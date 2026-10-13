@@ -1,0 +1,50 @@
+{
+  "checkedAtUtc": "2026-10-13T13:15:31.561270+00:00",
+  "source": "c8287b8f9a1a02a87536109362e3eba4bf47f4a5",
+  "services": {
+    "vmshpwa.service": {
+      "ActiveState": "active",
+      "MainPID": "241149",
+      "NRestarts": "0",
+      "journalRecords": 76,
+      "errorRecords": 0,
+      "tracebackRecords": 0,
+      "natsDisconnectRecords": 0
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "ActiveState": "active",
+      "MainPID": "241141",
+      "NRestarts": "0",
+      "journalRecords": 28,
+      "errorRecords": 0,
+      "tracebackRecords": 0,
+      "natsDisconnectRecords": 0
+    },
+    "nats-server.service": {
+      "ActiveState": "active",
+      "MainPID": "1409",
+      "NRestarts": "0",
+      "journalRecords": 0,
+      "errorRecords": 0,
+      "tracebackRecords": 0,
+      "natsDisconnectRecords": 0
+    }
+  },
+  "indexes": [
+    "live_mark_operations_active_context",
+    "results_by_problem_student"
+  ],
+  "privateArtifactUpload": {
+    "release": "c8287b8f9a1a-20261013130033",
+    "organization": "vmsh",
+    "privateArtifacts": 406,
+    "upload": "verified"
+  },
+  "privateArtifactChunks": 1145,
+  "backupPaths": [
+    "/web/vmsh_tasks_bot/backups/vmsh-before-deploy-20261013130833.sqlite3",
+    "/web/vmsh_tasks_bot/backups/vmsh-after-deploy-20261013130855.sqlite3"
+  ],
+  "standardDeploymentFinished": true,
+  "proxyUsed": false
+}

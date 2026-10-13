@@ -1,7 +1,9 @@
 # Scoped read performance — 13 октября 2026
 
 [Decision/implementation](../../../docs/performance/scoped-reads-20261013.md).
-Владелец утвердил три коммита и один выпуск на оба production.
+Владелец утвердил три коммита оптимизаций и выпуск на оба production.
+Выпуск завершён: source `c8287b8f` на ВМШ/TLF, включая ремонт штатного uploader.
+Полные квитанции и границы замера приведены ниже.
 
 ## Доказательства перед выпуском
 
@@ -53,10 +55,10 @@ Staff asset hashes, private sourcemaps, maintenance off и anonymous media 401.
 Общий required gate PASS: 3031 Python / 12 SKIP, 1128 frontend, 380 Storybook,
 156 E2E / 18 SKIP (три браузера), format/types/lint/i18n/build.
 `release-gate-summary.json`: source_changed=false; `release-gate-e2e.json`.
-Выпуск начинается; production receipts будут добавлены после проверки.
+Production receipts сохранены: ВМШ/TLF проверены после выпуска.
 `*-evening-before-metrics.json`: исходное окно 12.10 15:30–19:30 (+03).
 
-### Текущий rollout
+### История первых попыток rollout
 
 TLF `f799f449` выпущен 12:23:28 UTC. `tlf-deployment-verification.json` и
 `tlf-deployment-health.json`: verified backups, 25 HTTP, четыре HTML, 116
@@ -83,4 +85,26 @@ and remain inactive. Uploader repair uses standard authenticated HTTPS only:
 8 KiB SHA-1 chunks, paired small ZIP bundles, assemble JSON <=12 KiB, gzip
 responses, ten-file pages, server concurrency and three transient attempts.
 65 production build/static/smoke tests PASS. Runtime application code remains
-the full release-gate candidate. Live standard upload is still to be verified.
+the full release-gate candidate. Live standard upload subsequently passed; see completed rollout below.
+
+### Completed standard rollout
+
+Both source trees are `c8287b8f9a1a02a87536109362e3eba4bf47f4a5`:
+VMSH normal wrapper completed 13:08:55 UTC; TLF optimization release was
+12:23:28 UTC, followed by tooling-only ff-sync, preserving runtime/static.
+`vmsh-deployment-verification.json` / `tlf-current-verification.json`: on each
+host 25 HTTP, four HTML and 116 Staff asset hashes PASS; no public maps,
+maintenance off, services active. `vmsh-deployment-health.json`: 1145 direct
+chunks, 406 artifacts verified, both indexes present, NATS PID 1409 preserved,
+post-start journal errors/traceback/disconnect=0 and NRestarts=0. TLF NATS
+PID 1093 preserved. `vmsh-backup-restore-verification.json`: both verified
+backups restored separately, integrity OK, all 169 table counts match each
+snapshot; temporary restores removed. Earlier failure records are history.
+
+First five-minute VMSH observation (`vmsh-first-five-minutes-metrics.json`):
+~199 tasks GET, p95 303 ms / p99 461 ms; ~86 auth GET, p95 8.25 ms / p99
+29.5 ms; no 5xx, read/write queue max=0. Immediate before was 15 minutes,
+~375 tasks, p95 244 ms / p99 467 ms, read queue max=8. After has ~40 tasks/min
+vs ~25/min before and cold caches; these periods do not establish a speedup.
+Staff sample absent. At 19:45 (+03) one-off heartbeat compares original evening
+window and clean 13:15–16:30 UTC in both days, separately for both hosts.

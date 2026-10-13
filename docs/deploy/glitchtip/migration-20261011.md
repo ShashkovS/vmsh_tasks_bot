@@ -151,3 +151,13 @@ and bounded private errors; production/static/deploy smoke regressions: 65 PASS.
 [Production receipts](../../../pwa_tests/reports/scoped-reads-20261013/README.md)
 record the direct transport and actual source/map partition proof. Live upload
 and resumption of the normal release are the next gate.
+
+Live normal deployment repair confirmed: VMSH release
+`c8287b8f9a1a-20261013130033` uploaded 1145 direct HTTPS chunks and confirmed
+all 406 private artifacts before publication. Standard wrapper completed
+13:08:55 UTC; 25 HTTP / four HTML / 116 Staff hashes PASS, no startup errors
+or NATS disconnects. Both hosts now have tooling source `c8287b8f`; TLF's
+already verified runtime/static are preserved. No additional network port,
+proxy, token export or sudoers modification was needed. The wrapper's generic
+infrastructure warning is triggered by decision documentation under docs/deploy;
+this commit changes no installed nginx/unit/webhook artifacts.

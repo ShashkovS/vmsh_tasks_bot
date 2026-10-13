@@ -1,0 +1,23 @@
+{
+  "actualRestoreChecks": [
+    {
+      "backup": "vmsh-before-deploy-20261013130833.sqlite3",
+      "storage": "sqlite3",
+      "integrity": "ok",
+      "tableCountsMatchBackup": true,
+      "restoredBytes": 418795520,
+      "tablesChecked": 169,
+      "rowsChecked": 827481
+    },
+    {
+      "backup": "vmsh-after-deploy-20261013130855.sqlite3",
+      "storage": "sqlite3",
+      "integrity": "ok",
+      "tableCountsMatchBackup": true,
+      "restoredBytes": 418795520,
+      "tablesChecked": 169,
+      "rowsChecked": 827481
+    }
+  ],
+  "temporaryRestoresRemoved": true
+}

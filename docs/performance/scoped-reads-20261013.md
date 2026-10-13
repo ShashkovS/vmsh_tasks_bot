@@ -197,3 +197,20 @@ services/NATS/HTTP/assets/journals, source/static rollback без data rollback.
   full duplicate-aware artifact confirmation; 65 deploy/static/build PASS.
   Application files remain identical to the fully tested `f799f449` candidate.
   Decision/transport details: `docs/deploy/glitchtip/migration-20261011.md`.
+
+- Standard HTTPS repair and rollout complete: `c8287b8f` on both hosts.
+  VMSH completed 13:08:55 UTC, 1145 chunks / 406 private artifacts verified;
+  0120, 25 HTTP, 4 HTML / 116 Staff hashes, services/NATS PASS. TLF runtime
+  remains the release-gate candidate, tooling ff-sync to the same SHA, static
+  retained and reverified. No proxy, firewall rule, new port or sudoers change.
+  Read-only journals since startup: no errors/tracebacks/NATS disconnects,
+  NRestarts=0. Both VMSH deployment backups restored to separate temporary
+  databases: integrity OK and all 169 table counts match each source snapshot;
+  temporary copies removed. Runtime hashes remain 83 full-gate tested files.
+- First VMSH five minutes: ~199 tasks GET, p95 303 ms / p99 461 ms, ~86 auth
+  GET, p95 8.25 ms / p99 29.5 ms; no HTTP 5xx, read/write queue max 0. Before
+  rollout 15 min: ~375 tasks (25/min vs 40/min after), p95 244 ms / p99 467 ms;
+  read queue max 8. Different durations/load and cold caches prevent a causal
+  speedup conclusion; Staff marking/statistics sample absent after deployment.
+  Heartbeat 19:45 (+03) compares full window and clean 13:15–16:30 UTC in both
+  days, with counts and workload differences recorded.

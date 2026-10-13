@@ -9,12 +9,15 @@ refresh=1 и объединением событий. Memo cell labels сохр�
 156 E2E / 18 SKIP в Chromium/WebKit/Firefox; format/types/lint/i18n/build PASS,
 source_changed=false. Fresh-copy migration/rollback rehearsal и server SQL guard
 на обоих production PASS; все 168 business tables сохранили hashes.
-TLF `f799f449` выпущен: 25 HTTP, 4 HTML / 116 Staff hashes, services/NATS,
-verified backups и business hashes PASS. ВМШ две попытки остановлены до
-maintenance/migration из-за сетевого таймаута private sourcemap upload;
-deployed revision `aae27430`, службы active. Владелец запросил ремонт штатного механизма: uploader ограничивает размеры
-HTTPS-запросов; 65 deploy/static/build PASS и все 406 JS/map bytes сохранены.
-Запускается штатный выпуск без proxy/портов. Вечернее сравнение — 19:45 (+03).
+Выпуск завершён: оба production source `c8287b8f`, ВМШ 13:08:55 UTC,
+TLF оптимизации 12:23:28 UTC / tooling sync без изменений runtime/static.
+На каждом 25 HTTP / 4 HTML / 116 Staff hashes PASS; 0120, services/NATS,
+verified backups и copy parity PASS. Штатный uploader исправлен: 8 KiB chunks,
+bounded bundles/assemble, gzip/pages/retries; 65 deploy/static/build PASS,
+1145 direct chunks и все 406 private artifacts подтверждены на ВМШ.
+Без новых портов/proxy. После старта journal errors/traceback/disconnect=0,
+NRestarts=0; оба ВМШ backups восстановлены отдельно, integrity/table counts OK.
+Вечернее сравнение запланировано на 19:45 (+03), чистое окно с 16:15 (+03).
 Фото/LLM исключены.
 
 ## 2026-10-12 — RAM-кеш общих чтений и auth
