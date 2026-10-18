@@ -407,5 +407,7 @@ Evidence и CAS сохраняются. Fast gate PASS: 2981 Python / 12 SKIP,
 
 [Remote MCP fast gate](../../../pwa_tests/reports/remote-mcp-20261018/fast-gate.json)
 PASS: 3086 Python / 12 SKIP, 1142 frontend, 384 Storybook, 45 Chromium E2E,
-static/i18n/build, source unchanged. Production push ожидает доступного SSH-ключа
-через macOS Keychain; remote endpoint ещё не выпущен.
+static/i18n/build, source unchanged. Обычный SSH push `450903b7` выполнен после
+разблокировки ключа владельцем. Выпуск на оба production завершён:
+25 HTTP / 119 Staff hashes на каждом, remote MCP auth boundary PASS,
+services active, maintenance off. [Доказательства](../../../pwa_tests/reports/remote-mcp-20261018/README.md).
