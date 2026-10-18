@@ -295,7 +295,6 @@ written into production by these checks. All 15 maintenance recovery scenarios
 and 6 Family context scenarios passed in three browsers without retries before
 cutover; see [integration evidence](../../../vmshpwa/dev/development-plan/23-pilot-deployment.md#2026-10-01--consolidation-and-two-portal-rollout-complete).
 
-
 ## Receipt lookup index — 2026-10-01
 
 Migration `0105.pwa_recheck_receipt_lookup` is deployed from `0a05b685` on
@@ -314,7 +313,6 @@ Zoom receipts preserved). Both hosts have 76 migrations; the VMSh historical
 lookup selects 714 answers in 15 ms using the new index. Shared NATS and the
 existing frontend releases are unchanged. Documentation-only source updates
 need no worker restart or frontend build. [Migration, regression and verification](../../../vmshpwa/docs/sqlite-admission-performance.md#receipt-lookup-index--1-october-2026).
-
 
 ## Course metadata language/model — 2026-10-01
 
@@ -474,3 +472,23 @@ with the actual service PATH. Font/config/maps/tool links and the installation
 record are under `/web/vmsh_tasks_bot/toolchains/cm-super/`.
 [Release evidence](../../../pwa_tests/reports/release-audit-20261011/README.md):
 609×235 SVG PASS on both; labels «а)»/«б)» visually verified, security policy unchanged.
+
+## SVG previews for MCP — 2026-10-18
+
+The remote [MCP assistant](../../../vmshpwa/docs/ai-review-assistant.md) returns
+SVG figures as bounded PNG previews through
+[ai_review_images.py](../../../helpers/pwa/ai_review_images.py). On Ubuntu 26.04,
+`imagemagick-7.q16` alone does not include the SVG/MSVG coder. Install
+`libmagickcore-7.q16-10-extra` matching the installed core package version;
+`magick -version` succeeding does not prove SVG conversion works.
+
+18 October: installed extra version `8:7.1.2.18+dfsg1-1` with its five dependencies,
+without upgrading existing packages, changing ImageMagick policy or restarting
+services. Keep the native MSVG sanitizer/renderer; do not enable HTTP/URL delegates.
+Verify a synthetic SVG converts to PNG as `vmsh_tasks_bot`, then call both
+`get_review_image` and `get_lesson_material_image` through the real MCP connection.
+Both checks passed after installation. [Connected MCP proof](../../../pwa_tests/reports/remote-mcp-20261018/connected-mcp-smoke.json).
+
+Discoverable installation logs, codec and package-manifest symlinks:
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261018-mcp-svg-codec`.
+The application source and database schema are unchanged by this runtime fix.

@@ -47,3 +47,23 @@ http_headers = { Authorization = "Bearer air_YOUR_PERSONAL_KEY" }
 For TLF use another connection name, `https://prep.leaders.tech/staff/api/ai-review/v1/mcp`
 and a personal TLF key. Existing unexpired portal keys remain valid.
 [Full instructions](../../../vmshpwa/docs/ai-review-assistant.md#подключение-именно-в-codex).
+
+## Connected Codex MCP verification — 18 October 2026
+
+The owner connected both remote servers in Codex. [Actual connected-tool receipt](connected-mcp-smoke.json)
+checks all 14 read tools on each server: catalogs, pending work and pagination,
+problem/context/dialogue, teacher comments, pending/reviewed/all submission pages,
+previous 3/5 lessons, proposal listing and both image tools. VMSH returned five
+previous lessons; TLF correctly returned the three available previous lessons.
+No test proposals, verdict changes, claims or student messages were created.
+
+TLF revealed a real deployment prerequisite that isolated tests did not cover:
+Ubuntu's base ImageMagick package lacked SVG/MSVG support. Both image tools failed
+on SVG assets. Installed `libmagickcore-7.q16-10-extra=8:7.1.2.18+dfsg1-1`, matching
+the installed ImageMagick core; six new packages including dependencies, zero
+upgrades, no policy change and no service restart. Synthetic SVG conversion and
+both actual connected MCP image tools then returned PNG successfully.
+
+Server installation record and links to codec/package manifests are under
+`/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261018-mcp-svg-codec`.
+[Required runtime package](../../../docs/deploy/tlf-app/README.md#svg-previews-for-mcp--2026-10-18).

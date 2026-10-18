@@ -1,5 +1,14 @@
 # Design-system status
 
+## 2026-10-18 — проверка реально подключённых MCP
+
+Оба сервера подключены владельцем в Codex. Все 14 read tools на каждом прошли:
+каталоги, очередь, контекст/диалог, комментарии, pending/reviewed/all, pagination,
+предыдущие 3/5 занятий и оба image tools. Тестовых предложений и оценок нет.
+На TLF обнаружен и установлен недостающий штатный SVG-кодек ImageMagick
+той же версии; без upgrades, изменения policy и рестартов. После этого оба
+реальных MCP image tools вернули PNG. [Квитанция](../../../pwa_tests/reports/remote-mcp-20261018/connected-mcp-smoke.json).
+
 ## 2026-10-18 — удалённый MCP без клона репозитория
 
 По уточнению владельца добавляется прямой Streamable HTTP endpoint `/staff/api/ai-review/v1/mcp`
