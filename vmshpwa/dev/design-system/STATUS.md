@@ -1,5 +1,20 @@
 # Design-system status
 
+## 2026-10-18 — удалённый MCP без клона репозитория
+
+По уточнению владельца добавляется прямой Streamable HTTP endpoint `/staff/api/ai-review/v1/mcp`
+в существующем aiohttp backend. URL и личный токен заменяют локальную команду;
+SDK протокол, token-only/fresh scopes и независимая обычная проверка сохраняются.
+Fast gate PASS: 3086 Python / 12 SKIP, 1142 frontend, 384 Storybook,
+45 Chromium E2E; format/types/lint/i18n/build PASS, source unchanged.
+Реальный HTTP SDK: изображения, bulk context, proposals, изоляция, отзыв и scopes PASS.
+Готов к штатному SSH push и выпуску обоих production. Сейчас macOS Keychain
+не разрешает разблокировать GitHub-ключ (`User interaction is not allowed`);
+GitHub принимает публичный ключ. Ожидается разблокировка Mac владельцем,
+обходы авторизации не используются. Production остаётся на `19056ec7`.
+[Квитанция](../../../pwa_tests/reports/remote-mcp-20261018/fast-gate.json).
+[Контракт](../../docs/ai-review-assistant.md).
+
 ## 2026-10-18 — общий production-выпуск MCP и производительности
 
 Владелец разрешил общий выпуск на ВМШ и TLF. Включены MCP-помощник и пакет

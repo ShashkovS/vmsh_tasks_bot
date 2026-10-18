@@ -49,6 +49,15 @@ export function McpAccessPage() {
       <div className="max-w-2xl space-y-4">
         <p className="text-small">
           <Trans>
+            Добавьте этот URL как HTTP MCP-сервер и укажите личный токен в заголовке Authorization:
+            Bearer. Клон репозитория и установка Python не нужны.
+          </Trans>
+        </p>
+        <code className="block break-all text-small">
+          {`${window.location.origin}/staff/api/ai-review/v1/mcp`}
+        </code>
+        <p className="text-small">
+          <Trans>
             Токен открывает учебные материалы ваших кружков и групп, включая неопубликованные
             решения и изображения из диалогов. Через него можно загружать приватные предложения ИИ
             для учителя.

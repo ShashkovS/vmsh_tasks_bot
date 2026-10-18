@@ -399,3 +399,13 @@ Evidence и CAS сохраняются. Fast gate PASS: 2981 Python / 12 SKIP,
 Интеграционный gate перед выпуском PASS без исключений: 2997 Python / 6 SKIP, 1117 frontend, 378 Storybook, 10 Chromium E2E. После правки процента в временной карточке простыни: static gates, 6 unit и 4 Chromium review PASS. [Квитанции](../../../pwa_tests/reports/paste-evidence-20261011/README.md#интеграция-в-основную-ветку). Корпуса не копировались. Начинается owner-authorized push/deployment; pre-push backup ВМШ integrity ok.
 
 Выпуск доли вставок завершён: `bef85d3c8d5e` на ВМШ и TLF, schema 0119, по 25 HTTP / 4 HTML / 116 Staff hashes PASS, службы active, maintenance off. TLF up/down/up и stopped-writer comparison сохранили 168 таблиц / 37 052 строки, config/NATS и backups intact. [Production proof](../../../pwa_tests/reports/paste-evidence-20261011/production-proof.json). Незакоммиченная параллельная работа сохранена в `refs/archive/paste-evidence-worktree-20261011`; лишние checkout удалены.
+
+18 октября: по уточнению владельца добавляется удалённый Streamable HTTP `/staff/api/ai-review/v1/mcp`
+без локального клона/запуска. Реализация: `apps/pwa_api/ai_review_mcp_routes.py`,
+общие инструменты `ai_review_mcp/server.py`, проверка `test_ai_review_remote_mcp.py`.
+Права и токены общие с выпущенным помощником; работа учителя не меняется.
+
+[Remote MCP fast gate](../../../pwa_tests/reports/remote-mcp-20261018/fast-gate.json)
+PASS: 3086 Python / 12 SKIP, 1142 frontend, 384 Storybook, 45 Chromium E2E,
+static/i18n/build, source unchanged. Production push ожидает доступного SSH-ключа
+через macOS Keychain; remote endpoint ещё не выпущен.

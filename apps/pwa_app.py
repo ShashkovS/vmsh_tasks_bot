@@ -61,6 +61,7 @@ from apps.pwa_api.oral_result_routes import oral_result_routes
 from apps.pwa_api.live_marking_routes import routes as live_marking_routes
 from apps.pwa_api.legacy_print_routes import routes as legacy_print_routes
 from apps.pwa_api.ai_review_routes import routes as ai_review_routes
+from apps.pwa_api.ai_review_mcp_routes import routes as ai_review_mcp_routes
 from apps.pwa_api.news_routes import news_routes
 from apps.pwa_api.group_banner_routes import (
     PWA_BANNER_INVALIDATOR,
@@ -2118,6 +2119,7 @@ def configure(
         app.add_routes(classroom_assignment_routes)
         app.add_routes(legacy_print_routes)
         app.add_routes(ai_review_routes)
+        app.add_routes(ai_review_mcp_routes)
         app.add_routes(classroom_delivery_routes)
         app.add_routes(notification_routes)
         app.add_routes(oral_window_routes)

@@ -1764,6 +1764,10 @@ msgstr "Add"
 msgid "Добавлено задач"
 msgstr "Problems added"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Добавьте этот URL как HTTP MCP-сервер и укажите личный токен в заголовке Authorization: Bearer. Клон репозитория и установка Python не нужны."
+msgstr "Add this URL as an HTTP MCP server and supply your personal token in the Authorization: Bearer header. No repository clone or Python installation is needed."
+
 #: apps/staff/src/staff-file-upload.tsx
 msgid "Дождитесь загрузки файла перед сохранением текста."
 msgstr "Wait for the file to finish uploading before saving the text."

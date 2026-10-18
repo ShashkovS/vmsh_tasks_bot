@@ -178,16 +178,25 @@ async def suggestions(request):
 @routes.post(PREFIX + "/tools/{tool}")
 async def call_tool(request):
     validate_request_boundary(request, audience=AuthAudience.STAFF, expects_json=True)
+    return await execute_tool(
+        request, bearer_secret(request), request.match_info["tool"], await body(request)
+    )
+
+
+def bearer_secret(request):
     headers = request.headers.getall("Authorization", [])
     header = headers[0] if len(headers) == 1 else ""
-    secret = header.removeprefix("Bearer ") if header.startswith("Bearer ") else ""
-    tool = request.match_info["tool"]
+    return header.removeprefix("Bearer ") if header.startswith("Bearer ") else ""
+
+
+async def execute_tool(request, secret, tool, value):
+    """Shared authorization/domain path for stdio bridge and remote MCP."""
     if tool not in TOOLS:
         raise PwaApiError(
             status=404, code="unknown_tool", message="Неизвестный инструмент"
         )
     try:
-        payload = TOOLS[tool].model_validate(await body(request)).model_dump()
+        payload = TOOLS[tool].model_validate(value).model_dump()
     except ValidationError as error:
         raise PwaApiError(
             status=422,
