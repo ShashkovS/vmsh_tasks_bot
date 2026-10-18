@@ -1,7 +1,8 @@
 # Общий выпуск MCP и производительности — 18 октября 2026
 
 Владелец разрешил commit/push и deployment на vmsh.shashkovs.ru и prep.leaders.tech.
-Текущий этап: общий release gate и репетиции миграций PASS; начинается штатный SSH push → webhook ВМШ и отдельный штатный выпуск TLF. Production ещё не обновлён этим выпуском.
+Выпуск завершён: `9626315c7b4d1c0f9d76532fb339661a8778475a` на обоих production.
+Обычный SSH push в `vmshpwa`, штатный webhook ВМШ и guarded deploy TLF.
 
 ## Состав и проверки
 
@@ -41,3 +42,12 @@ Chromium/Firefox/WebKit; format/types/lint/i18n/build PASS, source unchanged.
 Server-local up/down/up, 168 business table hashes, performance guard и integrity:
 [ВМШ](../../pwa_tests/reports/ai-review-assistant-20261018/vmsh-rehearsal.json),
 [TLF](../../pwa_tests/reports/ai-review-assistant-20261018/tlf-rehearsal.json).
+
+## Production proof
+
+- ВМШ static `9626315c7b4d-20261018160836`: [HTTP/assets/API](../../pwa_tests/reports/ai-review-assistant-20261018/vmsh-production-proof.json), [backup/NATS/revision](../../pwa_tests/reports/ai-review-assistant-20261018/vmsh-rollout.json).
+- TLF static `tlfprep-20261018-ai-perf-9626315c7b4d`: [HTTP/assets/API](../../pwa_tests/reports/ai-review-assistant-20261018/tlf-production-proof.json), [backup/data/rehearsal/guard](../../pwa_tests/reports/ai-review-assistant-20261018/tlf-rollout.json).
+- На каждом: 25 read-only HTTP checks, 4 HTML и 119 Staff asset hashes; production provenance без MSW/prototype и публичных maps, schema 0122, SQLite quick_check, cookie/token API без авторизации 401. Службы active, maintenance off. Личный ключ пользователя не создавался; положительный сценарий токена/загрузки проверен изолированными HTTP/stdio/E2E.
+- TLF: все 168 business tables сохранены при остановленных writers; новые три AI-таблицы пусты после миграции, настройки и NATS сохранены, verified backups до/после. PWA/Zoom активны; основной legacy Telegram process остаётся выключенным.
+- GlitchTip: установлен helper с явным закрытием SQLite; credentials и state сохранены. После restart service active / NRestarts=0. Обновлены пять targets в файле Grafana dashboard, Grafana health database ok. [Квитанция](../../pwa_tests/reports/ai-review-assistant-20261018/performance-sidecars.json). Длительное наблюдение за OOM и новые production p95/p99 этим выпуском не доказаны. Root bootstrap installers не перезапускались.
+- Проверка воспроизводится [verify-production.py](../../pwa_tests/reports/ai-review-assistant-20261018/verify-production.py). Инструкция владельцу: [создать ключ и подключить Codex](../../vmshpwa/docs/ai-review-assistant.md#подключение-именно-в-codex).

@@ -105,3 +105,8 @@ Server-local migration up/down/up обеих копий production DB PASS;
 168 business table hashes сохранены, новые AI-таблицы пусты, integrity ok.
 [ВМШ](vmsh-rehearsal.json), [TLF](tlf-rehearsal.json),
 [план штатного выпуска](../../../docs/deploy/ai-review-performance-20261018.md).
+
+Выпуск `9626315c` завершён на обоих production штатным SSH push/webhook ВМШ
+и guarded TLF deploy. По 25 HTTP, 4 HTML / 119 Staff hashes, schema 0122,
+MCP anonymous 401 и backup integrity PASS; maintenance off.
+[Production record](../../../docs/deploy/ai-review-performance-20261018.md#production-proof).

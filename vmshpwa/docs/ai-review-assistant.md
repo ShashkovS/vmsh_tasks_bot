@@ -318,3 +318,7 @@ AI-данные не записываются в submission_entries или resul
 штатным `schema_inventory generate --write`. Отдельные процессы/systemd units,
 новые порты и provider credentials для backend не требуются. Production-выкладка
 и remote HTTP MCP для веб-клиентов не входят в этот инкремент.
+
+18 октября 2026 помощник и performance-выпуск `9626315c` опубликованы на обоих
+production. [Порядок выпуска и фактические проверки](../../docs/deploy/ai-review-performance-20261018.md#production-proof).
+Раздел подключения Codex выше применим к обоим работающим порталам.

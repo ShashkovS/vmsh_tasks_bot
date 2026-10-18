@@ -9,7 +9,12 @@
 3083 Python / 12 SKIP, 1136 frontend, 384 Storybook, 159 E2E / 18 SKIP
 в трёх браузерах; format/types/lint/i18n/build PASS, source unchanged.
 Server-local up/down/up обеих БД PASS: 168 business tables сохранены, integrity ok.
-Начинается штатный SSH push в vmshpwa и выпуск обоих production.
+Штатный SSH push и выпуск обоих production завершены: `9626315c`.
+ВМШ — webhook, TLF — существующий guarded deploy. На каждом: 25 HTTP,
+4 HTML / 119 Staff hashes, schema 0122 и MCP anonymous 401 PASS;
+службы active, maintenance off, backup integrity ok.
+[ВМШ proof](../../../pwa_tests/reports/ai-review-assistant-20261018/vmsh-production-proof.json),
+[TLF proof](../../../pwa_tests/reports/ai-review-assistant-20261018/tlf-production-proof.json).
 [План выпуска](../../../docs/deploy/ai-review-performance-20261018.md).
 
 ## 2026-10-18 — предыдущие занятия через MCP реализованы
