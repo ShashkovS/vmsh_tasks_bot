@@ -1,5 +1,15 @@
 # Design-system status
 
+## 2026-10-18 — общий production-выпуск MCP и производительности
+
+Владелец разрешил общий выпуск на ВМШ и TLF. Включены MCP-помощник и пакет
+`8b7ce809`: scoped reads/refetch, статистика, persistent analytics, фото и push.
+Невыпущенная миграция помощника перенесена с 0120 на 0122 после performance
+0120/0121; fresh schema содержит 532 product objects. Объединённый release gate,
+server-side rehearsal, backup и выкладка выполняются. Проверки прежних отдельных
+инкрементов ниже не заменяют проверку общего исходника.
+[План выпуска](../../../docs/deploy/ai-review-performance-20261018.md).
+
 ## 2026-10-18 — предыдущие занятия через MCP реализованы
 
 Реализован один пакет условий, подсказок и решений последних N предыдущих
@@ -38,6 +48,23 @@ format/types/lint/i18n/builds PASS, source unchanged. Реальный stdio MCP
 снимков 1280/390 light/dark проверены. Первый WebKit sending-status race прошёл
 в повторе без изменения теста/Student flow.
 [Квитанции и снимки](../../../pwa_tests/reports/ai-review-assistant-20261018/README.md).
+
+## 2026-10-13 — Адресные обновления и scoped SQL
+
+[Утверждённый план](../../../docs/performance/scoped-reads-20261013.md) реализован: адресные ресурсы и очередь refetch ≤4,
+scoped отметки/visits, migration 0120 и статистика с RAM TTL ≤60 секунд,
+refresh=1 и объединением событий. Memo cell labels сохраняют прежние пороги.
+Полный release gate PASS: 3031 Python / 12 SKIP, 1128 frontend, 380 Storybook,
+156 E2E / 18 SKIP в Chromium/WebKit/Firefox; format/types/lint/i18n/build PASS,
+source_changed=false. Fresh-copy migration/rollback rehearsal и server SQL guard
+на обоих production PASS; все 168 business tables сохранили hashes.
+TLF `f799f449` выпущен: 25 HTTP, 4 HTML / 116 Staff hashes, services/NATS,
+verified backups и business hashes PASS. ВМШ две попытки остановлены до
+maintenance/migration из-за сетевого таймаута private sourcemap upload;
+deployed revision `aae27430`, службы active. Владелец запросил ремонт штатного механизма: uploader ограничивает размеры
+HTTPS-запросов; 65 deploy/static/build PASS и все 406 JS/map bytes сохранены.
+Запускается штатный выпуск без proxy/портов. Вечернее сравнение — 19:45 (+03).
+Фото/LLM исключены.
 
 ## 2026-10-13 — Backend RAM cache release
 

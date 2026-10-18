@@ -125,3 +125,11 @@ References: [official installation guide](https://glitchtip.com/documentation/in
 [release tags](https://gitlab.com/glitchtip/glitchtip-backend/-/tags),
 [6.2 release notes](https://glitchtip.com/blog/2026-06-22-glitchtip-6-2-released/)
 and [MCP guide](https://glitchtip.com/documentation/mcp/).
+
+## Digest connection lifecycle fix — 2026-10-18
+
+`telegram-webhook.py` now closes each SQLite connection explicitly after
+commit/rollback. `tests/test_glitchtip_telegram.py` verifies retained connection
+objects are closed on success and errors. Update the installed helper and restart
+only `glitchtip-telegram.service`; preserve credentials, durable state and limits.
+This fix does not prove all historical memory growth causes are eliminated.

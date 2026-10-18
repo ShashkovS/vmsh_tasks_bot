@@ -191,6 +191,7 @@ export function createLessonBlockClient(
 
 export function useStaffLessonBlocksQuery(client: LessonBlockClient, groupLessonId: string) {
   return useQuery({
+    meta: { realtimeResources: [`group-lessons/${groupLessonId}/blocks/staff`] },
     queryKey: lessonBlockQueryKeys.staff(groupLessonId),
     queryFn: ({ signal }) => client.get(groupLessonId, signal),
   })

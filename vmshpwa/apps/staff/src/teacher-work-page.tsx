@@ -1178,6 +1178,7 @@ export function TeacherWorkPage({
   )
   const scope = [...principalQueryKey(principal), 'teacher-work']
   const catalog = useQuery({
+    meta: { realtimeResources: ['teacher-work'] },
     queryKey: [...scope, 'catalog'],
     queryFn: ({ signal }) => client.catalog(signal),
     enabled: admin,
@@ -1189,6 +1190,7 @@ export function TeacherWorkPage({
     ''
   const section = search.section ?? 'report'
   const report = useQuery({
+    meta: { realtimeResources: ['teacher-work'] },
     queryKey: [...scope, 'report', courseId, search.first, search.last, search.q],
     queryFn: ({ signal }) =>
       client.report(courseId, { first: search.first, last: search.last, q: search.q }, signal),
@@ -1197,12 +1199,14 @@ export function TeacherWorkPage({
       ['queued', 'running'].includes(query.state.data?.operation?.state ?? '') ? 1500 : 30000,
   })
   const inputs = useQuery({
+    meta: { realtimeResources: ['teacher-work'] },
     queryKey: [...scope, 'inputs', courseId],
     queryFn: ({ signal }) => client.inputs(courseId, signal),
     enabled: admin && !!courseId && section !== 'report',
   })
   const [selected, setSelected] = useState<string | null>(null)
   const details = useQuery({
+    meta: { realtimeResources: ['teacher-work'] },
     queryKey: [...scope, 'details', courseId, selected],
     queryFn: ({ signal }) => client.details(courseId, selected!, signal),
     enabled: admin && !!courseId && !!selected,

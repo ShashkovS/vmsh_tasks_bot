@@ -17,6 +17,7 @@ export interface PrepareOfflineLessonsOptions {
   ownerId: string
   runtime: RuntimeConfig
   signal: AbortSignal
+  refreshSession?: () => Promise<unknown>
   courseClient?: StudentCourseClient & {
     offlineLessons(options: { signal: AbortSignal }): Promise<StudentOfflineLessonsResponse>
   }
@@ -54,8 +55,11 @@ export async function prepareOfflineLessons(
 
 async function prepareLocked(options: PrepareOfflineLessonsOptions): Promise<LessonBundle> {
   const { database, ownerId, runtime, signal } = options
-  const course = options.courseClient ?? createStudentCourseClient(runtime)
-  const content = options.contentClient ?? createContentApiClient(runtime)
+  // followups-20261018.md: a concurrent cookie rotation must not let a
+  // background read sign the student out. Reuse the coordinated retry.
+  const auth = options.refreshSession ? { refreshSession: options.refreshSession } : {}
+  const course = options.courseClient ?? createStudentCourseClient(runtime, auth)
+  const content = options.contentClient ?? createContentApiClient(runtime, auth)
   const request = { signal }
   const savedAt = new Date().toISOString()
   const documents: LessonBundle['documents'] = []

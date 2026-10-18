@@ -2,7 +2,7 @@
 
 from yoyo import step
 
-__depends__ = {"0119.text_origin"}
+__depends__ = {"0121.review_sheet_indexes"}
 
 steps = [
     step(

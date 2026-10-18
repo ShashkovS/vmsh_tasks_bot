@@ -32,6 +32,7 @@ export function LiveConditionDialog({
   onClose: () => void
 }) {
   const condition = useQuery({
+    meta: { realtimeResources: ['group-lessons/*/content/condition'] },
     queryKey: ['live-condition', accountId, context, problem.problemId],
     queryFn: () => client.condition(context, problem.problemId),
   })

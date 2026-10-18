@@ -46,6 +46,7 @@ export function WhiteboardExportPage() {
     return payload
   }
   const catalog = useQuery({
+    meta: { realtimeResources: ['group-lessons/*/content/condition'] },
     queryKey: ['whiteboard-export', principal.accountId],
     queryFn: async ({ signal }) => whiteboardCatalogSchema.parse(await get('', signal)),
     refetchOnWindowFocus: 'always',

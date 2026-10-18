@@ -66,3 +66,14 @@ it('retries an expired admin session with the same calculation key', async () =>
     vi.unstubAllGlobals()
   }
 })
+
+it('requests a fresh snapshot explicitly without changing ordinary reads', async () => {
+  const fetchImplementation = vi
+    .fn<typeof fetch>()
+    .mockImplementation(() => Promise.resolve(Response.json(emptyResponse)))
+  const client = createStaffStatisticsClient(runtime, { fetchImplementation })
+  await client.get({ courseId: 'c-1', groupId: null }, undefined, { refresh: true })
+  expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+    '/staff/api/v1/statistics?courseId=c-1&refresh=1',
+  )
+})

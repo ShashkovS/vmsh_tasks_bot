@@ -1078,6 +1078,12 @@ export function usePublishedContentQuery(
     throw new TypeError('Published content query principal must match the client audience')
   }
   return useQuery({
+    meta: {
+      realtimeResources: [
+        `group-lessons/${input.groupLessonId}/content/${input.kind}`,
+        `group-lessons/${input.groupLessonId}/problem-release`,
+      ],
+    },
     networkMode: client.audience === 'student' ? 'always' : 'online',
     queryKey: contentQueryKeys.published(
       principal,
@@ -1096,6 +1102,7 @@ export function useContentDiagnosticsQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`revisions/${revisionId}/*`] },
     queryKey: contentQueryKeys.diagnostics(revisionId),
     queryFn: ({ signal }) => client.diagnostics(revisionId, { signal }),
     enabled: options.enabled ?? true,
@@ -1108,6 +1115,7 @@ export function useContentRevisionAssetsQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`revisions/${revisionId}/*`] },
     queryKey: contentQueryKeys.assets(revisionId),
     queryFn: ({ signal }) => client.revisionAssets(revisionId, { signal }),
     enabled: options.enabled ?? true,
@@ -1120,6 +1128,7 @@ export function useProblemMatchesQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`revisions/${revisionId}/*`] },
     queryKey: contentQueryKeys.problemMatches(revisionId),
     queryFn: ({ signal }) => client.problemMatches(revisionId, { signal }),
     enabled: options.enabled ?? true,
@@ -1133,6 +1142,7 @@ export function useProblemMetadataGridQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`group-lessons/${groupLessonId}/*`] },
     queryKey: contentQueryKeys.metadataGrid(groupLessonId, revisionId),
     queryFn: ({ signal }) => client.metadataGrid(groupLessonId, revisionId, { signal }),
     enabled: options.enabled ?? true,
@@ -1145,6 +1155,7 @@ export function useStaffContentHistoryQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`group-lessons/${groupLessonId}/*`] },
     queryKey: contentQueryKeys.history(groupLessonId),
     queryFn: ({ signal }) => client.history(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
@@ -1157,6 +1168,7 @@ export function useStaffLessonWindowQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`group-lessons/${groupLessonId}/*`] },
     queryKey: contentQueryKeys.lessonWindow(groupLessonId),
     queryFn: ({ signal }) => client.lessonWindow(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
@@ -1169,6 +1181,7 @@ export function useStaffLessonTitleQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`group-lessons/${groupLessonId}/*`] },
     queryKey: contentQueryKeys.lessonTitle(groupLessonId),
     queryFn: ({ signal }) => client.lessonTitle(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
@@ -1181,6 +1194,7 @@ export function useContentUploadTargetsQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`group-lessons/${groupLessonId}/*`] },
     queryKey: contentQueryKeys.uploadTargets(groupLessonId),
     queryFn: ({ signal }) => client.uploadTargets(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
@@ -1194,6 +1208,7 @@ export function useContentPreviewQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`revisions/${revisionId}/*`] },
     queryKey: contentQueryKeys.preview(revisionId, kind),
     queryFn: ({ signal }) => client.preview(revisionId, kind, { signal }),
     enabled: options.enabled ?? true,

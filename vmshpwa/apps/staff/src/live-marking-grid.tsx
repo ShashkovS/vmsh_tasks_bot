@@ -18,6 +18,18 @@ export interface MarkDisplay {
   pending?: 'draft' | 'queued' | 'sending' | 'conflict' | 'failed' | undefined
   disabled: boolean
 }
+function sameDisplay(a: MarkDisplay, b: MarkDisplay) {
+  return (
+    a.symbol === b.symbol &&
+    a.beforeSymbol === b.beforeSymbol &&
+    a.canClear === b.canClear &&
+    a.unconfirmed === b.unconfirmed &&
+    a.mine === b.mine &&
+    a.changed === b.changed &&
+    a.pending === b.pending &&
+    a.disabled === b.disabled
+  )
+}
 export const LiveMarkButton = memo(
   function LiveMarkButton({
     label,
@@ -124,14 +136,40 @@ export const LiveMarkButton = memo(
     a.studentId === b.studentId &&
     a.problemId === b.problemId &&
     a.onMark === b.onMark &&
-    a.display.symbol === b.display.symbol &&
-    a.display.beforeSymbol === b.display.beforeSymbol &&
-    a.display.canClear === b.display.canClear &&
-    a.display.unconfirmed === b.display.unconfirmed &&
-    a.display.mine === b.display.mine &&
-    a.display.changed === b.display.changed &&
-    a.display.pending === b.display.pending &&
-    a.display.disabled === b.display.disabled,
+    sameDisplay(a.display, b.display),
+)
+
+// scoped-reads-20261013.md: unchanged cells also skip translation/label work,
+// even when a board refetch replaces student/problem objects with equal values.
+const SchoolMarkCell = memo(
+  function SchoolMarkCell({
+    student,
+    p,
+    display,
+    onMark,
+  }: {
+    student: LiveBoard['students'][number]
+    p: LiveBoard['problems'][number]
+    display: MarkDisplay
+    onMark: LiveSchoolGridProps['onMark']
+  }) {
+    return (
+      <LiveMarkButton
+        label={t`${student.displayName}, задача ${p.label}`}
+        display={display}
+        onMark={onMark}
+        studentId={student.studentId}
+        problemId={p.problemId}
+      />
+    )
+  },
+  (a, b) =>
+    a.student.studentId === b.student.studentId &&
+    a.student.displayName === b.student.displayName &&
+    a.p.problemId === b.p.problemId &&
+    a.p.label === b.p.label &&
+    a.onMark === b.onMark &&
+    sameDisplay(a.display, b.display),
 )
 
 // Stable events let memoized cells skip unrelated classmates' updates. The
@@ -284,12 +322,11 @@ export function LiveSchoolGrid({
                 </td>
                 {board.problems.map((p) => (
                   <td key={p.problemId} className="min-w-11 border-b border-r p-0">
-                    <LiveMarkButton
-                      label={t`${student.displayName}, задача ${p.label}`}
+                    <SchoolMarkCell
+                      student={student}
+                      p={p}
                       display={display(student.studentId, p.problemId)}
                       onMark={mark}
-                      studentId={student.studentId}
-                      problemId={p.problemId}
                     />
                   </td>
                 ))}

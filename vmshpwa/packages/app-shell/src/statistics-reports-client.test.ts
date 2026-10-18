@@ -33,3 +33,33 @@ it('fetches only the requested report and retries expired sessions', async () =>
     cache: 'no-store',
   })
 })
+
+it.each(['summary', 'plus-table'] as const)(
+  'forces a fresh %s snapshot on request',
+  async (kind) => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        schemaVersion: 1,
+        courses: [],
+        selectedCourseId: null,
+        selectedGroupId: null,
+        requestId: 'fresh',
+        lessons: [],
+        lessonNumbers: [],
+        lessonNumber: null,
+        problems: [],
+        rows: [],
+      }),
+    )
+    const client = createStatisticsReportsClient(
+      runtimeConfigSchemaForAudience('staff').parse(runtimeFixture.response),
+      { fetchImplementation },
+    )
+    await client(kind, { courseId: 'c-1', groupId: 'g-1', lessonNumber: 0 }, undefined, {
+      refresh: true,
+    })
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      `/staff/api/v1/statistics/${kind}?courseId=c-1&groupId=g-1${kind === 'plus-table' ? '&lessonNumber=0' : ''}&refresh=1`,
+    )
+  },
+)

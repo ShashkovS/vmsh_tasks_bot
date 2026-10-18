@@ -108,6 +108,7 @@ export function canonicalProductRoute(pathname: string): string {
 export class ProductAnalyticsTracker {
   #events: ProductEvent[] = []
   #flushing = false
+  #timer: ReturnType<typeof setTimeout> | undefined
 
   constructor(
     private readonly audience: Audience,
@@ -123,10 +124,17 @@ export class ProductAnalyticsTracker {
       ...(entity ? { entityType: entity.type, entityId: entity.id } : {}),
       ...environment(),
     })
-    void this.flush()
+    this.#schedule()
+  }
+
+  #schedule(): void {
+    // docs/performance/followups-20261018.md: coalesce route/action bursts.
+    this.#timer ??= setTimeout(() => void this.flush(), 100)
   }
 
   async flush(): Promise<void> {
+    clearTimeout(this.#timer)
+    this.#timer = undefined
     if (this.#flushing || this.#events.length === 0) return
     this.#flushing = true
     const events = this.#events.splice(0, 20)
@@ -142,7 +150,7 @@ export class ProductAnalyticsTracker {
       // Best effort by design: do not retry or persist telemetry offline.
     } finally {
       this.#flushing = false
-      if (this.#events.length > 0) void this.flush()
+      if (this.#events.length > 0) this.#schedule()
     }
   }
 }
@@ -185,7 +193,10 @@ export function ProductPageView({ audience, pathname }: { audience: Audience; pa
   useEffect(() => {
     const flush = () => void tracker.flush()
     window.addEventListener('pagehide', flush)
-    return () => window.removeEventListener('pagehide', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      flush()
+    }
   }, [tracker])
   return null
 }

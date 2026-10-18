@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 92f741b16f168d954d003a4a80f04072df1b26f8df6ca5786d1de9b20283a813
+-- Product schema SHA-256: 1a77772e7a8998bbdb719f5fd97e5104c612ddd423a114d5dd344b03d2221b9d
 
 CREATE TABLE achievement_definitions
 (
@@ -3326,6 +3326,8 @@ CREATE INDEX lesson_window_schedule_sources_rule_idx
 CREATE INDEX lesson_windows_close_idx
     on lesson_windows (submission_closes_at, group_lesson_id);
 
+CREATE INDEX live_mark_operations_active_context ON live_mark_operations(context_id) WHERE kind='mark' AND undone_at IS NULL;
+
 CREATE INDEX live_mark_operations_history
     ON live_mark_operations(teacher_id, context_id, created_at DESC);
 
@@ -3423,6 +3425,8 @@ CREATE INDEX pwa_image_uploads_cleanup ON pwa_image_uploads(state, expires_at);
 
 CREATE INDEX pwa_sentry_admissions_budget_idx ON pwa_sentry_admissions (lane, occurred_at, signature);
 
+CREATE INDEX results_by_problem_student ON results(problem_id, student_id, id);
+
 CREATE INDEX results_by_student_problem
     on results (student_id, problem_id);
 
@@ -3502,6 +3506,8 @@ CREATE INDEX submission_review_evidence_attachments_attachment_idx
 CREATE INDEX submission_review_evidence_entries_entry_idx
     on submission_review_evidence_entries (entry_id, review_id);
 
+CREATE INDEX submission_review_evidence_entries_thread_review_idx ON submission_review_evidence_entries(thread_id, review_id);
+
 CREATE INDEX submission_review_internal_reaction_events_review_idx
     on submission_review_internal_reaction_events (review_id, created_at, id);
 
@@ -3520,6 +3526,8 @@ CREATE UNIQUE INDEX submission_threads_id_owner_problem_uq
 CREATE UNIQUE INDEX submission_threads_one_active_uq
     on submission_threads (student_user_id, problem_id)
     where status <> 'closed';
+
+CREATE INDEX submission_threads_public_id_idx ON submission_threads(public_id);
 
 CREATE INDEX submission_threads_review_queue_idx
     on submission_threads (latest_entry_at, id)

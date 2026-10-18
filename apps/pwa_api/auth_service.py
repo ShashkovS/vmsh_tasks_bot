@@ -180,6 +180,7 @@ class PwaAuthService:
             max_entries=8192,
             max_bytes=32 * 1024**2,
             clock=lambda: self._now().timestamp(),
+            metric_name="auth",
         )
 
     def invalidate_read_cache(self) -> None:

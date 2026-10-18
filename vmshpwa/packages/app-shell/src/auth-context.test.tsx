@@ -1,4 +1,4 @@
-import { onlineManager } from '@tanstack/react-query'
+import { onlineManager, useQuery } from '@tanstack/react-query'
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { act, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -31,6 +31,7 @@ import {
 } from './auth-context'
 import { createInMemoryAuthRefreshCoordinator } from './auth-refresh-coordinator'
 import { AppProviders, createAppQueryClient } from './providers'
+import { RealtimeProvider } from './realtime'
 
 const studentRuntime = parseRuntimeConfigForAudience('student', studentRuntimeFixture.response)
 const staffRuntime = parseRuntimeConfigForAudience('staff', staffRuntimeFixture.response)
@@ -628,5 +629,72 @@ it('reaches the durable Student snapshot when TanStack Query sees a disconnected
     expect(store.clear).not.toHaveBeenCalled()
   } finally {
     onlineManager.setOnline(true)
+  }
+})
+
+it('recovers authority when the offline failure arrives after the online event', async () => {
+  const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
+  let rejectFirst: (error: Error) => void = () => undefined
+  const fetchImplementation = vi
+    .fn<typeof fetch>()
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((_resolve, reject) => {
+          rejectFirst = reject
+        }),
+    )
+    .mockImplementation(() => Promise.resolve(jsonResponse(studentAuthContext)))
+  const read = vi.fn(() => Promise.resolve('fresh personal result'))
+  function Probe() {
+    const authentication = useAuthentication()
+    const result = useQuery({
+      queryKey: ['late-online-personal'],
+      queryFn: read,
+      initialData: 'offline snapshot',
+      staleTime: Infinity,
+      enabled: authentication.state.status === 'authenticated',
+    })
+    return (
+      <div>
+        {authentication.state.status} / {result.data}
+      </div>
+    )
+  }
+  try {
+    render(
+      <AppProviders queryClient={createAppQueryClient()}>
+        <AuthenticationProvider
+          audience="student"
+          runtime={studentRuntime}
+          offlineStore={mockOfflineStore(durableSnapshot())}
+          refreshCoordinator={createInMemoryAuthRefreshCoordinator()}
+          fetchImplementation={fetchImplementation}
+        >
+          <RealtimeProvider
+            audience="student"
+            runtime={studentRuntime}
+            socketFactory={() => {
+              throw new Error('No socket needed for authority recovery')
+            }}
+          >
+            <Probe />
+          </RealtimeProvider>
+        </AuthenticationProvider>
+      </AppProviders>,
+    )
+    await vi.waitFor(() => expect(fetchImplementation).toHaveBeenCalledTimes(1))
+    online.mockReturnValue(false)
+    fireEvent(window, new Event('offline'))
+    online.mockReturnValue(true)
+    fireEvent(window, new Event('online'))
+    await act(() => {
+      rejectFirst(new TypeError('late offline response'))
+      return Promise.resolve()
+    })
+    expect(await screen.findByText('authenticated / fresh personal result')).not.toBeNull()
+    expect(fetchImplementation).toHaveBeenCalledTimes(2)
+    expect(read).toHaveBeenCalledTimes(1)
+  } finally {
+    online.mockRestore()
   }
 })

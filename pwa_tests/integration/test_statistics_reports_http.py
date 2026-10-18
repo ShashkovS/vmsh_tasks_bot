@@ -155,3 +155,115 @@ async def test_report_requires_staff_and_scopes_teacher(content_http, kind):
         cookies=support._cookie(f, "teacher"),
     )
     assert forbidden.status == 403
+
+
+@pytest.mark.parametrize("kind", ["", "/summary", "/plus-table"])
+async def test_statistics_cache_hit_and_forced_fresh_read(
+    content_http, monkeypatch, kind
+):
+    from apps.pwa_api import staff_statistics_routes as routes
+
+    f = content_http
+    public_id, _ = await support._prepare_published_test_problem(f, problem_type=2)
+    calls = []
+    original = routes.main_snapshot if not kind else routes.report_snapshot
+
+    def counted(*args, **kwargs):
+        calls.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        routes, "main_snapshot" if not kind else "report_snapshot", counted
+    )
+    url = "/staff/api/v1/statistics" + kind + "?courseId=c-1"
+
+    async def get(refresh=False, request_id="cache.first"):
+        response = await f.client.get(
+            url + ("&refresh=1" if refresh else ""),
+            cookies=support._cookie(f, "admin"),
+            headers={**support._headers(), "X-Request-ID": request_id},
+        )
+        assert response.status == 200, await response.text()
+        assert response.headers["Cache-Control"] == "no-store"
+        return await response.json()
+
+    first = await get()
+
+    def seed(db):
+        p = db.execute(
+            "SELECT * FROM problems WHERE public_id=?", (public_id,)
+        ).fetchone()
+        db.execute(
+            "INSERT INTO results(student_id,problem_id,group_id,lesson,ts,verdict,res_type) VALUES(?,?,?,?,?,17,2)",
+            (
+                support.STUDENT_USER_ID,
+                p["id"],
+                p["group_id"],
+                p["lesson"],
+                "2026-10-13T12:00:00",
+            ),
+        )
+
+    f.factory.run_write(seed)  # Legacy writes are allowed to age out by TTL.
+    cached = await get(request_id="cache.second")
+    assert len(calls) == 1
+    assert {k: v for k, v in first.items() if k != "requestId"} == {
+        k: v for k, v in cached.items() if k != "requestId"
+    }
+    assert first["requestId"] != cached["requestId"]
+    fresh = await get(refresh=True)
+    assert len(calls) == 2
+    if not kind:
+        assert fresh["basicLesson"]["groups"][0]["problems"][0]["points"] == 1
+    elif kind == "/summary":
+        assert fresh["lessons"][0]["allPlus"] == 1
+    else:
+        assert fresh["rows"][0]["total"] == 1
+    denied = await f.client.get(
+        url + "&groupId=g-999",
+        cookies=support._cookie(f, "admin"),
+        headers=support._headers(),
+    )
+    assert denied.status == 403
+    assert len(calls) == 2
+
+
+async def test_owner_work_selectors_are_restricted_to_changed_children_and_recipient(
+    content_http,
+):
+    from apps.pwa_app import owner_work_resources
+
+    f = content_http
+
+    def sibling(db):
+        user_id = support.STUDENT_USER_ID + 1000
+        db.execute(
+            "INSERT INTO users(id,name,surname,type) VALUES (?,'Sibling','Test',1)",
+            (user_id,),
+        )
+        db.execute(
+            """INSERT INTO auth_accounts
+            (id,audience,username,username_normalized,username_algorithm_version,
+             provisioning_source,credential_kind,credential_hash,linked_user_id,status,created_at,updated_at)
+            SELECT 5,'student','sibling','sibling',1,'synthetic-test',credential_kind,
+                   credential_hash,?,'active',created_at,updated_at FROM auth_accounts WHERE id=1""",
+            (user_id,),
+        )
+        db.execute(
+            """INSERT INTO family_student_links(family_account_id,student_user_id,created_at,updated_at)
+            SELECT 2,?,created_at,updated_at FROM auth_accounts WHERE id=2""",
+            (user_id,),
+        )
+
+    f.factory.run_write(sibling)
+    own, _ = await owner_work_resources(f.client.app, ("a-1",), recipient="a-2")
+    assert own == [f"students/u-{support.STUDENT_USER_ID}/work"]
+    both, _ = await owner_work_resources(f.client.app, ("a-1", "a-5"), recipient="a-2")
+    assert set(both) == {
+        f"students/u-{support.STUDENT_USER_ID}/work",
+        f"students/u-{support.STUDENT_USER_ID + 1000}/work",
+    }
+    first, _ = await owner_work_resources(f.client.app, ("a-1", "a-5"), recipient="a-1")
+    assert first == own
+    unrelated, _ = await owner_work_resources(f.client.app, ("a-5",), recipient="a-1")
+    assert unrelated == []

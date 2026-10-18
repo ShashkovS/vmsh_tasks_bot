@@ -65,23 +65,30 @@ def _group_id(connection, selected):
     ).fetchone()["group_id"]
 
 
-def lesson_threads(connection, selected):
+def lesson_threads(connection, selected, *, pending_only=False):
+    # followups-20261018.md: queued evidence can belong to a synonym in a
+    # different lesson; selected-thread.status alone would hide those cases.
+    pending = """ AND EXISTS (
+        SELECT 1 FROM written_tasks_queue q
+        JOIN result_problem_groups qp ON qp.problem_id=q.problem_id
+        WHERE q.student_id=t.student_user_id AND qp.logical_key=pg.logical_key
+    )""" if pending_only else ""
     return connection.execute(
         THREAD_SELECT + " WHERE p.group_id=? AND p.lesson=? AND p.prob>0 "
-        "AND p.prob_type IN (2,3,4) ORDER BY p.prob,p.item,t.created_at,u.surname,u.name,t.id",
+        "AND p.prob_type IN (2,3,4)" + pending +
+        " ORDER BY p.prob,p.item,t.created_at,u.surname,u.name,t.id",
         (_group_id(connection, selected), selected["lesson"]),
     ).fetchall()
 
 
-def case_threads(connection, case_id):
-    return connection.execute(
-        THREAD_SELECT
-        + """ WHERE (t.student_user_id,pg.logical_key)=(
+CASE_THREADS_SQL = THREAD_SELECT + """ WHERE (t.student_user_id,pg.logical_key)=(
         SELECT a.student_user_id,ag.logical_key FROM submission_threads a
         JOIN result_problem_groups ag ON ag.problem_id=a.problem_id WHERE a.public_id=?)
-        ORDER BY p.lesson,p.prob,p.item,t.id""",
-        (case_id,),
-    ).fetchall()
+        ORDER BY p.lesson,p.prob,p.item,t.id"""
+
+
+def case_threads(connection, case_id):
+    return connection.execute(CASE_THREADS_SQL, (case_id,)).fetchall()
 
 
 def queues(connection, threads):
@@ -93,16 +100,17 @@ def queues(connection, threads):
     ).fetchall()
 
 
-def latest_review(connection, threads):
-    return connection.execute(
-        """SELECT DISTINCT r.*, u.name AS teacher_name,u.surname AS teacher_surname,
+LATEST_REVIEW_SQL = """SELECT DISTINCT r.*, u.name AS teacher_name,u.surname AS teacher_surname,
         comment.text AS comment FROM submission_reviews r
         JOIN submission_review_evidence_entries x ON x.review_id=r.id
         JOIN users u ON u.id=r.reviewer_user_id
         LEFT JOIN submission_entries comment ON comment.id=r.comment_entry_id
-        WHERE x.thread_id IN ("""
-        + ",".join("?" for _ in threads)
-        + ") ORDER BY r.id DESC LIMIT 1",
+        WHERE x.thread_id IN ({placeholders}) ORDER BY r.id DESC LIMIT 1"""
+
+
+def latest_review(connection, threads):
+    return connection.execute(
+        LATEST_REVIEW_SQL.format(placeholders=",".join("?" for _ in threads)),
         tuple(row["id"] for row in threads),
     ).fetchone()
 

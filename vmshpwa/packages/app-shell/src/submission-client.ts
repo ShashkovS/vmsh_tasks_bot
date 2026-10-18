@@ -266,6 +266,7 @@ export function useTestAttemptHistoryQuery(
   problemId: string,
 ) {
   return useInfiniteQuery({
+    meta: { realtimeResources: [`problems/${problemId}/test-attempts`] },
     queryKey: testSubmissionQueryKeys.problem(principal, problemId),
     initialPageParam: null as TestAttemptCursor | null,
     queryFn: ({ pageParam, signal }) =>
@@ -283,6 +284,7 @@ export function useTestAnswerInputQuery(
   problemId: string,
 ) {
   return useQuery({
+    meta: { realtimeResources: [`problems/${problemId}/test-attempts`] },
     networkMode: 'always',
     queryKey: testSubmissionQueryKeys.input(principal, problemId),
     queryFn: ({ signal }) => client.input(problemId, { signal }),

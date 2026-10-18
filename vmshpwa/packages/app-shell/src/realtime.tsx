@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, type Query } from '@tanstack/react-query'
 import {
   authQueryKeys,
   parseRuntimeConfigForAudience,
@@ -20,7 +20,7 @@ import {
 } from 'react'
 
 import { useAuthentication } from './auth-context'
-import { resyncActiveQueries, waitForQueryResync } from './query-resync'
+import { enqueueQueryRefetches, resyncActiveQueries } from './query-resync'
 
 const SOCKET_OPEN = 1
 const CLOSE_NORMAL = 1000
@@ -108,21 +108,48 @@ export interface RealtimeConnectionOptions {
 }
 
 /**
- * Unlabelled queries retain the conservative Phase-1 behaviour. Queries that
- * opt into resource routing are invalidated only by matching live resources;
- * an empty list deliberately means reconnect-only refetching.
+ * Explicit dependencies only; scoped-reads-20261013.md. Broad legacy tokens
+ * are domain fallbacks when an event carries no more precise resource.
  */
 export function shouldInvalidateRealtimeQuery(
   meta: Record<string, unknown> | undefined,
   resources: readonly string[],
 ): boolean {
-  if (resources.includes('live-results')) return true
   const configured = meta?.realtimeResources
   if (!Array.isArray(configured) || !configured.every((resource) => typeof resource === 'string')) {
-    return true
+    return false
   }
-  const changed = new Set(resources)
-  return configured.some((resource) => changed.has(resource))
+  // A Family account can own several children in the same lesson. Resource
+  // matching alone is insufficient; scoped-reads-20261013.md requires both.
+  const student = meta?.realtimeStudentId
+  const students = resources.filter((resource) => /^students\/[^/]+\/work$/.test(resource))
+  if (
+    typeof student === 'string' &&
+    students.length &&
+    !students.includes(`students/${student}/work`)
+  )
+    return false
+  const fallbacks: Record<string, (resource: string) => boolean> = {
+    'student-course-lessons': (resource) =>
+      /^courses\/[^/]+\/(?:groups\/[^/]+\/)?lessons$/.test(resource),
+    'family-worksheets': (resource) => resource.includes('/lesson-numbers/'),
+    'live-results': (resource) =>
+      (resource.startsWith('courses/') || resource.startsWith('group-lessons/')) &&
+      resource.endsWith('/work'),
+  }
+  const changed = resources.filter((resource) => {
+    const fallback = fallbacks[resource]
+    return !fallback || !resources.some(fallback)
+  })
+  return configured.some((resource: string) => {
+    const pattern = new RegExp(
+      `^${resource
+        .split('*')
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')}$`,
+    )
+    return changed.some((item) => pattern.test(item))
+  })
 }
 
 const RealtimeConnectionContext = createContext<RealtimeConnectionValue | null>(null)
@@ -684,6 +711,7 @@ export function RealtimeProvider({
     authenticationRef.current = authentication
   }, [authentication])
   const queryClient = useQueryClient()
+  const offlineSinceLastRecovery = useRef(!window.navigator.onLine)
   const [state, setState] = useState<RealtimeConnectionState>({ status: 'idle' })
   const sessionId =
     authentication.state.status === 'authenticated'
@@ -691,32 +719,30 @@ export function RealtimeProvider({
       : null
 
   useEffect(() => {
-    let wasOffline = !window.navigator.onLine
     const wentOffline = () => {
-      wasOffline = true
+      offlineSinceLastRecovery.current = true
     }
     const resyncAfterNetworkRecovery = () => {
       if (!window.navigator.onLine) return
       const authority = authenticationRef.current.state
-      if (
-        authority.status !== 'authenticated' &&
-        !(authority.status === 'offline-unverified' && authority.context)
-      )
-        return
+      if (authority.status !== 'authenticated' && authority.status !== 'offline-unverified') return
       // docs/problem-release.md: an offline cache read can be fresh in Query,
       // while a failed authority refetch has stopped the socket. Cancel older
       // reads and recheck HTTP authority/data even before WS is mounted again.
-      const restart = wasOffline
-      wasOffline = false
+      const restart = offlineSinceLastRecovery.current
+      offlineSinceLastRecovery.current = false
       void resyncActiveQueries(queryClient, { restart })
     }
     window.addEventListener('offline', wentOffline)
     window.addEventListener('online', resyncAfterNetworkRecovery)
+    // scoped-reads-20261013.md: a cold auth failure can arrive after online.
+    // Retry on this state transition once; no polling or optimistic authority.
+    if (authentication.state.status === 'offline-unverified') resyncAfterNetworkRecovery()
     return () => {
       window.removeEventListener('offline', wentOffline)
       window.removeEventListener('online', resyncAfterNetworkRecovery)
     }
-  }, [queryClient])
+  }, [authentication.state.status, queryClient])
 
   useEffect(() => {
     if (sessionId === null) return
@@ -729,13 +755,24 @@ export function RealtimeProvider({
           await resyncActiveQueries(queryClient)
         },
         invalidateActiveQueries: async (resources) => {
-          // Changes arriving during a full resync still require a newer read.
-          await waitForQueryResync(queryClient)
+          const predicate = (query: Query) => shouldInvalidateRealtimeQuery(query.meta, resources)
           await queryClient.invalidateQueries({
-            predicate: (query) => shouldInvalidateRealtimeQuery(query.meta, resources),
-            refetchType: 'active',
-            type: 'active',
+            predicate,
+            refetchType: 'none',
           })
+          const massPublication = resources.some(
+            (resource) => resource === 'banners' || resource.includes('/content/'),
+          )
+          await enqueueQueryRefetches(
+            queryClient,
+            queryClient.getQueryCache().findAll({ type: 'active', predicate }),
+            {
+              invalidation: true,
+              delay: massPublication
+                ? Math.floor((environment?.random() ?? Math.random()) * 251)
+                : 0,
+            },
+          )
         },
         refetchAuthentication: async () => {
           try {

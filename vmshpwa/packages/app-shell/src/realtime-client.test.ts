@@ -243,8 +243,8 @@ describe('RealtimeConnection', () => {
     expect(querySpies.invalidateActiveQueries).toHaveBeenCalledWith(['lesson.current', 'news'])
   })
 
-  it('routes ordinary invalidations by resource while preserving conservative queries', () => {
-    expect(shouldInvalidateRealtimeQuery(undefined, ['review-queue'])).toBe(true)
+  it('routes ordinary invalidations only to explicit resource dependencies', () => {
+    expect(shouldInvalidateRealtimeQuery(undefined, ['review-queue'])).toBe(false)
     expect(
       shouldInvalidateRealtimeQuery({ realtimeResources: ['review-queue'] }, ['review-queue']),
     ).toBe(true)
@@ -252,6 +252,30 @@ describe('RealtimeConnection', () => {
       shouldInvalidateRealtimeQuery({ realtimeResources: ['review-lease'] }, ['review-queue']),
     ).toBe(false)
     expect(shouldInvalidateRealtimeQuery({ realtimeResources: [] }, ['review-queue'])).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['group-lessons/one/content/*'] }, [
+        'banners',
+      ]),
+    ).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['group-lessons/one/content/*'] }, [
+        'group-lessons/two/content/condition',
+      ]),
+    ).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['group-lessons/one/content/*'] }, [
+        'group-lessons/one/content/condition',
+      ]),
+    ).toBe(true)
+    expect(
+      shouldInvalidateRealtimeQuery(
+        { realtimeResources: ['student-course-lessons', 'courses/one/groups/g1/lessons'] },
+        ['student-course-lessons', 'courses/two/groups/g1/lessons'],
+      ),
+    ).toBe(false)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['live-results'] }, ['live-results']),
+    ).toBe(true)
   })
 
   it('fails closed on malformed frames and reconnects with only the in-memory cursor', async () => {
@@ -449,4 +473,48 @@ describe('RealtimeConnection', () => {
     expect(second.sockets).toHaveLength(1)
     expect(second.sockets[0]!.closes).toEqual([])
   })
+})
+
+it('keeps a sibling worksheet cached while routing results for the right child', () => {
+  const dependencies = ['family-worksheets', 'courses/c/groups/g/lesson-numbers/1/*']
+  const changed = ['students/child-a/work', 'courses/c/groups/g/lesson-numbers/1/work']
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-a' },
+      changed,
+    ),
+  ).toBe(true)
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-b' },
+      changed,
+    ),
+  ).toBe(false)
+  const publication = ['courses/c/groups/g/lesson-numbers/1/content']
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-b' },
+      publication,
+    ),
+  ).toBe(true)
+  expect(
+    shouldInvalidateRealtimeQuery(
+      { realtimeResources: dependencies, realtimeStudentId: 'child-a' },
+      ['students/child-a/work', 'courses/c/groups/g/lesson-numbers/2/work'],
+    ),
+  ).toBe(false)
+})
+
+it('retains the work-domain fallback when only an owner identity is available', () => {
+  const meta = {
+    realtimeResources: ['live-results', 'courses/*/work'],
+    realtimeStudentId: 'child-a',
+  }
+  expect(shouldInvalidateRealtimeQuery(meta, ['live-results', 'students/child-a/work'])).toBe(true)
+  expect(
+    shouldInvalidateRealtimeQuery({ ...meta, realtimeStudentId: 'child-b' }, [
+      'live-results',
+      'students/child-a/work',
+    ]),
+  ).toBe(false)
 })

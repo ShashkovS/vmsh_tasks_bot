@@ -49,6 +49,7 @@ export function useProductAnalyticsSummary(
   filter: ProductAnalyticsFilter,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['product-analytics'] },
     queryKey: ['product-analytics', 'summary', filter],
     queryFn: () => client.summary(filter),
   })
@@ -59,6 +60,7 @@ export function useProductAnalyticsEvents(
   filter: ProductAnalyticsFilter,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['product-analytics'] },
     queryKey: ['product-analytics', 'events', filter],
     queryFn: () => client.events(filter),
   })

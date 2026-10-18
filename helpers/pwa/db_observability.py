@@ -21,36 +21,37 @@ OWNER_INTERVAL = 1.0
 WAITING = Gauge(
     "vmsh_db_waiting",
     "Operations waiting for admission",
-    ["role"],
+    ["store", "role"],
     multiprocess_mode="liveall",
 )
 ACTIVE = Gauge(
     "vmsh_db_active",
     "Operations holding admission slots",
-    ["role"],
+    ["store", "role"],
     multiprocess_mode="liveall",
 )
 BUCKETS = (0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1, 2.5, 5, 10, 30, 60)
 WAIT = Histogram(
     "vmsh_db_admission_wait_seconds",
     "Admission wait including cancelled waits",
-    ["role"],
+    ["store", "role"],
     buckets=BUCKETS,
 )
 HOLD = Histogram(
     "vmsh_db_slot_hold_seconds",
     "Full admission slot lifetime",
-    ["role"],
+    ["store", "role"],
     buckets=BUCKETS,
 )
 
 
 @asynccontextmanager
-async def observed_admission(role, slots, operation, queue_depth):
+async def observed_admission(role, slots, operation, queue_depth, *, store="main"):
     trace = current_trace.get()
     identity = {
         "pid": os.getpid(),
         "role": role,
+        "store": store,
         "request_id": trace.request_id if trace else None,
         "route": trace.route if trace else None,
         "callback": getattr(operation, "__qualname__", type(operation).__qualname__),
@@ -73,7 +74,7 @@ async def observed_admission(role, slots, operation, queue_depth):
 
     started = time.perf_counter()
     queue_depth[role] += 1
-    WAITING.labels(role).inc()
+    WAITING.labels(store, role).inc()
     acquired = False
     try:
         with (
@@ -84,14 +85,14 @@ async def observed_admission(role, slots, operation, queue_depth):
         acquired = True
     finally:
         queue_depth[role] -= 1
-        WAITING.labels(role).dec()
+        WAITING.labels(store, role).dec()
         elapsed = time.perf_counter() - started
-        WAIT.labels(role).observe(elapsed)
+        WAIT.labels(store, role).observe(elapsed)
         if elapsed >= SLOW_SECONDS:
             emit("admitted" if acquired else "wait_cancelled", elapsed)
 
     started = time.perf_counter()
-    ACTIVE.labels(role).inc()
+    ACTIVE.labels(store, role).inc()
     loop = asyncio.get_running_loop()
     timer = None
 
@@ -110,8 +111,8 @@ async def observed_admission(role, slots, operation, queue_depth):
     finally:
         timer.cancel()
         elapsed = time.perf_counter() - started
-        ACTIVE.labels(role).dec()
-        HOLD.labels(role).observe(elapsed)
+        ACTIVE.labels(store, role).dec()
+        HOLD.labels(store, role).observe(elapsed)
         slots.release()
         if elapsed >= SLOW_SECONDS:
             emit("released", elapsed, outcome=outcome)

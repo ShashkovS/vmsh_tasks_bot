@@ -150,6 +150,7 @@ export function useTelegramBindingsQuery(
   courseId?: string,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['telegram-binding'] },
     queryKey: telegramBindingQueryKeys.list(principal, courseId),
     queryFn: ({ signal }) => client.list({ ...(courseId ? { courseId } : {}), signal }),
   })
@@ -160,6 +161,7 @@ export function useTelegramBindingOwnersQuery(
   principal: PrincipalQueryScope,
 ) {
   return useQuery({
+    meta: { realtimeResources: ['telegram-binding'] },
     queryKey: ['telegram-binding-owners', ...principalQueryKey(principal)],
     queryFn: ({ signal }) => client.owners({ signal }),
   })

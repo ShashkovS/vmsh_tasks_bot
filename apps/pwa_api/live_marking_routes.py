@@ -304,10 +304,17 @@ async def post_operation(request):
             "lessonId"
         )
         kind = command["kind"]
+        from apps.pwa_app import work_dependency_resources
+        problem_id = payload["state"].get("problemId")
+        work_resources = await work_dependency_resources(
+            request.app, (problem_id,) if problem_id else ()
+        )
         resources = [
             f"live-cells/{lesson_id}",
             f"live-history/{context_id}",
             f"live-visits/{context_id}",
+            *work_resources,
+            *([f"students/{payload["state"]["studentId"]}/work"] if payload["state"].get("studentId") else []),
         ]
         if kind in ("attendance", "transfer", "reaction", "praise", "undo"):
             resources.extend([f"live-board/{context_id}"])
@@ -331,6 +338,8 @@ async def post_operation(request):
                     dict(
                         resources=[
                             "live-results",
+                            f"students/{student_id}/work",
+                            *work_resources,
                             "notification-events",
                             "classroom-assignment",
                             "course-enrollments",

@@ -1,6 +1,7 @@
 """Read projections for the serial feed; vmshpwa/docs/serial-review-feed.md."""
 
 import json
+from copy import deepcopy
 
 from db_methods.pwa.content import _overlay_problem_titles
 
@@ -68,7 +69,7 @@ def current_detail(connection, scope, actor, review):
     )
 
 
-def condition(connection, scope, problem, entry=None):
+def condition(connection, scope, problem, entry=None, *, documents=None):
     row = connection.execute(
         """SELECT p.id,p.lesson,p.prob,p.item,p.title,g.short_code,
       g.public_id AS group_public_id,c.public_id AS course_public_id
@@ -91,13 +92,22 @@ def condition(connection, scope, problem, entry=None):
     ).fetchone()
     document = None
     if material:
-        document = json.loads(material["content_text"])
-        _overlay_problem_titles(connection, document, material["content_revision_id"])
-        document["problems"] = [
-            p
-            for p in document["problems"]
-            if p["ordinal"] == material["source_ordinal"]
-        ]
+        revision = material["content_revision_id"]
+        # Request-local reuse only; followups-20261018.md. Authorization above
+        # runs for every part, and callers receive independent mutable trees.
+        source = documents.get(revision) if documents is not None else None
+        if source is None:
+            source = json.loads(material["content_text"])
+            _overlay_problem_titles(connection, source, revision)
+            if documents is not None:
+                documents[revision] = source
+        document = deepcopy({
+            **source,
+            "problems": [
+                p for p in source["problems"]
+                if p["ordinal"] == material["source_ordinal"]
+            ],
+        })
     return {
         "schemaVersion": 1,
         "label": f"{row['lesson']}{row['short_code']}.{row['prob']}{row['item'] or ''} · {row['title'] or ''}",

@@ -655,6 +655,7 @@ export function useReviewQueueQuery(
   query: ReviewQueueListQuery = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: ['review-queue', 'review-queue/*'] },
     queryKey: reviewQueueQueryKeys.list(principal, query),
     queryFn: ({ signal }) => client.list(query, { signal }),
   })

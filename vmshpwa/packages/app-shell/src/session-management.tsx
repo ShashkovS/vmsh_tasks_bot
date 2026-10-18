@@ -472,6 +472,7 @@ export function AccountSessionManager({ offlineWorkGuard, title }: AccountSessio
     [accountId, authentication.audience],
   )
   const sessionsQuery = useQuery({
+    meta: { realtimeResources: ['auth', 'sessions'] },
     enabled: authenticated,
     queryFn: ({ signal }) => authentication.client.sessions({ signal }),
     queryKey,

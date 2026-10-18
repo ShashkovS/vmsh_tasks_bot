@@ -1,7 +1,13 @@
 """Production configuration and private release artifacts, using fake credentials."""
 import io
+import gzip
+import hashlib
 import json
+import random
+import threading
+import urllib.error
 import zipfile
+from types import SimpleNamespace
 
 import pytest
 
@@ -86,4 +92,127 @@ def test_release_files_follow_lowercase_asgi_pagination_header(monkeypatch):
         {'name': 'first.js'}, {'name': 'last.js.map'},
     ]
     assert len(calls) == 2
+
+
+def test_split_bundles_preserves_every_source_pair_and_manifest(tmp_path):
+    from vmshpwa.scripts import production_frontend_build as build
+    for audience in AUDIENCES:
+        directory = tmp_path / 'vmshpwa/apps' / audience / 'dist/assets'
+        directory.mkdir(parents=True)
+        for index in range(3):
+            data = random.Random(index).randbytes(20000)
+            (directory / f'bundle-{index}.js').write_bytes(data)
+            (directory / f'bundle-{index}.js.map').write_bytes(data[::-1])
+    bundle, manifest, _ = artifact_bundle(tmp_path, 'release-1', 'vmsh')
+    parts = list(build.split_artifact_bundles(bundle, manifest, max_bytes=90000))
+    assert len(parts) > 1
+    recovered = {}
+    with zipfile.ZipFile(io.BytesIO(bundle)) as original:
+        for value, selected in parts:
+            assert len(value) <= 90000
+            with zipfile.ZipFile(io.BytesIO(value)) as archive:
+                assert json.loads(archive.read('manifest.json')) == selected
+                for name, entry in selected['files'].items():
+                    assert name not in recovered
+                    assert archive.read(name) == original.read(name)
+                    if entry['type'] == 'minified_source':
+                        assert name + '.map' in selected['files']
+                    recovered[name] = entry
+    assert recovered == manifest['files']
+
+
+def test_upload_respects_small_requests_and_advertised_concurrency(tmp_path, monkeypatch):
+    from vmshpwa.scripts import production_frontend_build as build
+    for index, audience in enumerate(AUDIENCES):
+        directory = tmp_path / 'vmshpwa/apps' / audience / 'dist/assets'
+        directory.mkdir(parents=True)
+        (directory / f'bundle-{index}.js').write_bytes(random.Random(index).randbytes(400000))
+        (directory / f'bundle-{index}.js.map').write_bytes(random.Random(index + 4).randbytes(400000))
+    bundle, manifest, maps = artifact_bundle(tmp_path, 'release-1', 'vmsh')
+    chunks, recovered, assembly_sizes = {}, {}, []
+    lock = threading.Lock()
+    active = 0
+    maximum = 0
+
+    def fake_api(metadata, endpoint, value=None, content_type='application/json', headers=None):
+        nonlocal active, maximum
+        assert metadata == portal()
+        if endpoint.endswith('/releases/'):
+            return {}
+        if endpoint.endswith('/chunk-upload/') and value is None:
+            return {'compression': ['gzip'], 'accept': ['release_files'],
+                    'chunkSize': 32 * 1024 * 1024, 'concurrency': 1}
+        if endpoint.endswith('/chunk-upload/'):
+            assert len(value) < 9 * 1024
+            with lock:
+                active += 1
+                maximum = max(maximum, active)
+            raw = gzip.decompress(value.split(b'\r\n\r\n', 1)[1].rsplit(b'\r\n--', 1)[0])
+            checksum = hashlib.sha1(raw).hexdigest()
+            assert checksum.encode() in value.split(b'\r\n\r\n', 1)[0]
+            with lock:
+                chunks[checksum] = raw
+                active -= 1
+            return {}
+        if endpoint.endswith('/artifactbundle/assemble/'):
+            assembly_sizes.append(len(json.dumps(value).encode()))
+            assert assembly_sizes[-1] <= 12 * 1024
+            assembled = b''.join(chunks[item] for item in value['chunks'])
+            assert hashlib.sha1(assembled).hexdigest() == value['checksum']
+            with zipfile.ZipFile(io.BytesIO(assembled)) as archive:
+                selected = json.loads(archive.read('manifest.json'))
+                assert selected['release'] == 'release-1'
+                for name in selected['files']:
+                    assert name not in recovered
+                    recovered[name] = archive.read(name)
+            return {'missingChunks': [], 'state': 'created'}
+        assert endpoint.endswith('/files/?limit=10')
+        return [{'name': name.rsplit('/', 1)[-1]} for name in recovered]
+
+    monkeypatch.setattr(build, 'api', fake_api)
+    build.upload(portal(), 'release-1', bundle, manifest)
+    assert maximum == 1
+    assert len(assembly_sizes) > 1
+    assert set(recovered) == set(manifest['files'])
+    assert all(path.is_file() for path in maps)
+
+
+def test_api_retries_transport_failures_and_decodes_gzip(monkeypatch):
+    from vmshpwa.scripts import production_frontend_build as build
+    calls, sleeps = [], []
+
+    def open_request(request, timeout):
+        calls.append(request)
+        assert timeout == 20
+        assert request.get_header('Accept-encoding') == 'gzip'
+        if len(calls) < 3:
+            raise urllib.error.URLError('private underlying detail')
+        response = io.BytesIO(gzip.compress(b'{"accepted":true}'))
+        response.headers = {'Content-Encoding': 'gzip', 'Link': 'next'}
+        return response
+
+    monkeypatch.setattr(build.urllib.request, 'build_opener', lambda *args: SimpleNamespace(open=open_request))
+    monkeypatch.setattr(build.time, 'sleep', sleeps.append)
+    headers = {}
+    assert build.api(portal(), 'organizations/vmsh/chunk-upload/', headers=headers) == {'accepted': True}
+    assert headers['link'] == 'next'
+    assert sleeps == [1, 2]
+    assert len(calls) == 3
+
+
+@pytest.mark.parametrize('status,attempts', [(403, 1), (429, 3), (503, 3)])
+def test_api_permanent_and_transient_http_failures_are_bounded_and_private(monkeypatch, status, attempts):
+    from vmshpwa.scripts import production_frontend_build as build
+    calls = []
+
+    def fail(request, timeout):
+        calls.append(request)
+        raise urllib.error.HTTPError(request.full_url, status, 'private body and credential', {}, None)
+
+    monkeypatch.setattr(build.urllib.request, 'build_opener', lambda *args: SimpleNamespace(open=fail))
+    monkeypatch.setattr(build.time, 'sleep', lambda seconds: None)
+    with pytest.raises(RuntimeError) as raised:
+        build.api(portal(), 'organizations/vmsh/chunk-upload/')
+    assert str(raised.value) == f'GlitchTip upload HTTP {status}'
+    assert len(calls) == attempts
 

@@ -13,7 +13,7 @@ from helpers.pwa.i18n import _
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session, validate_request_boundary
-from db_methods.pwa.product_analytics import utc_now_text
+from db_methods.pwa.product_analytics import insert_events, utc_now_text
 from helpers.pwa.app_keys import PWA_ANALYTICS_DATABASE, PWA_DATABASE
 from helpers.pwa.permissions import AuthorizationPrincipal, Capability
 from helpers.config import logger
@@ -171,20 +171,19 @@ async def record_events(request: web.Request) -> web.Response:
     account_id = session.principal.account_public_id
     session_id = session.principal.session_public_id
 
-    def write(connection: sqlite3.Connection) -> None:
-        connection.executemany(
-            "INSERT INTO product_events (occurred_at, audience, account_public_id, session_public_id, event_type, route_id, entity_type, entity_public_id, viewport_width, viewport_height, device_pixel_ratio, pointer_type, display_mode) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                (occurred_at, audience.value, account_id, session_id, parsed_event[0], _route_id(raw["routeId"]), parsed_event[1], parsed_event[2], parsed_event[3], parsed_event[4], parsed_event[5], parsed_event[6], parsed_event[7])
-                for raw, parsed_event in parsed
-            ],
-        )
-
-    try:
-        await factory.run_write_async(write)
-    except Exception:  # analytics intentionally never affects product work
-        logger.warning("Product analytics write failed", exc_info=True)
+    rows = [
+        (occurred_at, audience.value, account_id, session_id, parsed_event[0], _route_id(raw["routeId"]), parsed_event[1], parsed_event[2], parsed_event[3], parsed_event[4], parsed_event[5], parsed_event[6], parsed_event[7])
+        for raw, parsed_event in parsed
+    ]
+    state = request.app.get(PWA_ANALYTICS_DATABASE)
+    if state is not None and state.ingestor is not None:
+        state.ingestor.submit(rows)
+    else:
+        # Standalone adapters/tests without the runtime lifecycle stay compatible.
+        try:
+            await factory.run_write_async(lambda connection: insert_events(connection, rows))
+        except Exception:
+            logger.warning("Product analytics write failed", exc_info=True)
     return web.Response(status=204, headers={"Cache-Control": "no-store"})
 
 

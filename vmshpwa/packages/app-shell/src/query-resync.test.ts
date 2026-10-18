@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { expect, it, vi } from 'vitest'
-import { resyncActiveQueries, waitForQueryResync } from './query-resync'
+import { enqueueQueryRefetches, resyncActiveQueries, waitForQueryResync } from './query-resync'
 import { createAppQueryClient } from './providers'
 
 it('skips a late recovery-ready event while offline and preserves the next online resync', async () => {
@@ -154,4 +154,73 @@ it('does not recreate queued queries after logout or refresh disabled queries', 
   expect(read).toHaveBeenCalledTimes(4)
   expect(client.getQueryCache().getAll()).toHaveLength(0)
   unsubscribes.forEach((unsubscribe) => unsubscribe())
+})
+
+it('ordinary events join the four-slot scheduler and request one trailing read', async () => {
+  const client = createAppQueryClient()
+  const pending: (() => void)[] = []
+  let running = 0
+  let peak = 0
+  const read = vi.fn(
+    () =>
+      new Promise<string>((resolve) => {
+        peak = Math.max(peak, ++running)
+        pending.push(() => {
+          running--
+          resolve('fresh')
+        })
+      }),
+  )
+  const unsubscribes = Array.from({ length: 6 }, (_, index) =>
+    new QueryObserver(client, {
+      queryKey: ['addressed', index],
+      queryFn: read,
+      initialData: 'old',
+      staleTime: Infinity,
+    }).subscribe(() => undefined),
+  )
+  const queries = client.getQueryCache().getAll()
+  const resync = resyncActiveQueries(client)
+  const changed = queries.slice(0, 1)
+  const first = enqueueQueryRefetches(client, changed, { invalidation: true })
+  const second = enqueueQueryRefetches(client, changed, { invalidation: true })
+  expect(first).toBe(second)
+  expect(read).toHaveBeenCalledTimes(4)
+  pending.splice(0).forEach((release) => release())
+  await vi.waitFor(() => expect(read).toHaveBeenCalledTimes(7))
+  pending.splice(0).forEach((release) => release())
+  await Promise.all([resync, first])
+  expect(peak).toBe(4)
+  expect(read).toHaveBeenCalledTimes(7)
+  unsubscribes.forEach((unsubscribe) => unsubscribe())
+  client.clear()
+})
+
+it('coalesces statistics events to at most one automatic read per second', async () => {
+  vi.useFakeTimers()
+  const client = createAppQueryClient()
+  const read = vi.fn().mockResolvedValue('fresh')
+  const unsubscribe = new QueryObserver(client, {
+    queryKey: ['statistics'],
+    queryFn: read,
+    initialData: 'old',
+    staleTime: Infinity,
+    meta: { realtimeStatistics: true },
+  }).subscribe(() => undefined)
+  try {
+    const queries = client.getQueryCache().getAll()
+    await enqueueQueryRefetches(client, queries, { invalidation: true })
+    expect(read).toHaveBeenCalledTimes(1)
+    const next = enqueueQueryRefetches(client, queries, { invalidation: true })
+    void enqueueQueryRefetches(client, queries, { invalidation: true })
+    await vi.advanceTimersByTimeAsync(999)
+    expect(read).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    await next
+    expect(read).toHaveBeenCalledTimes(2)
+  } finally {
+    unsubscribe()
+    client.clear()
+    vi.useRealTimers()
+  }
 })

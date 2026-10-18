@@ -2849,6 +2849,7 @@ msgid "Старые скрипты поддерживают только оди�
 msgstr "Legacy scripts support only one course per run"
 
 #: apps/pwa_api/staff_statistics_routes.py
+#: apps/pwa_api/statistics_cache.py
 msgid "Статистика временно недоступна"
 msgstr "Statistics are temporarily unavailable"
 

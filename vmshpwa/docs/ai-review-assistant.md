@@ -1,6 +1,7 @@
 # AI-помощник через MCP
 
-Решение владельца от 18 октября 2026. Реализовано и проверено локально; production не обновлялся.
+Решение владельца от 18 октября 2026. Реализовано и проверено локально; владелец разрешил совместный production-выпуск
+с оптимизациями. [План и ход выпуска](../../docs/deploy/ai-review-performance-20261018.md).
 [Release gate и визуальные доказательства](../../pwa_tests/reports/ai-review-assistant-20261018/README.md).
 
 Внешний MCP-клиент выбирает модель и загружает приватные предложения. Backend
@@ -22,7 +23,7 @@ AI-контекста и запрет предложения вердикта в
 материалы, переписку, учебные редакции и результат, но не claim/heartbeat.
 Устаревшие варианты сохраняются, их применение недоступно.
 
-Реализация: [миграция](../../migrations/0120.ai_review_assistant.py),
+Реализация: [миграция](../../migrations/0122.ai_review_assistant.py),
 [SQLite](../../db_methods/pwa/ai_review.py),
 [домен](../../models/pwa/ai_review.py),
 [HTTP](../../apps/pwa_api/ai_review_routes.py),
@@ -265,7 +266,7 @@ AI-данные не записываются в submission_entries или resul
   загрузка предложений, одиночная/серийная проверка/простыня, reload черновиков,
   отзыв и снимки 1280/390 light/dark в трёх браузерах.
 
-Миграция 0120 добавляет только assistant tables; fresh schema inventory обновлён
+Миграция 0122 добавляет только assistant tables; fresh schema inventory обновлён
 штатным `schema_inventory generate --write`. Отдельные процессы/systemd units,
 новые порты и provider credentials для backend не требуются. Production-выкладка
 и remote HTTP MCP для веб-клиентов не входят в этот инкремент.

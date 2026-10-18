@@ -61,3 +61,36 @@ def test_failed_delivery_preserves_queue_and_concurrent_arrivals(tmp_path):
     assert first in messages[0]
     digests.deliver(PROJECTS, messages.append, now=2100)
     assert second in messages[1]
+
+
+def test_digest_closes_connections_on_success_and_rollback(tmp_path, monkeypatch):
+    import sqlite3
+    import pytest
+
+    connections = []
+    original = sqlite3.connect
+
+    class TrackedConnection(sqlite3.Connection):
+        closed = False
+
+        def close(self):
+            self.closed = True
+            super().close()
+
+    def connect(*args, **kwargs):
+        connection = original(*args, **kwargs, factory=TrackedConnection)
+        connections.append(connection)
+        return connection
+
+    monkeypatch.setattr(bridge.sqlite3, 'connect', connect)
+    digests = bridge.Digests(tmp_path / 'bounded.sqlite3')
+    for index in range(50):
+        digests.enqueue('vmsh-front', [f'https://glitch.leaders.tech/vmsh/issues/{index}'])
+        digests.deliver(PROJECTS, lambda _: None, now=1000 + index * 900)
+    with pytest.raises(AttributeError):
+        digests.enqueue('vmsh-front', [object()])
+    assert len(connections) > 100
+    assert all(connection.closed for connection in connections)
+    for connection in connections:
+        with pytest.raises(sqlite3.ProgrammingError):
+            connection.execute('SELECT 1')

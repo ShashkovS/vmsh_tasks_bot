@@ -97,6 +97,7 @@ export function OralWeeklyDraft({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const plan = useQuery({
+    meta: { realtimeResources: ['oral-windows'] },
     queryKey: ['oral-windows', 'planning', accountId, groupLessonId],
     queryFn: () => client.planning(groupLessonId),
   })

@@ -147,6 +147,7 @@ export function useFamilyWrittenThreadQuery(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
+    meta: { realtimeResources: [`problems/${problemId}/thread`], realtimeStudentId: studentId },
     queryKey: writtenSubmissionQueryKeys.familyThread(principal, studentId, problemId),
     queryFn: ({ signal }) => client.thread(studentId, problemId, { signal }),
     ...(options.enabled === undefined ? {} : { enabled: options.enabled }),

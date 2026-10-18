@@ -118,7 +118,7 @@ async def change_problem_release(request: web.Request) -> web.Response:
         )
     except (ProblemReleaseConflict, ProblemReleaseNotFound) as error:
         raise _translate(error) from error
-    from apps.pwa_app import NATS_PWA_INVALIDATE, PWA_BROKER
+    from apps.pwa_app import NATS_PWA_INVALIDATE, PWA_BROKER, lesson_dependency_resources
 
     try:
         await request.app[PWA_BROKER].publish(
@@ -126,6 +126,7 @@ async def change_problem_release(request: web.Request) -> web.Response:
             {
                 "reason": "problem-release-changed",
                 "resources": [
+                    *await lesson_dependency_resources(request.app, scope.group_lesson_public_id),
                     f"group-lessons/{scope.group_lesson_public_id}/problem-release",
                     *(
                         f"group-lessons/{scope.group_lesson_public_id}/content/{kind}"

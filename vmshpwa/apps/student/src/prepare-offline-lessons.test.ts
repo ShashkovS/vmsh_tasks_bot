@@ -330,3 +330,79 @@ it('refreshes a figure publication with the same source revision in the offline 
   expect(await readLessonBundle(options.database, options.ownerId)).toEqual(next)
   expect(next).not.toEqual(first)
 })
+
+it('uses coordinated refresh for default course and content clients during cookie rotation', async () => {
+  const { options } = await setup()
+  const { courseClient, contentClient, ...runtimeOptions } = options
+  const denied = new Set<string>()
+  const refreshSession = vi.fn(async () => undefined)
+  vi.stubGlobal(
+    'fetch',
+    vi.fn<typeof fetch>(async (input) => {
+      const url = new URL(input instanceof Request ? input.url : input, location.origin)
+      const path = url.pathname
+      const content = path.match(/\/group-lessons\/([^/]+)\/content\/condition$/)
+      if ((path.endsWith('/courses') || content) && !denied.has(content ? 'content' : 'courses')) {
+        denied.add(content ? 'content' : 'courses')
+        return Response.json(
+          {
+            error: {
+              code: 'authentication_required',
+              message: 'Synthetic',
+              requestId: 'rotation-test',
+            },
+          },
+          { status: 401 },
+        )
+      }
+      if (path.endsWith('/courses')) return Response.json(await courseClient.list())
+      if (path.endsWith('/home')) return Response.json(await courseClient.home())
+      if (path.endsWith('/offline-lessons'))
+        return Response.json(await courseClient.offlineLessons())
+      if (path.endsWith('/lessons'))
+        return Response.json(
+          await courseClient.lessons('c-1', { groupId: url.searchParams.get('group')! }),
+        )
+      const problem = path.match(/\/courses\/([^/]+)\/lessons\/([^/]+)\/problems$/)
+      if (problem) return Response.json(await courseClient.problems(problem[1]!, problem[2]!))
+      if (content)
+        return Response.json(
+          await contentClient.published({ groupLessonId: content[1]!, kind: 'condition' }),
+        )
+      throw new Error(`Unexpected synthetic route: ${path}`)
+    }),
+  )
+  const bundle = await prepareOfflineLessons({ ...runtimeOptions, refreshSession })
+  expect(refreshSession).toHaveBeenCalledTimes(2)
+  expect(await verifyLessonBundle(bundle)).toBe(true)
+  expect(await readLessonBundle(options.database, options.ownerId)).toEqual(bundle)
+})
+
+it('keeps the complete offline copy when the retry still fails authorization', async () => {
+  const { options } = await setup()
+  const before = await prepareOfflineLessons(options)
+  const { database, ownerId, runtime, signal } = options
+  const refreshSession = vi.fn(async () => undefined)
+  vi.stubGlobal(
+    'fetch',
+    vi.fn<typeof fetch>(async () =>
+      Response.json(
+        {
+          error: {
+            code: 'authentication_required',
+            message: 'Synthetic',
+            requestId: 'rotation-test',
+          },
+        },
+        { status: 401 },
+      ),
+    ),
+  )
+  await expect(
+    prepareOfflineLessons({ database, ownerId, runtime, signal, refreshSession }),
+  ).rejects.toMatchObject({
+    status: 401,
+  })
+  expect(refreshSession).toHaveBeenCalledTimes(1)
+  expect(await readLessonBundle(options.database, options.ownerId)).toEqual(before)
+})

@@ -49,6 +49,7 @@ export function StaffReviewSheetPage({
   const identity = JSON.stringify([namespace, principal.accountId, search])
   const key = [namespace, principal.accountId, 'review-sheet']
   const options = useQuery({
+    meta: { realtimeResources: ['review-queue'] },
     queryKey: [...key, 'options'],
     queryFn: ({ signal }) => client.sheetOptions({ signal }),
   })

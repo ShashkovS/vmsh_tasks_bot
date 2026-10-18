@@ -279,7 +279,7 @@ export function StaffStatisticsReports(props: {
           )}
           <Button
             variant="outline"
-            onClick={() => void result.refetch()}
+            onClick={() => void result.refresh()}
             disabled={result.isFetching}
           >
             <Trans>Обновить статистику</Trans>
@@ -296,7 +296,7 @@ export function StaffStatisticsReports(props: {
               : 'error'
           }
           actionLabel={t`Повторить`}
-          onAction={() => void result.refetch()}
+          onAction={() => void result.refresh()}
         />
       ) : data ? (
         data.courses.length === 0 ? (

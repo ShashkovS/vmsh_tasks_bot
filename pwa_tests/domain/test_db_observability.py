@@ -8,14 +8,14 @@ from helpers.pwa import db_observability as diagnostics
 from helpers.pwa.request_trace import RequestTrace, current_trace
 
 
-def sample(name, role):
+def sample(name, role, store="main"):
     registry = CollectorRegistry()
     multiprocess.MultiProcessCollector(registry)
     return sum(
         s.value
         for metric in registry.collect()
         for s in metric.samples
-        if s.name == name and s.labels.get("role") == role
+        if s.name == name and s.labels.get("role") == role and s.labels.get("store") == store
     )
 
 
@@ -71,3 +71,15 @@ async def test_owner_queue_cancellation_and_burst(role, monkeypatch, caplog):
     finally:
         release.set()
         current_trace.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_stores_with_same_role_have_independent_metrics():
+    main = sample("vmsh_db_active", "write")
+    telemetry = sample("vmsh_db_active", "write", "product_analytics")
+    async with diagnostics.observed_admission(
+        "write", asyncio.Semaphore(1), sample, {"write": 0}, store="product_analytics"
+    ):
+        assert sample("vmsh_db_active", "write") == main
+        assert sample("vmsh_db_active", "write", "product_analytics") == telemetry + 1
+    assert sample("vmsh_db_active", "write", "product_analytics") == telemetry

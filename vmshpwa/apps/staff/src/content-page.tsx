@@ -409,6 +409,7 @@ function MaterialWorkflowCard({
   const queryClient = useQueryClient()
   const [state, setState] = useState<MaterialWorkflowState>(() => initialMaterialState(history))
   const previewWindow = useQuery({
+    meta: { realtimeResources: ['courses', 'group-lessons/*/content/*'] },
     queryKey: contentQueryKeys.lessonWindow(groupLessonId),
     queryFn: () => client.lessonWindow!(groupLessonId),
     enabled: typeof client.lessonWindow === 'function',

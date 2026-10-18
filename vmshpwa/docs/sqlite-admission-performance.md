@@ -276,3 +276,13 @@ TLF Prometheus targets are up; the observed post-cutover one-minute backend
 Telegram and TLF Zoom are active. Shared NATS PIDs remain 3018 and 1936264.
 Documentation-only follow-ups need source synchronization, without service
 restart or rebuilding the unchanged frontend. [TLF operations](../../docs/deploy/tlf-app/README.md#receipt-lookup-index--2026-10-01).
+
+## Scoped reads — 13 October 2026
+
+[Owner-approved performance increment](../../docs/performance/scoped-reads-20261013.md):
+`db_methods/pwa/live_marking.py` restricts the shared effective-result winner
+to requested students and logical aliases before aggregation. Visits aggregate
+active session marks once. Migration 0120 adds problem/session lookup indexes;
+`db_methods/pwa/performance_guard.py` probes actual cell/board/visits callbacks.
+Before/after reads, ledger, undo and delta versions remain authoritative.
+Production deployment awaits the combined release gate.

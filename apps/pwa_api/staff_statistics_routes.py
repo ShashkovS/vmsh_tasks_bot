@@ -9,25 +9,43 @@ from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
-from db_methods.pwa.course_analytics import (
-    find_latest_completed_course_run,
-    list_course_run_metrics,
-)
 from db_methods.pwa.course_catalog import find_season, list_courses, list_groups
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import AuthorizationPrincipal, Capability
 from models.pwa.auth import AuthAudience
-from models.pwa.staff_statistics import summarize_staff_course_metrics
-from db_methods.pwa.lesson_statistics import course_facts
-from db_methods.pwa.iterative_analytics import read_state
-from models.pwa.lesson_statistics import summarize_lessons
-from db_methods.pwa.statistics_reports import report_facts
-from models.pwa.statistics_reports import build_reports
+from apps.pwa_api.statistics_cache import (
+    PWA_STATISTICS_CACHE,
+    main_snapshot,
+    report_snapshot,
+)
 
 
 staff_statistics_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
-_QUERY_KEYS = {"courseId", "groupId", "lessonNumber", "studentId"}
+_QUERY_KEYS = {"courseId", "groupId", "lessonNumber", "studentId", "refresh"}
+
+
+def _refresh(request):
+    value = request.query.get("refresh")
+    if value not in (None, "1"):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Неизвестный параметр статистики",
+        )
+    return value == "1"
+
+
+async def _snapshot(request, key, operation):
+    async def load():
+        return await _factory(request).run_analytics_async(operation)
+
+    cache = request.app.get(PWA_STATISTICS_CACHE)
+    return (
+        await load()
+        if cache is None
+        else await cache.get(key, load, force_refresh=_refresh(request))
+    )
 
 
 def _factory(request: web.Request):
@@ -106,6 +124,7 @@ def _course_payload(
 @staff_statistics_routes.get("/staff/api/v1/statistics")
 async def get_staff_statistics(request: web.Request) -> web.Response:
     principal = _principal(request)
+    _refresh(request)
     if set(request.query) - _QUERY_KEYS:
         raise PwaApiError(
             status=422,
@@ -202,38 +221,19 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
             message="Нет доступа к статистике этой группы",
         )
 
-    def read_run(connection: sqlite3.Connection):
-        connection.execute("BEGIN")
-        try:
-            return read_snapshot(connection)
-        finally:
-            connection.execute("ROLLBACK")
-
-    def read_snapshot(connection: sqlite3.Connection):
-        run = find_latest_completed_course_run(
-            connection, course_id=int(selected_course["id"])
-        )
-        rows = (
-            []
-            if run is None
-            else list_course_run_metrics(connection, run_id=int(run["id"]))
-        )
-        facts = course_facts(connection, int(selected_course["id"]))
-        difficulty, _ = read_state(connection, int(selected_course["id"]))
-        return run, rows, facts, difficulty
-
-    run, metric_rows, facts, difficulty = await _factory(request).run_analytics_async(
-        read_run
-    )
     allowed_group_ids = (
         frozenset({requested_group_id})
         if requested_group_id is not None
         else accessible_group_ids
     )
-    lessons = summarize_staff_course_metrics(
-        metric_rows, allowed_group_public_ids=allowed_group_ids
+    snapshot = await _snapshot(
+        request,
+        ("main", course_id, tuple(sorted(allowed_group_ids))),
+        lambda connection: main_snapshot(
+            connection, int(selected_course["id"]), allowed_group_ids
+        ),
     )
-    basic = summarize_lessons(*facts, allowed_group_ids)
+    run, lessons, basic = snapshot["run"], snapshot["lessons"], snapshot["basic"]
     numbers = [item["lessonNumber"] for item in basic]
     selected_number = (
         requested_lesson if requested_lesson in numbers else max(numbers, default=None)
@@ -241,27 +241,7 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
     basic_lesson = next(
         (item for item in basic if item["lessonNumber"] == selected_number), None
     )
-    by_public = {p["public_id"]: p for p in facts[0]}
-    if basic_lesson:
-        for group in basic_lesson["groups"]:
-            for problem in group["problems"]:
-                values = difficulty.get(
-                    by_public[problem["problemId"]]["logical_problem_key"]
-                )
-                problem["difficultyWeak"] = values[0] if values else None
-                problem["difficultyStrong"] = values[1] if values else None
-    allowed_problems = {
-        p["problem_id"] for p in facts[0] if p["group_public_id"] in allowed_group_ids
-    }
-    students = {
-        r["student_public_id"]: {
-            "studentId": r["student_public_id"],
-            "name": r["student_name"],
-            "id": r["student_user_id"],
-        }
-        for r in facts[1]
-        if r["problem_id"] in allowed_problems
-    }
+    students = snapshot["students"]
     if requested_student_id is not None and requested_student_id not in students:
         raise PwaApiError(
             status=403, code="forbidden", message="Нет доступа к статистике школьника"
@@ -270,22 +250,7 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
     personal = (
         []
         if selected_student is None
-        else [
-            {
-                "lessonNumber": r["lesson_number"],
-                "groupCode": r["group_code"],
-                "simple": r["simple_strength"],
-                "complex": r["complex_strength"],
-                "difficulty": r["max_complex_strength"],
-                "simpleSmooth": r["simple_smooth"],
-                "complexSmooth": r["complex_smooth"],
-                "solved": r["solved_items"],
-                "total": r["total_items"],
-            }
-            for r in metric_rows
-            if r["student_user_id"] == selected_student["id"]
-            and r["group_public_id"] in allowed_group_ids
-        ]
+        else snapshot["personal"].get(selected_student["id"], [])
     )
     return web.json_response(
         {
@@ -323,9 +288,12 @@ async def get_staff_statistics(request: web.Request) -> web.Response:
 async def get_staff_statistics_report(request: web.Request) -> web.Response:
     """Live reports, independently of analytics runs; docs/lesson-statistics.md."""
     principal = _principal(request)
+    _refresh(request)
     matrix = request.path.endswith("/plus-table")
     keys = (
-        {"courseId", "groupId", "lessonNumber"} if matrix else {"courseId", "groupId"}
+        {"courseId", "groupId", "lessonNumber", "refresh"}
+        if matrix
+        else {"courseId", "groupId", "refresh"}
     )
     if set(request.query) - keys:
         raise PwaApiError(
@@ -348,96 +316,76 @@ async def get_staff_statistics_report(request: web.Request) -> web.Response:
             status=422, code="validation_error", message="Неверный номер занятия"
         )
 
-    def read(connection):
-        connection.execute("BEGIN")
-        try:
-            courses, groups = _catalog(connection)
-            courses = [
-                c
-                for c in courses
-                if principal.has_staff_course_access(str(c["public_id"]))
-            ]
-            groups = [
-                g
-                for g in groups
-                if any(
-                    int(c["id"]) == int(g["course_id"])
-                    and principal.has_staff_group_access(
-                        course_public_id=str(c["public_id"]),
-                        group_public_id=str(g["public_id"]),
-                    )
-                    for c in courses
-                )
-            ]
-            selected = (
-                next((c for c in courses if c["public_id"] == course_id), None)
-                if course_id
-                else next(iter(courses), None)
+    courses, groups = await _factory(request).run_read_async(_catalog)
+    courses = [
+        c for c in courses if principal.has_staff_course_access(str(c["public_id"]))
+    ]
+    groups = [
+        g
+        for g in groups
+        if any(
+            c["id"] == g["course_id"]
+            and principal.has_staff_group_access(
+                course_public_id=str(c["public_id"]),
+                group_public_id=str(g["public_id"]),
             )
-            if course_id and selected is None:
-                raise PwaApiError(
-                    status=403,
-                    code="forbidden",
-                    message="Нет доступа к статистике этого курса",
-                )
-            selected_groups = [
-                g for g in groups if selected and g["course_id"] == selected["id"]
-            ]
-            if group_id and not any(
-                g["public_id"] == group_id for g in selected_groups
-            ):
-                raise PwaApiError(
-                    status=403,
-                    code="forbidden",
-                    message="Нет доступа к статистике этой группы",
-                )
-            selected_group = group_id or (
-                str(selected_groups[0]["public_id"])
-                if matrix and selected_groups
-                else None
-            )
-            allowed = {
-                str(g["public_id"])
-                for g in selected_groups
-                if selected_group is None or g["public_id"] == selected_group
+            for c in courses
+        )
+    ]
+    selected = (
+        next((c for c in courses if c["public_id"] == course_id), None)
+        if course_id
+        else next(iter(courses), None)
+    )
+    if course_id and selected is None:
+        raise PwaApiError(
+            status=403, code="forbidden", message="Нет доступа к статистике этого курса"
+        )
+    selected_groups = [
+        g for g in groups if selected and g["course_id"] == selected["id"]
+    ]
+    if group_id and not any(g["public_id"] == group_id for g in selected_groups):
+        raise PwaApiError(
+            status=403, code="forbidden", message="Нет доступа к статистике этой группы"
+        )
+    selected_group = group_id or (
+        str(selected_groups[0]["public_id"]) if matrix and selected_groups else None
+    )
+    allowed = frozenset(
+        str(g["public_id"])
+        for g in selected_groups
+        if selected_group is None or g["public_id"] == selected_group
+    )
+    report = dict(lessons=[], lessonNumbers=[], lessonNumber=None, problems=[], rows=[])
+    if selected:
+        report = await _snapshot(
+            request,
+            (
+                "plus-table" if matrix else "summary",
+                str(selected["public_id"]),
+                tuple(sorted(allowed)),
+                number,
+            ),
+            lambda connection: report_snapshot(
+                connection, int(selected["id"]), allowed, number, matrix=matrix
+            ),
+        )
+    payload = dict(
+        schemaVersion=1,
+        courses=[_course_payload(c, groups) for c in courses],
+        selectedCourseId=selected["public_id"] if selected else None,
+        selectedGroupId=selected_group,
+        requestId=request["request_id"],
+    )
+    if matrix:
+        payload.update(
+            {
+                key: report[key]
+                for key in ("lessonNumbers", "lessonNumber", "problems", "rows")
             }
-            report = (
-                build_reports(
-                    report_facts(connection, int(selected["id"])),
-                    allowed,
-                    number,
-                    include_table=matrix,
-                )
-                if selected
-                else dict(
-                    lessons=[],
-                    lessonNumbers=[],
-                    lessonNumber=None,
-                    problems=[],
-                    rows=[],
-                )
-            )
-            payload = dict(
-                schemaVersion=1,
-                courses=[_course_payload(c, groups) for c in courses],
-                selectedCourseId=selected["public_id"] if selected else None,
-                selectedGroupId=selected_group,
-                requestId=request["request_id"],
-            )
-            if matrix:
-                payload.update(
-                    {
-                        key: report[key]
-                        for key in ("lessonNumbers", "lessonNumber", "problems", "rows")
-                    }
-                )
-            else:
-                payload["lessons"] = report["lessons"]
-            return payload
-        finally:
-            connection.execute("ROLLBACK")
-
-    payload = await _factory(request).run_analytics_async(read)
+        )
+    else:
+        payload["lessons"] = report["lessons"]
     return web.json_response(payload, headers={"Cache-Control": "no-store"})
 
 

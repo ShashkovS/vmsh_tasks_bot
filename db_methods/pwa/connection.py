@@ -70,7 +70,11 @@ class PwaConnectionFactory:
         policy: SqliteConcurrencyPolicy | None = None,
         sleeper: Callable[[float], None] = time.sleep,
         verify_schema: bool = True,
+        metric_store: str = "main",
     ) -> None:
+        if metric_store not in {"main", "product_analytics"}:
+            raise ValueError("Unknown SQLite metric store")
+        self.metric_store = metric_store
         self.database_path = Path(database_path)
         self.policy = policy or SqliteConcurrencyPolicy()
         self._sleep = sleeper
@@ -291,7 +295,9 @@ class PwaConnectionFactory:
         runner: Callable[[Callable[[sqlite3.Connection], ResultT]], ResultT],
         operation: Callable[[sqlite3.Connection], ResultT],
     ) -> ResultT:
-        async with observed_admission(role, slots, operation, self._queue_depth):
+        async with observed_admission(
+            role, slots, operation, self._queue_depth, store=self.metric_store
+        ):
             if self._closed:
                 raise RuntimeError("SQLite workers are closed")
             executor = self._executors.get(role)

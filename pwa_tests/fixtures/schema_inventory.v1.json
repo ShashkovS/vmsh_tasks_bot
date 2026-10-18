@@ -83,8 +83,16 @@
         "sha256": "533097a611e54d09255a4a8d1c747cb8efdf282f8f1f00ed1cb43f14d6b20481"
       },
       {
-        "id": "0120.ai_review_assistant",
-        "sha256": "d247c3c5d465af0bd1ec5b7a53dc085de846a83d5db87aea153203282f793ea4"
+        "id": "0120.scoped_read_indexes",
+        "sha256": "787ac83e269a52c7f7170954065070d5bc74f5f48e6664c3d781bc71a3cf9dab"
+      },
+      {
+        "id": "0121.review_sheet_indexes",
+        "sha256": "68c7f02f58d6c0a436760f43979bfdac7887602aad9633ac21293325fe404845"
+      },
+      {
+        "id": "0122.ai_review_assistant",
+        "sha256": "99bc7520c61e3862e05ae1e7c941e29218cd8d643e6f5d831583744bf6364b82"
       }
     ],
     "repository_head_status": {
@@ -95,7 +103,7 @@
     }
   },
   "product": {
-    "object_count": 528,
+    "object_count": 532,
     "objects": [
       {
         "columns": [
@@ -14755,6 +14763,30 @@
           {
             "columns": [
               {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "context_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "live_mark_operations_active_context",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
                 "cid": 1,
                 "collation": "BINARY",
                 "descending": false,
@@ -21206,6 +21238,46 @@
           {
             "columns": [
               {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "results_by_problem_student",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
                 "cid": 1,
                 "collation": "BINARY",
                 "descending": false,
@@ -25075,6 +25147,38 @@
             "origin": "c",
             "partial": false,
             "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "thread_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_review_evidence_entries_thread_review_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
           }
         ],
         "name": "submission_review_evidence_entries",
@@ -26281,6 +26385,30 @@
             "origin": "c",
             "partial": true,
             "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "submission_threads_public_id_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
           },
           {
             "columns": [
@@ -32132,6 +32260,13 @@
         "type": "index"
       },
       {
+        "name": "live_mark_operations_active_context",
+        "object_sha256": "b34d5c6696ee170e755a5f018fdae344341b86e2f172b7f2ac42b99014b12571",
+        "sql": "CREATE INDEX live_mark_operations_active_context ON live_mark_operations(context_id) WHERE kind='mark' AND undone_at IS NULL;",
+        "table_name": "live_mark_operations",
+        "type": "index"
+      },
+      {
         "name": "live_mark_operations_history",
         "object_sha256": "a953ba92f124d98156be26ebf1597fad5dddace7f230ff54fba5f95d7a4ef903",
         "sql": "CREATE INDEX live_mark_operations_history\n    ON live_mark_operations(teacher_id, context_id, created_at DESC);",
@@ -32363,6 +32498,13 @@
         "type": "index"
       },
       {
+        "name": "results_by_problem_student",
+        "object_sha256": "943722a98d0bf63ce1f5e7621ff3a2b5bb047729fec4e559135f828fbb47e8c3",
+        "sql": "CREATE INDEX results_by_problem_student ON results(problem_id, student_id, id);",
+        "table_name": "results",
+        "type": "index"
+      },
+      {
         "name": "results_by_student_problem",
         "object_sha256": "362c3ddad4e8595680d39d8eb4b1d3e3310ec27a47bf3992028f538f99200924",
         "sql": "CREATE INDEX results_by_student_problem\n    on results (student_id, problem_id);",
@@ -32538,6 +32680,13 @@
         "type": "index"
       },
       {
+        "name": "submission_review_evidence_entries_thread_review_idx",
+        "object_sha256": "e4a5e3cb1c1ff664314d317af08e0796e5519a332c2cb675944bb195c5db3589",
+        "sql": "CREATE INDEX submission_review_evidence_entries_thread_review_idx ON submission_review_evidence_entries(thread_id, review_id);",
+        "table_name": "submission_review_evidence_entries",
+        "type": "index"
+      },
+      {
         "name": "submission_review_internal_reaction_events_review_idx",
         "object_sha256": "307f212a86bc829116b6648c6c1b5a055a8cff9049b68e177d5462c8c98e06a0",
         "sql": "CREATE INDEX submission_review_internal_reaction_events_review_idx\n    on submission_review_internal_reaction_events (review_id, created_at, id);",
@@ -32576,6 +32725,13 @@
         "name": "submission_threads_one_active_uq",
         "object_sha256": "e244771f964d658e7038daa778963cd34765342915f3ef338b23872f2a3e3b8b",
         "sql": "CREATE UNIQUE INDEX submission_threads_one_active_uq\n    on submission_threads (student_user_id, problem_id)\n    where status <> 'closed';",
+        "table_name": "submission_threads",
+        "type": "index"
+      },
+      {
+        "name": "submission_threads_public_id_idx",
+        "object_sha256": "8a7d50608e16f6dce1e2e6c5c3b6af5a784072323e73a681ed28fa332ebf87e8",
+        "sql": "CREATE INDEX submission_threads_public_id_idx ON submission_threads(public_id);",
         "table_name": "submission_threads",
         "type": "index"
       },
@@ -34085,8 +34241,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "2d80d382fcbd6e94f07b25a4cd246d2f9fdce960f1db265b038866a77cf3dfb9",
-    "sha256": "92f741b16f168d954d003a4a80f04072df1b26f8df6ca5786d1de9b20283a813"
+    "pragma_structure_sha256": "c52a6f813d1dc8aa30d09ba9b93d37e466d115a4f3c9354d98799083d60cd863",
+    "sha256": "1a77772e7a8998bbdb719f5fd97e5104c612ddd423a114d5dd344b03d2221b9d"
   },
   "source_kind": "repository-migration-head"
 }

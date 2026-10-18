@@ -434,7 +434,7 @@ export function StaffStatisticsPage({
       <PageLayout title={t`Статистика курса`} width="wide">
         <PageStatePanel
           actionLabel={t`Повторить`}
-          onAction={() => void result.refetch()}
+          onAction={() => void result.refresh()}
           state={
             result.error instanceof ApiResponseError && result.error.status === 403
               ? 'forbidden'
@@ -453,13 +453,13 @@ export function StaffStatisticsPage({
       onLessonChange={onLessonChange}
       studentId={studentId}
       onStudentChange={onStudentChange}
-      onRefresh={() => void result.refetch()}
+      onRefresh={() => void result.refresh()}
       recalculationControl={
         principal.role === 'admin' && result.data.selectedCourseId ? (
           <StatisticsRecalculationControl
             key={result.data.selectedCourseId}
             courseId={result.data.selectedCourseId}
-            onRefresh={() => void result.refetch()}
+            onRefresh={() => void result.refresh()}
           />
         ) : undefined
       }

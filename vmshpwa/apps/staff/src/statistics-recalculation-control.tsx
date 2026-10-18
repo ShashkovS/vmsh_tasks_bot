@@ -29,6 +29,7 @@ export function StatisticsRecalculationControl({
   const queryKey = ['statistics-recalculation', principal.accountId, courseId]
   const storageKey = `${createBrowserStorageNamespace(auth.client.runtime)}:${principal.accountId}:recalculate:${courseId}`
   const status = useQuery({
+    meta: { realtimeResources: ['statistics-recalculation'] },
     queryKey,
     queryFn: () => client(courseId),
     refetchOnWindowFocus: 'always',

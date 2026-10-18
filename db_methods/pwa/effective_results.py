@@ -65,6 +65,34 @@ student_teacher_choices AS MATERIALIZED (
 """
 
 
+def scoped_effective_results_ctes(*, students=False):
+    """Restrict the same winner before aggregation; scoped-reads-20261013.md.
+
+    The caller supplies requested_problem_ids(problem_id) and, optionally,
+    requested_student_ids(student_id). All logical aliases participate in the
+    winner; the caller then projects only its requested targets/source rows.
+    """
+    prefix = """
+    scoped_logical_keys AS MATERIALIZED (
+        SELECT DISTINCT logical_key FROM result_problem_groups
+        WHERE problem_id IN (SELECT problem_id FROM requested_problem_ids)
+    ), scoped_problem_members AS MATERIALIZED (
+        SELECT pg.* FROM result_problem_groups pg
+        JOIN scoped_logical_keys keys USING(logical_key)
+    ),
+    """
+    body = STUDENT_EFFECTIVE_RESULTS_CTES.replace(
+        "student_teacher_choices", "scoped_teacher_choices"
+    ).replace("student_effective_results", "scoped_effective_results")
+    body = body.replace("JOIN result_problem_groups pg", "JOIN scoped_problem_members pg")
+    for alias in ("r", "c"):
+        predicate = f"{alias}.problem_id IN (SELECT problem_id FROM scoped_problem_members)"
+        if students:
+            predicate += f" AND {alias}.student_id IN (SELECT student_id FROM requested_student_ids)"
+        body = body.replace(f"{alias}.student_id = :student_user_id", predicate)
+    return prefix + body
+
+
 def result_source(connection) -> str:
     exists = connection.execute(
         "SELECT 1 FROM sqlite_schema WHERE type='view' AND name='effective_results'"
