@@ -5,9 +5,11 @@
 Владелец разрешил общий выпуск на ВМШ и TLF. Включены MCP-помощник и пакет
 `8b7ce809`: scoped reads/refetch, статистика, persistent analytics, фото и push.
 Невыпущенная миграция помощника перенесена с 0120 на 0122 после performance
-0120/0121; fresh schema содержит 532 product objects. Объединённый release gate,
-server-side rehearsal, backup и выкладка выполняются. Проверки прежних отдельных
-инкрементов ниже не заменяют проверку общего исходника.
+0120/0121; fresh schema содержит 532 product objects. Общий release gate PASS:
+3083 Python / 12 SKIP, 1136 frontend, 384 Storybook, 159 E2E / 18 SKIP
+в трёх браузерах; format/types/lint/i18n/build PASS, source unchanged.
+Server-local up/down/up обеих БД PASS: 168 business tables сохранены, integrity ok.
+Начинается штатный SSH push в vmshpwa и выпуск обоих production.
 [План выпуска](../../../docs/deploy/ai-review-performance-20261018.md).
 
 ## 2026-10-18 — предыдущие занятия через MCP реализованы

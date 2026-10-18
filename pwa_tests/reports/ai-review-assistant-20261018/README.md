@@ -44,7 +44,6 @@ submission-сценарий не поймал промежуточный ста�
 Production-выкладка не выполнялась. Реальные LLM-вызовы в проверках отсутствуют:
 модель запускается в пользовательском MCP-клиенте, а backend хранит предложения.
 
-
 ## Массовая выгрузка комментариев и посылок — 18 октября
 
 Добавлены `list_review_comments(lesson_id?, problem_id?, cursor?)` и
@@ -71,7 +70,6 @@ legacy-only историю и изображения, строгие входы,
 Первый запуск остановился на форматировании двух STATUS.md; после исправления
 полный fast gate завершён успешно.
 
-
 ## Предыдущие занятия того же уровня — 18 октября
 
 Добавлены `get_previous_lesson_materials(lesson_id, count=3)` и
@@ -97,3 +95,13 @@ LaTeX без web AST, строгую валидацию, scope, изображе
 номеров, active/archived, тот же уровень и кружок. Публикация и порядок не
 утверждают посещение или усвоение материала конкретным учеником. Новых миграций,
 UI, provider-вызовов, процессов и production-выкладки нет.
+
+## Общий выпуск с performance — 18 октября
+
+[Release gate](combined-release-gate.json) PASS: 3083 Python / 12 SKIP,
+1136 frontend, 384 Storybook, 159 E2E / 18 SKIP в трёх браузерах;
+format/types/lint/i18n/build PASS, source unchanged.
+Server-local migration up/down/up обеих копий production DB PASS;
+168 business table hashes сохранены, новые AI-таблицы пусты, integrity ok.
+[ВМШ](vmsh-rehearsal.json), [TLF](tlf-rehearsal.json),
+[план штатного выпуска](../../../docs/deploy/ai-review-performance-20261018.md).
