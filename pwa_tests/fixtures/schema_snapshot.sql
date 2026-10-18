@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: e29873ba460eca6819e0b03f3d3fac12501ddaae14f2baede8807dee685cca18
+-- Product schema SHA-256: 772a23e2752fb7bd4a99f5dc056ee6216518f34faae6e94262e58c941eafa749
 
 CREATE TABLE achievement_definitions
 (
@@ -3464,6 +3464,8 @@ CREATE INDEX submission_review_evidence_attachments_attachment_idx
 CREATE INDEX submission_review_evidence_entries_entry_idx
     on submission_review_evidence_entries (entry_id, review_id);
 
+CREATE INDEX submission_review_evidence_entries_thread_review_idx ON submission_review_evidence_entries(thread_id, review_id);
+
 CREATE INDEX submission_review_internal_reaction_events_review_idx
     on submission_review_internal_reaction_events (review_id, created_at, id);
 
@@ -3482,6 +3484,8 @@ CREATE UNIQUE INDEX submission_threads_id_owner_problem_uq
 CREATE UNIQUE INDEX submission_threads_one_active_uq
     on submission_threads (student_user_id, problem_id)
     where status <> 'closed';
+
+CREATE INDEX submission_threads_public_id_idx ON submission_threads(public_id);
 
 CREATE INDEX submission_threads_review_queue_idx
     on submission_threads (latest_entry_at, id)

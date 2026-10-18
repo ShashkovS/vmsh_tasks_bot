@@ -55,3 +55,23 @@ async def test_web_push_adapter_classifies_gone_subscription(monkeypatch):
     assert caught.value.status_code == 410
     assert caught.value.stale_subscription
     assert not caught.value.retryable
+
+
+@pytest.mark.parametrize('failure', ['ReadTimeout', 'ConnectTimeout', 'ConnectionError'])
+async def test_requests_transport_failure_is_retryable(monkeypatch, failure):
+    from requests import exceptions
+
+    def failed_webpush(**_kwargs):
+        raise getattr(exceptions, failure)('synthetic transport failure')
+
+    monkeypatch.setattr(web_push, 'webpush', failed_webpush)
+    with pytest.raises(web_push.WebPushTransportError) as caught:
+        await web_push.send_web_push(
+            {'endpoint': 'https://push.example.test/device', 'keys': {}},
+            {'title': 'Synthetic'}, private_key='synthetic',
+            subject='mailto:synthetic@example.test',
+        )
+    assert caught.value.status_code is None
+    assert caught.value.retryable
+    assert not caught.value.stale_subscription
+    assert str(caught.value) == 'web_push_transport_failed'

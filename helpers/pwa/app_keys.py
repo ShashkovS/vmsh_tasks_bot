@@ -15,6 +15,7 @@ from aiohttp import web
 from helpers.config import Config
 
 if TYPE_CHECKING:
+    from helpers.pwa.product_analytics import ProductAnalyticsIngestor
     from db_methods.pwa import (
         DatabaseLifecycleLock,
         ProductAnalyticsConnectionFactory,
@@ -40,6 +41,7 @@ class PwaAnalyticsDatabaseState:
     """Independent, optional product-analytics SQLite runtime."""
 
     factory: "ProductAnalyticsConnectionFactory | None" = None
+    ingestor: "ProductAnalyticsIngestor | None" = None
     lifecycle_lock: "DatabaseLifecycleLock | None" = None
 
 RUNTIME_CONFIG = web.AppKey("runtime_config", Config)

@@ -6,6 +6,7 @@ import asyncio
 import json
 
 from pywebpush import WebPushException, webpush
+from requests.exceptions import ConnectionError, Timeout
 
 
 class WebPushTransportError(Exception):
@@ -39,6 +40,10 @@ async def send_web_push(
             raise WebPushTransportError(
                 status_code=status_code if isinstance(status_code, int) else None
             ) from error
+        except (Timeout, ConnectionError) as error:
+            # followups-20261018.md: raw requests failures must reach the same
+            # per-delivery retry/finalization path as provider HTTP failures.
+            raise WebPushTransportError(status_code=None) from error
 
     await asyncio.to_thread(send)
 

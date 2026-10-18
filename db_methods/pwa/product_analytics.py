@@ -8,6 +8,7 @@ under maintenance; account names are resolved only when Staff reads a report.
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,13 +29,16 @@ class ProductAnalyticsConnectionFactory(PwaConnectionFactory):
     ) -> None:
         # PwaConnectionFactory's operation and busy handling is exactly what
         # this database needs, but its schema preflight targets the teaching DB.
-        super().__init__(database_path, policy=policy, verify_schema=False)
+        super().__init__(
+            database_path, policy=policy, verify_schema=False,
+            metric_store="product_analytics",
+        )
         self._initialize_schema()
         self._require_wal_mode()
 
     def _initialize_schema(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.database_path, autocommit=True) as connection:
+        with closing(sqlite3.connect(self.database_path, autocommit=True)) as connection:
             mode = connection.execute("PRAGMA journal_mode = WAL").fetchone()[0]
             if str(mode).casefold() != "wal":
                 raise RuntimeError("Could not enable WAL for product analytics")
@@ -73,6 +77,17 @@ class ProductAnalyticsConnectionFactory(PwaConnectionFactory):
                 "CREATE INDEX IF NOT EXISTS product_events_filter_idx "
                 "ON product_events (audience, event_type, occurred_at DESC)"
             )
+
+
+def insert_events(connection: sqlite3.Connection, rows) -> None:
+    """Insert a validated batch; transaction belongs to the existing factory."""
+    connection.executemany(
+        "INSERT INTO product_events (occurred_at, audience, account_public_id, "
+        "session_public_id, event_type, route_id, entity_type, entity_public_id, "
+        "viewport_width, viewport_height, device_pixel_ratio, pointer_type, display_mode) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        rows,
+    )
 
 
 def utc_now_text() -> str:

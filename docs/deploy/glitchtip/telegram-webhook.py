@@ -4,6 +4,7 @@ Native GlitchTip new-issue webhooks feed a durable, bounded per-project digest.
 Only fixed GlitchTip links leave this host; no exception text or user payloads.
 """
 import argparse
+from contextlib import contextmanager
 import hashlib
 import hmac
 import json
@@ -44,8 +45,16 @@ class Digests:
                        'last_sent REAL NOT NULL, retry_at REAL NOT NULL, failures INTEGER NOT NULL, '
                        'pending TEXT NOT NULL, seen TEXT NOT NULL)')
 
+    @contextmanager
     def connect(self):
-        return sqlite3.connect(self.path, timeout=10)
+        # followups-20261018.md: a Connection context commits/rolls back but
+        # does not close SQLite resources; this loop runs every ten seconds.
+        connection = sqlite3.connect(self.path, timeout=10)
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
 
     def enqueue(self, project, links):
         with self.connect() as db:

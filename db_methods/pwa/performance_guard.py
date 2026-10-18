@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 import time
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
@@ -23,7 +23,7 @@ class CriticalQueryProbe:
     sql: str
     required_plan_fragments: tuple[str, ...] = ()
     time_budget_seconds: float = 2.0
-    parameters: Mapping[str, object] | None = None
+    parameters: Mapping[str, object] | Sequence[object] | None = None
 
 
 # Keep this deliberately small and based on read-model fan-out, not individual
@@ -71,7 +71,16 @@ def scoped_query_probes(connection):
     publication = {"course_id": course[0] if course else -1, "group_ids": None, "lesson_number": None}
     published_ids = [row[0] for row in connection.execute(PUBLISHED_PROBLEMS_SQL, publication)]
     facts = {"problem_ids": json.dumps(published_ids), "exclude_reviewed": 1}
+    # Actual sheet lookups, protected by 0121; followups-20261018.md.
+    from db_methods.pwa.review_sheet import CASE_THREADS_SQL, LATEST_REVIEW_SQL
+    thread = connection.execute("SELECT id,public_id FROM submission_threads ORDER BY id DESC LIMIT 1").fetchone()
     return (
+        CriticalQueryProbe("review-sheet-case", CASE_THREADS_SQL,
+                           required_plan_fragments=("submission_threads_public_id_idx",),
+                           parameters=(thread[1] if thread else "st-empty",)),
+        CriticalQueryProbe("review-sheet-evidence", LATEST_REVIEW_SQL.format(placeholders="?"),
+                           required_plan_fragments=("submission_review_evidence_entries_thread_review_idx",),
+                           parameters=(thread[0] if thread else -1,)),
         CriticalQueryProbe("statistics-results-scoped", CURRENT_RESULTS_SQL, parameters=facts),
         CriticalQueryProbe("statistics-attempts-scoped", CURRENT_ATTEMPTS_SQL, parameters=facts),
         CriticalQueryProbe("statistics-pending-scoped", PENDING_SQL, parameters=facts),

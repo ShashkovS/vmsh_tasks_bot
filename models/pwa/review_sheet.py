@@ -43,7 +43,7 @@ def _label(row):
     return f"{row['lesson']}{row['short_code']}.{row['prob']}{row['item'] or ''} · {row['title'] or ''}"
 
 
-def context(connection, scope, case_id, *, allow_empty=False):
+def context(connection, scope, case_id, *, allow_empty=False, include_snapshot=True):
     threads = db.case_threads(connection, case_id)
     if not threads:
         raise ReviewQueueNotFound("sheet case was not found")
@@ -90,7 +90,9 @@ def context(connection, scope, case_id, *, allow_empty=False):
                 )
     if not evidence and not allow_empty:
         raise ReviewQueueNotFound("case has no modern review evidence")
-    result = db.latest_result(connection, threads)
+    # The collection needs evidence eligibility, not the detail/CAS snapshot.
+    # followups-20261018.md: keep CAS reads unchanged for detail and mutations.
+    result = db.latest_result(connection, threads) if include_snapshot else None
     snapshot = _digest(
         {
             "threads": [
@@ -125,7 +127,7 @@ def context(connection, scope, case_id, *, allow_empty=False):
                 for _, e, photos in evidence
             ],
         }
-    )
+    ) if include_snapshot else None
     return dict(
         threads=threads,
         queues=queue_rows,
@@ -170,14 +172,14 @@ def collection(connection, scope, *, lesson_id, problem_id=None, mode="pending")
     for p in problems:
         by_number.setdefault(p["prob"], []).append(p)
     candidates = {}
-    for t in db.lesson_threads(connection, selected):
+    for t in db.lesson_threads(connection, selected, pending_only=mode == "pending"):
         case_id = f"st-{t['anchor_id']}"
         # Assign a synonym case once, at its earliest selected task/part.
         candidates.setdefault(case_id, t)
     cases = []
     for case_id, row in candidates.items():
         try:
-            value = context(connection, scope, case_id)
+            value = context(connection, scope, case_id, include_snapshot=False)
         except ReviewQueueNotFound, ReviewQueueForbidden:
             continue
         if mode == "pending" and not value["queues"]:
@@ -209,6 +211,7 @@ def collection(connection, scope, *, lesson_id, problem_id=None, mode="pending")
         c for c in cases if chosen is None or c["number"] == chosen["prob"]
     ]
     tasks = []
+    condition_documents = {}
     for number, parts in by_number.items():
         if chosen is not None and number != chosen["prob"]:
             continue
@@ -222,7 +225,8 @@ def collection(connection, scope, *, lesson_id, problem_id=None, mode="pending")
                         "problemId": p["public_id"],
                         "label": _label(p),
                         "condition": review_series.condition(
-                            connection, scope, p["public_id"]
+                            connection, scope, p["public_id"],
+                            documents=condition_documents,
                         )["document"],
                         "statement": p.get("prob_text") or "",
                     }

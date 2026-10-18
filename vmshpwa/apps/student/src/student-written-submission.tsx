@@ -304,7 +304,21 @@ function writtenChatMessages({
   })
 }
 
-export function StudentWrittenSubmission({
+export function StudentWrittenSubmission(props: StudentWrittenSubmissionProps) {
+  const authentication = useAuthentication()
+  const principal = 'principal' in authentication.state ? authentication.state.principal : null
+  // followups-20261018.md: never hydrate a new owner/revision with old UI state.
+  const identity = JSON.stringify([
+    authentication.client.runtime.instance,
+    principal?.accountId,
+    props.problemId,
+    props.conditionRevisionId,
+    props.configVersion,
+  ])
+  return <WrittenSubmissionComposer key={identity} {...props} />
+}
+
+function WrittenSubmissionComposer({
   problemId,
   problemType,
   conditionRevisionId,
@@ -690,15 +704,21 @@ export function StudentWrittenSubmission({
 
   const selectPhotos = async (files: FileList | null, input: HTMLInputElement) => {
     if (!files) return
-    const selected = [...files].slice(0, Math.max(0, 10 - photos.length - pendingPhotos.length))
+    const selected = [...files]
+      .slice(0, Math.max(0, 10 - photos.length - pendingPhotos.length))
+      .map((file) => ({ file, id: crypto.randomUUID(), controller: new AbortController() }))
+    // followups-20261018.md: reserve the entire selection before the first
+    // await. Send must not snapshot text without the still-preparing pages.
+    for (const { id, controller } of selected) photoProcessing.current.set(id, controller)
+    setPendingPhotos((current) => [
+      ...current,
+      ...selected.map(({ file, id }) => ({ id, name: file.name, status: 'processing' as const })),
+    ])
     // Reset before processing so that taking the same picture again triggers change.
     input.value = ''
-    for (const file of selected) {
-      const id = crypto.randomUUID()
-      const controller = new AbortController()
-      photoProcessing.current.set(id, controller)
-      setPendingPhotos((current) => [...current, { id, name: file.name, status: 'processing' }])
+    for (const { file, id, controller } of selected) {
       try {
+        controller.signal.throwIfAborted()
         const result = await compressWrittenSubmissionImage(file, { signal: controller.signal })
         const image =
           result.status === 'ready'
@@ -709,6 +729,7 @@ export function StudentWrittenSubmission({
                 height: result.height,
               })
             : undefined
+        controller.signal.throwIfAborted()
         if (image) client.prefetchImage?.(problemId, image)
         await draftStore.value.addPhoto(descriptor, {
           id,
@@ -780,6 +801,14 @@ export function StudentWrittenSubmission({
   }
 
   const submit = async () => {
+    if (
+      photoProcessing.current.size > 0 ||
+      pendingPhotos.length > 0 ||
+      storageError ||
+      replacementLoading ||
+      (!text.trim() && photos.length === 0)
+    )
+      return
     setSendError(null)
     try {
       if (
@@ -1102,7 +1131,9 @@ export function StudentWrittenSubmission({
             onMoveAttachmentUp={(id) => move(id, -1)}
             onRemoveAttachment={(id) => void remove(id)}
             onSend={() => void submit()}
-            sendDisabled={composerEmpty || replacementLoading}
+            sendDisabled={
+              composerEmpty || replacementLoading || pendingPhotos.length > 0 || !!storageError
+            }
             sending={replacementLoading}
           >
             <Textarea
@@ -1114,7 +1145,7 @@ export function StudentWrittenSubmission({
                 textInput.onKeyDown(event)
                 if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
                   event.preventDefault()
-                  if (!composerEmpty && !replacementLoading) void submit()
+                  void submit()
                 }
               }}
               placeholder={t`Решение или пояснение. Формулы можно приложить фотографией.`}

@@ -80,6 +80,7 @@ function Preparation({ ownerId }: { ownerId: string }) {
           ownerId,
           runtime: authentication.client.runtime,
           signal,
+          refreshSession: authentication.refresh,
         })
         // Preparation includes route modules, before the student ever visits Tasks.
         await waitForOfflineShell(signal)

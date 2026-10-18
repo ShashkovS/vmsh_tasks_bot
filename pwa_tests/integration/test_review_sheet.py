@@ -350,3 +350,76 @@ def test_unknown_case_is_not_readable(review_queue_fixture):
         review_queue_fixture.factory.run_read(
             lambda c: review_sheet.detail(c, fixtures.ALL_GROUPS_SCOPE, "st-999")
         )
+
+
+@pytest.mark.parametrize("mode", ["pending", "all"])
+@pytest.mark.parametrize("limited", [False, True])
+def test_pending_prefilter_matches_full_context_without_losing_aliases(
+    review_queue_fixture, monkeypatch, mode, limited
+):
+    from db_methods.pwa import review_sheet as sheet_db
+    f = review_queue_fixture
+    scope = ReviewStaffScope(group_public_ids=frozenset({"g-5"})) if limited else fixtures.ALL_GROUPS_SCOPE
+    def arrange(c):
+        # Selected branch closed; the pending queue exists only on its synonym.
+        c.execute("DELETE FROM written_tasks_queue WHERE problem_id=(SELECT problem_id FROM submission_threads WHERE public_id='st-1')")
+        c.execute("UPDATE submission_threads SET status='closed',version=version+1 WHERE public_id='st-1'")
+        _add_students(c, 10)
+        c.execute("DELETE FROM written_tasks_queue WHERE student_id<=-960000")
+        c.execute("UPDATE submission_threads SET status='closed',version=version+1 WHERE student_user_id<=-960000")
+    f.factory.run_write(arrange)
+    def read(c):
+        return review_sheet.collection(c, scope, lesson_id="gl-1", mode=mode)
+    actual = f.factory.run_read(read)
+    original = sheet_db.lesson_threads
+    original_context = review_sheet.context
+    monkeypatch.setattr(sheet_db, "lesson_threads", lambda c, selected, **_: original(c, selected))
+    monkeypatch.setattr(review_sheet, "context", lambda c, s, case, **_: original_context(c, s, case))
+    assert f.factory.run_read(read) == actual
+    if not limited:
+        assert actual["total"] == 1
+
+
+def test_completed_history_does_not_expand_pending_collection_reads(review_queue_fixture):
+    f = review_queue_fixture
+    def arrange(c):
+        _add_students(c, 100)
+        c.execute("DELETE FROM written_tasks_queue WHERE student_id<=-960000")
+        c.execute("UPDATE submission_threads SET status='closed',version=version+1 WHERE student_user_id<=-960000")
+    f.factory.run_write(arrange)
+    statements = []
+    def read(c):
+        c.set_trace_callback(statements.append)
+        return review_sheet.collection(c, fixtures.ALL_GROUPS_SCOPE, lesson_id="gl-1")
+    assert f.factory.run_read(read)["total"] == 1
+    assert len(statements) < 60
+
+
+def test_condition_reuse_keeps_access_checks_and_independent_trees(review_queue_fixture, monkeypatch):
+    from db_methods.pwa import review_series
+    f = review_queue_fixture
+    import json
+    f.factory.run_write(lambda c: c.execute(
+        """INSERT INTO content_derivatives
+        (revision_id,kind,renderer_version,content_text,sha256,provenance_json,created_at)
+        VALUES(1,'web_ast','memo-test',?,?,'{}',?)""",
+        (json.dumps({"materialKind": "condition", "problems": [
+            {"ordinal": 1, "blocks": [{"text": "Condition"}]}]}),
+         "a" * 64, fixtures._timestamp(fixtures.NOW)),
+    ))
+    original = review_series._overlay_problem_titles
+    overlays = []
+    def overlay(c, document, revision):
+        overlays.append(revision)
+        return original(c, document, revision)
+    monkeypatch.setattr(review_series, "_overlay_problem_titles", overlay)
+    def read(c):
+        documents = {}
+        first = review_series.condition(c, fixtures.ALL_GROUPS_SCOPE, "p-1", documents=documents)
+        second = review_series.condition(c, fixtures.ALL_GROUPS_SCOPE, "p-1", documents=documents)
+        assert first == second and first["document"] is not None
+        assert len(overlays) == 1
+        first["document"]["problems"].clear()
+        assert second["document"]["problems"]
+        assert review_series.condition(c, ReviewStaffScope(), "p-1", documents=documents) is None
+    f.factory.run_read(read)

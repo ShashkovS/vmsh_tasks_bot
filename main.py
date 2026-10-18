@@ -21,6 +21,7 @@ import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
 from helpers.prometheus_metrics import configure_prometheus
+from helpers.pwa.product_analytics import ProductAnalyticsIngestor
 from helpers.pwa.app_keys import (
     ENABLED_ADAPTERS,
     PWA_DATABASE,
@@ -125,30 +126,51 @@ async def pwa_analytics_lifecycle(app: web.Application):
         Path(runtime_config.db_filename).with_name("analytics.sqlite3")
     )
     lifecycle_lock = runtime_database_lock(analytics_path)
+    # Same lock/preflight/drain contract as the teaching store, including
+    # cancellation during the constructor. See followups-20261018.md.
     try:
         lifecycle_lock.acquire()
-        factory = await asyncio.to_thread(
-            ProductAnalyticsConnectionFactory,
-            analytics_path,
-        )
-        # Retention is enforced both here and by the lightweight daily task in
-        # the PWA adapter; failure is intentionally isolated from core startup.
+    except Exception:
+        logger.warning("Product analytics startup unavailable", exc_info=True)
+        yield
+        return
+    preflight = asyncio.create_task(asyncio.to_thread(
+        ProductAnalyticsConnectionFactory, analytics_path,
+    ))
+    try:
+        factory = await asyncio.shield(preflight)
+    except BaseException as error:
+        def release_after_preflight(completed):
+            with suppress(BaseException):
+                completed.result()
+            lifecycle_lock.release()
+        if preflight.done():
+            release_after_preflight(preflight)
+        else:
+            preflight.add_done_callback(release_after_preflight)
+        if isinstance(error, asyncio.CancelledError):
+            raise
+        logger.warning("Product analytics startup unavailable", exc_info=True)
+        yield
+        return
+    try:
+        factory.start_async_workers()
         await factory.run_write_async(
             lambda connection: prune_expired_events(connection, now=datetime.now(UTC))
         )
-    except asyncio.CancelledError:
-        lifecycle_lock.release()
-        raise
-    except Exception:
-        # Telemetry is explicitly fail-open: a disk or maintenance issue must
-        # not take the Student, Family or Staff application down.
-        logger.warning("Product analytics startup unavailable", exc_info=True)
-        with suppress(Exception):
+    except BaseException as error:
+        try:
+            await factory.aclose()
+        finally:
             lifecycle_lock.release()
+        if isinstance(error, asyncio.CancelledError):
+            raise
+        logger.warning("Product analytics startup unavailable", exc_info=True)
         yield
         return
     state.lifecycle_lock = lifecycle_lock
     state.factory = factory
+    state.ingestor = ProductAnalyticsIngestor(factory)
 
     async def prune_daily() -> None:
         while True:
@@ -167,12 +189,21 @@ async def pwa_analytics_lifecycle(app: web.Application):
     try:
         yield
     finally:
-        cleanup_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await cleanup_task
-        state.factory = None
-        state.lifecycle_lock = None
-        lifecycle_lock.release()
+        async def close():
+            cleanup_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await cleanup_task
+            try:
+                await state.ingestor.aclose()
+            finally:
+                try:
+                    await factory.aclose()
+                finally:
+                    state.ingestor = None
+                    state.factory = None
+                    state.lifecycle_lock = None
+                    lifecycle_lock.release()
+        await factory._drain_on_cancel(asyncio.create_task(close()))
 
 
 async def on_startup(app):
@@ -203,6 +234,11 @@ async def on_shutdown(app):
     """
     logger.warning("on_shutdown")
     logger.warning("MainApp Shutting down..")
+    analytics = app.get(PWA_ANALYTICS_DATABASE)
+    if analytics is not None and analytics.ingestor is not None:
+        # Drain before legacy shutdown cancels background tasks. Subsequent
+        # telemetry is best effort and is rejected by the closed ingestor.
+        await analytics.ingestor.aclose()
     await wait_for_valuable_tasks(logger, timeout=20)
     db.sql.disconnect()
     logger.warning("MainApp Bye!")

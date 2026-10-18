@@ -86,3 +86,14 @@ Implementation and automated gates completed locally.
 938 full-suite frontend tests, 27 final focused tests, 64 backend tests; lint,
 typecheck, i18n and production build passed; browser acceptance 10 passed with
 2 explicit network-mode skips as described above.
+
+## 2026-10-18: coordinated authority during preparation
+
+`apps/student/src/student-offline-preparation.tsx` passes the existing shared
+`authentication.refresh` into `prepare-offline-lessons.ts`, which configures both
+its course and published-content clients to retry one 401 after coordinated
+refresh. A concurrent cookie rotation must not sign the student out via a
+background old-cookie response. Permanent denial still fails closed, leaving the
+previous complete offline bundle intact. See
+[follow-up decision](../../docs/performance/followups-20261018.md) and the
+preparation regression tests (real clients with synthetic unit transports).

@@ -184,3 +184,12 @@ Implementation and release/provider proof status live in the linked decision.
 ## Доля вставленного текста — 11 октября 2026
 
 Готово локально; static/build и behavioral gates прошли (2965 Python, 1106 frontend, 376 Storybook, 6 Chromium E2E; шесть baseline corpus-проверок исключены): [учёт вставок, сохранение и плашки Staff](../../docs/paste-evidence.md). Новые данные учитывают удаления; прежние счётчики дают явно обозначенную грубую оценку.
+
+## 2026-10-18: durable photo preparation follow-up
+
+See [approved follow-ups](../../../docs/performance/followups-20261018.md) and
+`apps/student/src/student-written-submission.tsx` / its interaction test.
+The whole selected batch is reserved before compression starts; button and
+keyboard Send wait for durable storage of every page. Failed pages require
+explicit removal. Owner/revision changes unmount and cancel old preparation.
+Owner, revision, local evidence and outbox idempotency guards remain enforced.

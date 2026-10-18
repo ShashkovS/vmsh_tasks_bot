@@ -1632,8 +1632,8 @@ cat > /var/lib/grafana/dashboards/vmsh-overview.json <<'JSON'
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 45},
       "targets": [
-        {"refId": "A", "expr": "vmsh_db_waiting{job=\"aiohttp\"}", "legendFormat": "waiting {{role}} pid={{pid}} {{instance}}"},
-        {"refId": "B", "expr": "vmsh_db_active{job=\"aiohttp\"}", "legendFormat": "active {{role}} pid={{pid}} {{instance}}"}
+        {"refId": "A", "expr": "vmsh_db_waiting{job=\"aiohttp\"}", "legendFormat": "waiting {{store}} {{role}} pid={{pid}} {{instance}}"},
+        {"refId": "B", "expr": "vmsh_db_active{job=\"aiohttp\"}", "legendFormat": "active {{store}} {{role}} pid={{pid}} {{instance}}"}
       ]
     },
     {
@@ -1644,8 +1644,8 @@ cat > /var/lib/grafana/dashboards/vmsh-overview.json <<'JSON'
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 45},
       "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
       "targets": [
-        {"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, role) (rate(vmsh_db_admission_wait_seconds_bucket{job=\"aiohttp\"}[$__rate_interval])))", "legendFormat": "wait {{role}}"},
-        {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le, role) (rate(vmsh_db_slot_hold_seconds_bucket{job=\"aiohttp\"}[$__rate_interval])))", "legendFormat": "hold {{role}}"}
+        {"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, store, role) (rate(vmsh_db_admission_wait_seconds_bucket{job=\"aiohttp\"}[$__rate_interval])))", "legendFormat": "wait {{store}} {{role}}"},
+        {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le, store, role) (rate(vmsh_db_slot_hold_seconds_bucket{job=\"aiohttp\"}[$__rate_interval])))", "legendFormat": "hold {{store}} {{role}}"}
       ]
     },
     {
@@ -1655,7 +1655,7 @@ cat > /var/lib/grafana/dashboards/vmsh-overview.json <<'JSON'
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 53},
       "targets": [
-        {"refId": "A", "expr": "sum by (role) (rate(vmsh_db_slot_hold_seconds_count{job=\"aiohttp\"}[$__rate_interval]))", "legendFormat": "{{role}}"}
+        {"refId": "A", "expr": "sum by (store, role) (rate(vmsh_db_slot_hold_seconds_count{job=\"aiohttp\"}[$__rate_interval]))", "legendFormat": "{{store}} {{role}}"}
       ]
     }
   ],

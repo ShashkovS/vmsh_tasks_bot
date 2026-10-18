@@ -42,6 +42,7 @@ def test_schema_bootstrap_is_explicit_and_repeatable(tmp_path):
         "0118.teacher_work",
         "0119.text_origin",
         "0120.scoped_read_indexes",
+        "0121.review_sheet_indexes",
     ]
     assert inspect_migration_state(database_path).is_current
     with sqlite3.connect(database_path) as connection:
@@ -91,6 +92,7 @@ def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
         "0118.teacher_work",
         "0119.text_origin",
         "0120.scoped_read_indexes",
+        "0121.review_sheet_indexes",
     )
     with pytest.raises(SchemaMismatchError, match="0112"):
         PwaConnectionFactory(path)
@@ -107,7 +109,7 @@ def test_previous_current_schema_adopts_baseline_and_applies_pending_migration(
         )
         assert (
             connection.execute("SELECT count(*) FROM _yoyo_migration").fetchone()[0]
-            == 11
+            == 12
         )
         assert (
             connection.execute(

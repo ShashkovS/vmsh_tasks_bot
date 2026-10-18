@@ -135,6 +135,33 @@ async def test_delivery_is_idempotent_and_quiet_hours_only_silence(tmp_path):
     }
 
 
+async def test_raw_provider_timeout_retries_one_item_and_continues_batch(tmp_path, monkeypatch):
+    from requests.exceptions import ReadTimeout
+    from helpers.pwa import web_push
+
+    path, factory = _prepare_database(tmp_path)
+    with sqlite3.connect(path) as c:
+        c.execute("""INSERT INTO notification_events
+            (account_id,category,dedupe_key,route,payload_json,occurred_at,deliver_after,created_at)
+            VALUES (1,'group_announcement','timeout-next','/student/','{"text":"Next"}',?,?,?)""",
+            (NOW, NOW, NOW))
+    calls = []
+    def provider(**kwargs):
+        calls.append(kwargs)
+        if len(calls) == 1:
+            raise ReadTimeout("synthetic timeout")
+    monkeypatch.setattr(web_push, "webpush", provider)
+    async def sender(subscription, payload):
+        await web_push.send_web_push(subscription, payload, private_key="synthetic",
+                                     subject="mailto:synthetic@example.test")
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+    assert result["retried"] == 1 and result["sent"] == 1
+    assert len(calls) == 2
+    states = factory.run_read(lambda c: [r["state"] for r in c.execute(
+        "SELECT state FROM notification_deliveries ORDER BY id")])
+    assert states == ["retry", "sent"]
+
+
 async def test_delivery_uses_the_recipient_locale_for_push_copy(tmp_path):
     _database_path, factory = _prepare_database(tmp_path, recipient_locale="en")
     sent: list[dict[str, object]] = []
