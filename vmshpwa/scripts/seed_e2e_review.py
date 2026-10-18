@@ -41,6 +41,9 @@ TARGETS = (
     ("sheet-chromium", 9971),
     ("sheet-webkit", 9972),
     ("sheet-firefox", 9973),
+    ("ai-chromium", 9981),
+    ("ai-webkit", 9982),
+    ("ai-firefox", 9983),
 )
 
 

@@ -81,6 +81,10 @@
       {
         "id": "0119.text_origin",
         "sha256": "533097a611e54d09255a4a8d1c747cb8efdf282f8f1f00ed1cb43f14d6b20481"
+      },
+      {
+        "id": "0120.ai_review_assistant",
+        "sha256": "d247c3c5d465af0bd1ec5b7a53dc085de846a83d5db87aea153203282f793ea4"
       }
     ],
     "repository_head_status": {
@@ -91,7 +95,7 @@
     }
   },
   "product": {
-    "object_count": 524,
+    "object_count": 528,
     "objects": [
       {
         "columns": [
@@ -181,6 +185,513 @@
         "object_sha256": "b010e3912549ab7f57109afa8e122dd4540a4cfc5cb06cd5b2c22e79133453c2",
         "sql": "CREATE TABLE achievement_definitions\n(\n    id           integer primary key,\n    code         text    not null unique,\n    rule_version integer not null check (rule_version > 0),\n    is_active    integer not null default 1 check (is_active in (0, 1)),\n    created_at   text    not null,\n    updated_at   text    not null\n);",
         "table_name": "achievement_definitions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "token_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "subject_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "token_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "ai_review_tokens"
+          }
+        ],
+        "indexes": [],
+        "name": "ai_review_events",
+        "object_sha256": "629da531a70dfbb9e562607ebe17e2232876f2c9dc1019e374cba730dc1b1fce",
+        "sql": "CREATE TABLE ai_review_events (\n        id INTEGER PRIMARY KEY,\n        account_id INTEGER NOT NULL REFERENCES auth_accounts(id),\n        token_id INTEGER REFERENCES ai_review_tokens(id),\n        event TEXT NOT NULL CHECK(event IN ('token_created','token_revoked','suggestion_uploaded')),\n        subject_id TEXT NOT NULL,\n        created_at TEXT NOT NULL\n        );",
+        "table_name": "ai_review_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "token_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "case_thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "case_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "snapshot",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_hash",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "comment",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "verdict",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "analysis",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "model",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "case_thread_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_threads"
+          },
+          {
+            "from_columns": [
+              "token_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "ai_review_tokens"
+          },
+          {
+            "from_columns": [
+              "verdict"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "verdicts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "case_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "ai_review_suggestions_case_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_ai_review_suggestions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "token_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_ai_review_suggestions_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "ai_review_suggestions",
+        "object_sha256": "442af29892a07103e5e5b56c3e5323f4e6fd21c13164efa659b2c3161a5df9b5",
+        "sql": "CREATE TABLE ai_review_suggestions (\n        id INTEGER PRIMARY KEY,\n        public_id TEXT NOT NULL UNIQUE,\n        token_id INTEGER NOT NULL REFERENCES ai_review_tokens(id),\n        case_thread_id INTEGER NOT NULL REFERENCES submission_threads(id),\n        case_id TEXT NOT NULL CHECK(case_id='st-'||case_thread_id),\n        snapshot TEXT NOT NULL CHECK(length(snapshot)=64),\n        idempotency_key TEXT NOT NULL CHECK(length(idempotency_key) BETWEEN 1 AND 128),\n        payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64),\n        comment TEXT CHECK(comment IS NULL OR length(comment)<=100000),\n        verdict INTEGER REFERENCES verdicts(id),\n        analysis TEXT CHECK(analysis IS NULL OR length(analysis)<=100000),\n        source TEXT NOT NULL CHECK(length(trim(source)) BETWEEN 1 AND 200),\n        model TEXT CHECK(model IS NULL OR length(model)<=200),\n        created_at TEXT NOT NULL,\n        UNIQUE(token_id,idempotency_key),\n        CHECK(comment IS NOT NULL OR verdict IS NOT NULL OR analysis IS NOT NULL)\n        );",
+        "table_name": "ai_review_suggestions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "credential_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "secret_hash",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expires_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revoked_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_ai_review_tokens_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "secret_hash",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_ai_review_tokens_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "ai_review_tokens",
+        "object_sha256": "bebd200ca54e0419864b12582e55cfba9310a21845051379035d908817eb5b55",
+        "sql": "CREATE TABLE ai_review_tokens (\n        id INTEGER PRIMARY KEY,\n        public_id TEXT NOT NULL UNIQUE,\n        account_id INTEGER NOT NULL REFERENCES auth_accounts(id),\n        credential_version INTEGER NOT NULL,\n        name TEXT NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 100),\n        secret_hash TEXT NOT NULL UNIQUE CHECK(length(secret_hash)=64),\n        created_at TEXT NOT NULL,\n        expires_at TEXT NOT NULL CHECK(expires_at>created_at),\n        revoked_at TEXT\n        );",
+        "table_name": "ai_review_tokens",
         "type": "table"
       },
       {
@@ -31075,6 +31586,13 @@
         "type": "table"
       },
       {
+        "name": "ai_review_suggestions_case_idx",
+        "object_sha256": "e11346c7488b43da848532827305d87eec2bbd1cb8520aa2875d9012f12a717f",
+        "sql": "CREATE INDEX ai_review_suggestions_case_idx ON ai_review_suggestions(case_id,id DESC);",
+        "table_name": "ai_review_suggestions",
+        "type": "index"
+      },
+      {
         "name": "analytics_runs_course_latest_idx",
         "object_sha256": "b96fb48d9236a54a3fcb9bfeb28abf8b36751f2a4a696c36e7e2a3630202bc9b",
         "sql": "CREATE INDEX analytics_runs_course_latest_idx\n    on analytics_runs (course_id, state, completed_at desc, id desc);",
@@ -33567,8 +34085,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "f7934a81cb33ffe0a361560a522004f0186ae9a8df3158b83c827231e6ff0f20",
-    "sha256": "f0d262305c954586463d44cde2bf640971ec62fe819b21687de9144d26391e64"
+    "pragma_structure_sha256": "2d80d382fcbd6e94f07b25a4cd246d2f9fdce960f1db265b038866a77cf3dfb9",
+    "sha256": "92f741b16f168d954d003a4a80f04072df1b26f8df6ca5786d1de9b20283a813"
   },
   "source_kind": "repository-migration-head"
 }

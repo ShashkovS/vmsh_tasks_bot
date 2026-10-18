@@ -1,5 +1,44 @@
 # Статус плана разработки
 
+## 2026-10-18 — предыдущие занятия через MCP реализованы
+
+Реализован один пакет условий, подсказок и решений последних N предыдущих
+занятий того же уровня (группы), с опорой на текущее занятие. Сохраняем полный
+документ, опубликованные редакции, изображения и явные пропуски материалов.
+[Контракт](../../docs/ai-review-assistant.md#предыдущие-занятия-того-же-уровня).
+Fast gate `review content` PASS: 3039 Python / 12 SKIP, 1125 frontend,
+384 Storybook и 7 Chromium E2E; format/types/lint/i18n/build PASS, source unchanged.
+11 новых HTTP/SQLite-сценариев и настоящий stdio MCP с изображением прошли.
+Миграций и изменений UI нет; production не менялся.
+[Квитанция](../../../pwa_tests/reports/ai-review-assistant-20261018/curriculum-fast-gate.json).
+
+## 2026-10-18 — массовые MCP-выгрузки реализованы
+
+Реализованы история преподавательских комментариев по занятию/задаче и пакетное
+чтение посылок фиксированной задачи: pending/reviewed/all. Повторные сдачи,
+исторические изображения и legacy-комментарии сохраняются; неизвестный статус
+старых сообщений явно отмечается. Контракт и критерии —
+[ai-review-assistant.md](../../docs/ai-review-assistant.md#массовая-выгрузка-для-калибровки).
+Fast gate `review submissions` PASS: 3028 Python / 12 SKIP, 1125 frontend,
+384 Storybook, 8 Chromium E2E; format/types/lint/i18n/build PASS, source unchanged.
+Новые HTTP/SQLite-сценарии и реальный stdio MCP прошли. UI и production не менялись.
+[Квитанция](../../../pwa_tests/reports/ai-review-assistant-20261018/bulk-exports-fast-gate.json).
+
+## 2026-10-18 — MCP AI-помощник реализован
+
+Личные отзываемые токены, полный учебный контекст с изображениями и несколько
+Staff-only предложений реализованы. Комментарий дописывается в конец черновика,
+вердикт выбирается независимо; одиночная проверка, серия и простыня поддержаны.
+Встроенного вызова LLM, публикации AI-результата и production-выкладки нет.
+[Контракт и подключение](../../docs/ai-review-assistant.md).
+
+Release gate `authentication review submissions` PASS в трёх браузерах:
+3022 Python / 12 SKIP, 1125 frontend, 384 Storybook, 117 E2E / 18 SKIP;
+format/types/lint/i18n/builds PASS, source unchanged. Реальный stdio MCP и 12
+снимков 1280/390 light/dark проверены. Первый WebKit sending-status race прошёл
+в повторе без изменения теста/Student flow.
+[Квитанции и снимки](../../../pwa_tests/reports/ai-review-assistant-20261018/README.md).
+
 ## 2026-10-12 — RAM-кеш общих чтений и auth
 
 [Реализовано по решению владельца](../../../docs/performance/worker-read-cache.md): dictionaries в каждом worker,

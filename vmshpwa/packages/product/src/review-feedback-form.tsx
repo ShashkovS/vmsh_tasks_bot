@@ -33,6 +33,8 @@ export interface ReviewFeedbackFormProps {
   verdicts: VerdictView[]
   onSubmit: (result: ReviewFeedbackResult) => void
   initialDraft?: ReviewFeedbackDraft
+  /** Controlled draft for explicit AI actions; docs/ai-review-assistant.md. */
+  draft?: ReviewFeedbackDraft
   onDraftChange?: (draft: ReviewFeedbackDraft) => void
   disabled?: boolean
   hotkeys?: boolean
@@ -45,6 +47,7 @@ export function ReviewFeedbackForm({
   verdicts,
   onSubmit,
   initialDraft,
+  draft,
   onDraftChange,
   disabled,
   hotkeys = true,
@@ -53,12 +56,20 @@ export function ReviewFeedbackForm({
   className,
 }: ReviewFeedbackFormProps) {
   const commentId = useId()
-  const [comment, setComment] = useState(initialDraft?.comment ?? '')
-  const [verdict, setVerdict] = useState<VerdictView | null>(
+  const [localComment, setComment] = useState(initialDraft?.comment ?? '')
+  const [localVerdict, setVerdict] = useState<VerdictView | null>(
     () => verdicts.find((item) => item.value === initialDraft?.verdictValue) ?? null,
   )
-  const [reactionId, setReactionId] = useState<number | null>(initialDraft?.reactionId ?? null)
-  const [confirming, setConfirming] = useState(false)
+  const [localReactionId, setReactionId] = useState<number | null>(initialDraft?.reactionId ?? null)
+  const comment = draft?.comment ?? localComment
+  const verdict = draft
+    ? (verdicts.find((item) => item.value === draft.verdictValue) ?? null)
+    : localVerdict
+  const reactionId = draft ? draft.reactionId : localReactionId
+  const [confirmedDraft, setConfirmedDraft] = useState<string | null>(null)
+  const confirmationKey = `${verdict?.value ?? ''}:${comment}`
+  const confirming = confirmedDraft === confirmationKey
+  const setConfirming = (value: boolean) => setConfirmedDraft(value ? confirmationKey : null)
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {

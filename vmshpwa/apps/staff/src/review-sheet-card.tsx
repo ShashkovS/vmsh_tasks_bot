@@ -39,6 +39,7 @@ import { ReviewEvidenceEntry } from './review-workspace-page'
 import { describeReviewError } from './review-errors'
 import { rememberCompletedReview } from './last-completed-review'
 import { ReviewTransfer } from './review-transfer'
+import { AiReviewPanel } from './ai-review-panel'
 
 const scales = {
   verdict_plus_minus: binaryVerdictScale,
@@ -508,8 +509,19 @@ function LoadedSheetCard({
             </div>
           ) : (
             <div className="space-y-3">
+              {detail.pending && (
+                <AiReviewPanel
+                  workspace={detail.workspace}
+                  caseId={detail.caseId}
+                  draft={draft}
+                  onDraftChange={edit}
+                  disabled={disabled}
+                  active={active}
+                />
+              )}
               <ReviewFeedbackForm
                 key={formVersion}
+                draft={draft}
                 hotkeys={active}
                 disabled={disabled}
                 initialDraft={{

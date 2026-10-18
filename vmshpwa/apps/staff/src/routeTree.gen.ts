@@ -19,6 +19,7 @@ import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as InPersonRouteImport } from './routes/in-person'
 import { Route as LessonsRouteImport } from './routes/lessons'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as McpAccessRouteImport } from './routes/mcp-access'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as OralRouteImport } from './routes/oral'
 import { Route as ProblemsRouteImport } from './routes/problems'
@@ -94,6 +95,11 @@ const LessonsRoute = LessonsRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpAccessRoute = McpAccessRouteImport.update({
+  id: '/mcp-access',
+  path: '/mcp-access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -240,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/in-person': typeof InPersonRoute
   '/lessons': typeof LessonsRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp-access': typeof McpAccessRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
   '/problems': typeof ProblemsRouteWithChildren
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/courses': typeof CoursesRoute
   '/in-person': typeof InPersonRoute
   '/login': typeof LoginRoute
+  '/mcp-access': typeof McpAccessRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
   '/reactions': typeof ReactionsRoute
@@ -312,6 +320,7 @@ export interface FileRoutesById {
   '/in-person': typeof InPersonRoute
   '/lessons': typeof LessonsRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp-access': typeof McpAccessRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
   '/problems': typeof ProblemsRouteWithChildren
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/in-person'
     | '/lessons'
     | '/login'
+    | '/mcp-access'
     | '/news'
     | '/oral'
     | '/problems'
@@ -389,6 +399,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/in-person'
     | '/login'
+    | '/mcp-access'
     | '/news'
     | '/oral'
     | '/reactions'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/in-person'
     | '/lessons'
     | '/login'
+    | '/mcp-access'
     | '/news'
     | '/oral'
     | '/problems'
@@ -462,6 +474,7 @@ export interface RootRouteChildren {
   InPersonRoute: typeof InPersonRoute
   LessonsRoute: typeof LessonsRouteWithChildren
   LoginRoute: typeof LoginRoute
+  McpAccessRoute: typeof McpAccessRoute
   NewsRoute: typeof NewsRoute
   OralRoute: typeof OralRoute
   ProblemsRoute: typeof ProblemsRouteWithChildren
@@ -545,6 +558,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp-access': {
+      id: '/mcp-access'
+      path: '/mcp-access'
+      fullPath: '/mcp-access'
+      preLoaderRoute: typeof McpAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -820,6 +840,7 @@ const rootRouteChildren: RootRouteChildren = {
   InPersonRoute: InPersonRoute,
   LessonsRoute: LessonsRouteWithChildren,
   LoginRoute: LoginRoute,
+  McpAccessRoute: McpAccessRoute,
   NewsRoute: NewsRoute,
   OralRoute: OralRoute,
   ProblemsRoute: ProblemsRouteWithChildren,

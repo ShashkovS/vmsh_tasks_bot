@@ -829,6 +829,10 @@ msgstr "Changing the attendance format is unavailable for this course"
 msgid "Изменять оформление может только администратор"
 msgstr "Only an administrator can change branding"
 
+#: apps/pwa_api/ai_review_routes.py
+msgid "Изображение недоступно"
+msgstr "The image is unavailable"
+
 #: apps/pwa_api/problem_import_routes.py
 msgid "Импорт задач временно недоступен"
 msgstr "Problem import is temporarily unavailable"
@@ -1066,6 +1070,10 @@ msgstr "Materials are temporarily unavailable"
 msgid "Материалы занятий временно недоступны"
 msgstr "Class materials are temporarily unavailable"
 
+#: apps/pwa_api/ai_review_routes.py
+msgid "Материалы работы изменились"
+msgstr "The submitted work has changed"
+
 #: apps/pwa_api/content_routes.py
 msgid "Метаданные задач редактируются для файла условий"
 msgstr "Edit problem metadata for the statement file"
@@ -1163,6 +1171,10 @@ msgstr "Could not save the photo safely"
 #: apps/pwa_api/middleware.py
 msgid "Не удалось войти. Проверьте логин и данные для входа."
 msgstr "Could not sign in. Check your login and credentials."
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Не удалось выполнить запрос AI-помощника"
+msgstr "Could not complete the AI assistant request"
 
 #: apps/pwa_api/lesson_block_routes.py
 msgid "Не удалось обработать блок занятия"
@@ -1366,6 +1378,10 @@ msgstr "Insufficient permissions to manage notifications"
 msgid "Недостаточно прав для этого действия"
 msgstr "You do not have permission for this action"
 
+#: apps/pwa_api/ai_review_routes.py
+msgid "Недостаточно прав для этой работы"
+msgstr "You do not have access to this work"
+
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Неизвестное поле расписания"
 msgstr "Unknown schedule field"
@@ -1381,6 +1397,10 @@ msgstr "Unknown material type"
 #: apps/pwa_api/content_routes.py
 msgid "Неизвестный вид рисунка"
 msgstr "Unknown figure type"
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Неизвестный инструмент"
+msgstr "Unknown tool"
 
 #: apps/pwa_api/product_analytics_routes.py
 msgid "Неизвестный параметр аналитики"
@@ -1540,6 +1560,14 @@ msgstr "The class number must be a nonnegative integer."
 #: apps/pwa_api/legacy_print_routes.py
 msgid "Номер занятия не совпадает с выбранным событием"
 msgstr "The class number does not match the selected event"
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Нужен JSON"
+msgstr "JSON is required"
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Нужен JSON-объект"
+msgstr "A JSON object is required"
 
 #: apps/pwa_api/live_marking_routes.py
 msgid "Нужен актуальный подтверждённый план аудиторий"
@@ -1899,6 +1927,10 @@ msgstr "The submission or its lock has changed. Refresh the preview before movin
 msgid "Превышена максимальная глубина вложенности фигурных скобок."
 msgstr "The maximum brace nesting depth was exceeded."
 
+#: apps/pwa_api/ai_review_routes.py
+msgid "Предложения ИИ временно недоступны"
+msgstr "AI suggestions are temporarily unavailable"
+
 #: apps/pwa_api/admin_enrollment_routes.py
 msgid "Преподаватель может менять только активную группу в своём доступе"
 msgstr "A teacher can change only the active group they have access to"
@@ -2062,6 +2094,10 @@ msgstr "Check the review-completion data"
 msgid "Проверьте данные занятия"
 msgstr "Check the class data"
 
+#: apps/pwa_api/ai_review_routes.py
+msgid "Проверьте данные запроса"
+msgstr "Check the request data"
+
 #: apps/pwa_api/live_marking_routes.py
 msgid "Проверьте данные изменения"
 msgstr "Check the change details"
@@ -2207,6 +2243,10 @@ msgstr "Check the log parameters"
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Проверьте параметры запроса"
 msgstr "Check the request parameters"
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Проверьте параметры инструмента"
+msgstr "Check the tool parameters"
 
 #: apps/pwa_api/news_routes.py
 msgid "Проверьте параметры ленты новостей"
@@ -2545,6 +2585,10 @@ msgstr "The queued work was not found"
 #: apps/pwa_api/review_routes.py
 msgid "Работа изменилась. Обновите её перед проверкой."
 msgstr "The work has changed. Refresh it before reviewing."
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Работа или материал недоступны"
+msgstr "The work or material is unavailable"
 
 #: apps/pwa_api/review_routes.py
 msgid "Работа находится вне доступных групп"
@@ -3021,6 +3065,10 @@ msgstr "Specify a revision for metadata generation"
 msgid "Укажите revision для таблицы метаданных"
 msgstr "Specify a revision for the metadata table"
 
+#: apps/pwa_api/ai_review_routes.py
+msgid "Укажите имя токена"
+msgstr "Enter a token name"
+
 #: apps/pwa_api/news_moderation_routes.py
 msgid "Укажите краткую причину"
 msgstr "Provide a brief reason"
@@ -3040,6 +3088,10 @@ msgstr "Specify exactly one revision for the metadata table"
 #: apps/pwa_api/problem_synonym_routes.py
 msgid "Укажите причину разделения"
 msgstr "Enter a reason for separation"
+
+#: apps/pwa_api/ai_review_routes.py
+msgid "Укажите работу"
+msgstr "Specify the work"
 
 #: apps/pwa_api/content_routes.py
 msgid "Укажите рисунок для изменения размера"

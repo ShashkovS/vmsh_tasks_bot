@@ -68,6 +68,7 @@ import {
 } from './review-draft'
 import { describeReviewError } from './review-errors'
 import { rememberCompletedReview } from './last-completed-review'
+import { AiReviewPanel } from './ai-review-panel'
 
 const verdictToWire = {
   rejected: 11,
@@ -407,17 +408,28 @@ export function LoadedReviewWorkspace({
             </PageSection>
           }
           feedback={
-            <ReviewFeedbackForm
-              disabled={inactive || complete.isPending || leaseLost || transferBusy}
-              initialDraft={{
-                verdictValue: draft.verdictValue,
-                comment: draft.comment,
-                reactionId: draft.reactionId,
-              }}
-              onDraftChange={updateDraft}
-              onSubmit={(result) => void submit(result)}
-              verdicts={verdictsByMode[currentLease.verdictMode ?? 'verdict_plus_steps']}
-            />
+            <div className="space-y-3">
+              <AiReviewPanel
+                workspace={currentLease}
+                queueId={queueId}
+                draft={draft}
+                onDraftChange={updateDraft}
+                active={!inactive}
+                disabled={inactive || complete.isPending || leaseLost || transferBusy}
+              />
+              <ReviewFeedbackForm
+                disabled={inactive || complete.isPending || leaseLost || transferBusy}
+                initialDraft={{
+                  verdictValue: draft.verdictValue,
+                  comment: draft.comment,
+                  reactionId: draft.reactionId,
+                }}
+                draft={draft}
+                onDraftChange={updateDraft}
+                onSubmit={(result) => void submit(result)}
+                verdicts={verdictsByMode[currentLease.verdictMode ?? 'verdict_plus_steps']}
+              />
+            </div>
           }
           queue={<BranchSummary lease={currentLease} />}
         />

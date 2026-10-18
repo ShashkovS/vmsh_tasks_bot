@@ -37,7 +37,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+mcp = ["mcp>=2,<3"]
 dev = [
+    { include-group = "mcp" },
     "aiohttp-cors>=0.8.1",
     "aiohttp-devtools>=1.1.2",
     "aresponses>=3.0.0",

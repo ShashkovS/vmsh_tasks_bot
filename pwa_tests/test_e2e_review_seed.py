@@ -66,4 +66,7 @@ def test_review_seed_target_guard_is_exact():
         "sheet-chromium",
         "sheet-webkit",
         "sheet-firefox",
+        "ai-chromium",
+        "ai-webkit",
+        "ai-firefox",
     }

@@ -557,6 +557,11 @@ msgstr "LaTeX files"
 msgid "Markdown публикации"
 msgstr "Publication Markdown"
 
+#: apps/staff/src/mcp-access-page.tsx
+#: apps/staff/src/routes/__root.tsx
+msgid "MCP-доступ"
+msgstr "MCP access"
+
 #: apps/staff/src/content-page.tsx
 msgid "PDF для этой версии пока не сохранён."
 msgstr "No PDF has been saved for this version yet."
@@ -1430,6 +1435,10 @@ msgstr "Selected: {0}. The selection is kept on this device until accounts are c
 msgid "Выбрать {0} для {1}"
 msgstr "Choose {0} for {1}"
 
+#: apps/staff/src/ai-review-suggestions-view.tsx
+msgid "Выбрать вердикт"
+msgstr "Use verdict"
+
 #. placeholder {0}: matches.length
 #: apps/staff/src/student-account-batch-panel.tsx
 msgid "Выбрать найденных · {0}"
@@ -1633,6 +1642,10 @@ msgstr "Figure actions"
 msgid "Действия с рисунком: {0}"
 msgstr "Figure actions: {0}"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Действует до"
+msgstr "Expires on"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "День недели"
 msgstr "Day of the week"
@@ -1718,6 +1731,10 @@ msgstr "Add another window"
 #: apps/staff/src/review-workspace-page.tsx
 msgid "Добавить или изменить пометки"
 msgstr "Add or edit annotations"
+
+#: apps/staff/src/ai-review-suggestions-view.tsx
+msgid "Добавить комментарий"
+msgstr "Append comment"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Добавить окно"
@@ -1837,6 +1854,10 @@ msgstr "50 more events ({0} of {1})"
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Ещё не рассчитано"
 msgstr "Not calculated yet"
+
+#: apps/staff/src/ai-review-panel.tsx
+msgid "Ещё предложения"
+msgstr "More suggestions"
 
 #: apps/staff/src/staff-support-pages.tsx
 msgid "Ждём школьника"
@@ -1961,6 +1982,10 @@ msgstr "Loading switches…"
 #: apps/staff/src/review-sheet-card.tsx
 msgid "Загружаем переписку…"
 msgstr "Loading the conversation…"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Загружаем подключения…"
+msgstr "Loading connections…"
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Загружаем посылки…"
@@ -3065,6 +3090,10 @@ msgstr "Title not saved"
 msgid "Название общее для этого номера занятия во всех группах курса."
 msgstr "The title is shared by this class number across all groups in the course."
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Название подключения"
+msgstr "Connection name"
+
 #: apps/staff/src/content-page.tsx
 msgid "Название сохранено"
 msgstr "Title saved"
@@ -3426,6 +3455,10 @@ msgstr "Could not upload the file."
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Не удалось изменить блок занятия"
 msgstr "Could not update class block"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Не удалось обновить MCP-доступ."
+msgstr "Could not update MCP access."
 
 #: apps/staff/src/staff-support-pages.tsx
 msgid "Не удалось обновить переписку. Набранный ответ не удалён."
@@ -3795,6 +3828,10 @@ msgstr "New season"
 #: apps/staff/src/staff-access-page.tsx
 msgid "Новый сотрудник"
 msgstr "New staff member"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Новый токен"
+msgstr "New token"
 
 #: apps/staff/src/pages.tsx
 msgid "Новый файл"
@@ -4410,6 +4447,14 @@ msgstr "Cancel schedule"
 msgid "Отношение"
 msgstr "Ratio"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Отозван"
+msgstr "Revoked"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Отозвать"
+msgstr "Revoke"
+
 #: apps/staff/src/family-digest-panel.tsx
 msgid "Отправить"
 msgstr "Send"
@@ -4862,11 +4907,13 @@ msgstr "Centered before text"
 msgid "По центру после текста"
 msgstr "Centered after text"
 
+#: apps/staff/src/ai-review-panel.tsx
 #: apps/staff/src/branding-page.tsx
 #: apps/staff/src/bulk-content-upload.tsx
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/family-digest-panel.tsx
 #: apps/staff/src/live-marking-condition.tsx
+#: apps/staff/src/mcp-access-page.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/problem-import-page.tsx
@@ -5298,6 +5345,22 @@ msgstr "Preview"
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Предварительный просмотр смен"
 msgstr "Shift preview"
+
+#: apps/staff/src/ai-review-suggestions-view.tsx
+msgid "Предложение устарело или материалы требуют обновления."
+msgstr "This suggestion is outdated or the work needs refreshing."
+
+#: apps/staff/src/ai-review-suggestions-view.tsx
+msgid "Предложения ИИ"
+msgstr "AI suggestions"
+
+#: apps/staff/src/ai-review-panel.tsx
+msgid "Предложения ИИ временно недоступны."
+msgstr "AI suggestions are temporarily unavailable."
+
+#: apps/staff/src/ai-review-suggestions-view.tsx
+msgid "Предложенный вердикт:"
+msgstr "Suggested verdict:"
 
 #. placeholder {0}: usernameSuggestion.username
 #: apps/staff/src/student-account-creator.tsx
@@ -5862,6 +5925,10 @@ msgstr "Zoom days"
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Разбираем…"
 msgstr "Parsing…"
+
+#: apps/staff/src/ai-review-suggestions-view.tsx
+msgid "Разбор для преподавателя"
+msgstr "Analysis for the teacher"
 
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Раздел"
@@ -6451,6 +6518,10 @@ msgstr "Hide password"
 msgid "Скрыть рисунок"
 msgstr "Hide figure"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Скрыть секрет"
+msgstr "Hide secret"
+
 #: apps/staff/src/review-series-page.tsx
 msgid "Следующая работа подготовлена"
 msgstr "The next work item is ready"
@@ -6780,6 +6851,10 @@ msgstr "Create season"
 msgid "Создать сотрудника"
 msgstr "Create staff member"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Создать токен"
+msgstr "Create token"
+
 #: apps/staff/src/student-results-history.tsx
 msgid "Сообщение"
 msgstr "Message"
@@ -6875,6 +6950,10 @@ msgstr "There are no saved events."
 msgid "Сохранено"
 msgstr "Saved"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Сохраните этот секрет в настройках MCP-клиента."
+msgstr "Save this secret in your MCP client settings."
+
 #: apps/staff/src/course-catalog-editors.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Сохранить"
@@ -6961,6 +7040,10 @@ msgstr "Average number solved"
 #: apps/staff/src/review-errors.ts
 msgid "Срок блокировки работы истёк. Откройте работу заново и повторите проверку."
 msgstr "The work lock expired. Reopen the work item and repeat the review."
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Срок действия — 90 дней. Сохраните секрет при создании: повторно он не показывается."
+msgstr "Tokens expire after 90 days. Save the secret when you create it: it will not be shown again."
 
 #: apps/staff/src/lesson-video-dialog.tsx
 msgid "Ссылка YouTube/VK или iframe"
@@ -7194,6 +7277,10 @@ msgstr "Problem type"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Тип ответа"
 msgstr "Answer type"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Токен открывает учебные материалы ваших кружков и групп, включая неопубликованные решения и изображения из диалогов. Через него можно загружать приватные предложения ИИ для учителя."
+msgstr "This token grants access to learning materials in your courses and groups, including unpublished solutions and images in conversations. It can upload private AI suggestions for teachers."
 
 #: apps/staff/src/product-analytics-page.tsx
 msgid "Только для глобального администратора"

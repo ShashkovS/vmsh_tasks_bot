@@ -338,6 +338,11 @@ Legacy backfill определяет `actor_kind` по `reaction_type_id`, а ac
 
 `id`, `thread_id`, `evidence_through_entry_id`, `model_provider`, `model_name`, `prompt_version`, `input_hash`, `status`, `output_text`, `output_svg`, `diagnostics_json`, `created_at`, `completed_at`. Не создавать до отдельного AI privacy/security решения.
 
+18 октября 2026: ручной MCP-помощник использует отдельные `ai_review_tokens`,
+`ai_review_suggestions` и `ai_review_events` из [миграции 0120](../../../migrations/0120.ai_review_assistant.py).
+Это не provider runs: [контракт и реализация](../../docs/ai-review-assistant.md)
+описывают внешнюю генерацию и приватные version-bound предложения учителю.
+
 ## 5. Вопросы, устные занятия и аудитории
 
 ### `support_threads` и `support_entries`

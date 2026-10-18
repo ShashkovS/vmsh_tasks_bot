@@ -89,9 +89,30 @@ overlay; renderer сохраняет alignment при любом локальн�
 - Вопрос не назначается одному teacher и живёт как общая диалоговая лента teachers + одного student; Telegram adapter остаётся совместимым, cross-channel continuation желательно, но не блокирует v1.
 - Privacy/public discussion scope is frozen before UI implementation.
 
-## AI placeholder
+## AI-помощник через MCP
 
-Только visual/contracts: «ИИ, не преподаватель», text + optional sanitized SVG, useful/rubbish reaction, copy suggestion. Реальный provider, automatic verdict и production AI call не входят в этап.
+18 октября 2026: вместо visual-only placeholder реализован приватный помощник
+с предложением комментария и вердикта; [контракт](../../docs/ai-review-assistant.md).
+Внешний клиент выполняет генерацию; backend не вызывает LLM и не публикует AI-результат.
+[Release gate](../../../pwa_tests/reports/ai-review-assistant-20261018/README.md): 3022 Python,
+1125 frontend, 384 Storybook и 117 E2E в трёх браузерах PASS; production не обновлялся.
+
+Дополнение: исторические комментарии по занятию/задаче и пакетные посылки
+pending/reviewed/all — [контракт и ограничения](../../docs/ai-review-assistant.md#массовая-выгрузка-для-калибровки),
+[домен](../../../models/pwa/ai_review_exports.py),
+[проверки](../../../pwa_tests/integration/test_ai_review_exports_http.py).
+Fast gate нового инкремента PASS: 3028 Python / 12 SKIP, 1125 frontend,
+384 Storybook и 8 Chromium E2E.
+[Квитанция](../../../pwa_tests/reports/ai-review-assistant-20261018/bulk-exports-fast-gate.json).
+
+18 октября: реализован пакет предыдущих занятий выбранного уровня, чтобы модель
+видела пройденные условия, подсказки и решения. [Контракт](../../docs/ai-review-assistant.md#предыдущие-занятия-того-же-уровня),
+[домен](../../../models/pwa/ai_review_curriculum.py),
+[проверки](../../../pwa_tests/integration/test_ai_review_curriculum_http.py).
+11 новых HTTP/SQLite-сценариев и настоящий stdio MCP с изображением PASS.
+Fast gate `review content`: 3039 Python / 12 SKIP, 1125 frontend, 384 Storybook,
+7 Chromium E2E PASS; source unchanged.
+[Квитанция](../../../pwa_tests/reports/ai-review-assistant-20261018/curriculum-fast-gate.json).
 
 ## Idea-only reference из другого проекта
 

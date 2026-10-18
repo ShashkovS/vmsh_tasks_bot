@@ -104,7 +104,7 @@ Questions/SOS получают отдельный от verdict queue product sur
 
 Компоненты проектируются на policy registry с режимами `off`, `student-visible negative check`, `teacher-only advisory`, `full AI reviewer`. Обязательные состояния: pending после submission, result absent/late, advisory text, student-visible AI comment, AI verdict, failure и escalation to human.
 
-Teacher advisory — отдельная сворачиваемая панель, видимая сразу, если результат уже готов. Она не применяет verdict и не блокирует проверку; доступны «полезно/туфта» и явное действие скопировать текст в teacher comment. Full AI reviewer визуально остаётся особым AI author. Student/Family видят только разрешённый policy output; human final verdict не маркируется как «с участием AI», поскольку за него отвечает teacher.
+Teacher advisory — отдельная сворачиваемая панель, видимая сразу, если результат уже готов. По [решению от 18 октября 2026](../../docs/ai-review-assistant.md) MCP-панель предлагает комментарий и вердикт; учитель применяет их независимо, без автоматического выбора или отправки. Текст дописывается в конец своего комментария, разбор остаётся приватным; реакции «полезно/туфта» отложены. Full AI reviewer визуально остаётся особым AI author. Student/Family видят только разрешённый policy output; human final verdict не маркируется как «с участием AI», поскольку за него отвечает teacher.
 
 AI comment допускает будущий безопасный math/SVG fragment, но story использует только санитизированный fixture. Дизайн не определяет prompts, leak prevention или LLM integration.
 

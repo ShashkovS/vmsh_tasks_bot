@@ -11,6 +11,115 @@ import { expect, test, type Locator } from './fixtures'
 
 test.describe.configure({ retries: 0 })
 
+// ai-review-assistant.md: a real token API feeds all Staff surfaces; no MSW/LLM.
+test('AI proposals: independent text and verdict in single, series and sheet review', async ({
+  page,
+}, info) => {
+  test.setTimeout(120_000)
+  const ids: Record<string, number> = { chromium: 9981, webkit: 9982, firefox: 9983 }
+  const id = ids[info.project.name]
+  if (!id) throw new Error('Unknown browser project')
+  await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/mcp-access')
+  await page
+    .getByRole('textbox', { name: 'Название подключения' })
+    .fill(`AI test ${info.project.name}`)
+  const created = page.waitForResponse(
+    (r) => r.request().method() === 'POST' && r.url().endsWith('/ai-review/tokens'),
+  )
+  await page.getByRole('button', { name: 'Создать токен' }).click()
+  const receipt = (await (await created).json()) as { secret: string; tokenId: string }
+  await expect(page.getByText(receipt.secret, { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Скрыть секрет' }).click()
+  const origin = new URL(page.url()).origin
+  const call = async (tool: string, data: unknown) => {
+    const response = await page.request.post(`/staff/api/ai-review/v1/tools/${tool}`, {
+      headers: { Authorization: `Bearer ${receipt.secret}`, Origin: origin },
+      data,
+    })
+    expect(response.ok(), await response.text()).toBeTruthy()
+    const result: unknown = await response.json()
+    return result
+  }
+  const cases = (await call('list_pending_reviews', { lessonId: `gl-${id}` })) as {
+    items: { caseId: string }[]
+  }
+  const caseId = cases.items[0]!.caseId
+  const context = (await call('get_review_context', { caseId })) as { snapshot: string }
+  await call('submit_ai_suggestion', {
+    caseId,
+    snapshot: context.snapshot,
+    idempotencyKey: 'browser-a',
+    source: 'Model A',
+    comment: 'AI предлагает пояснить переход.',
+    verdict: 14,
+    analysis: 'PRIVATE AI reasoning',
+  })
+  await call('submit_ai_suggestion', {
+    caseId,
+    snapshot: context.snapshot,
+    idempotencyKey: 'browser-b',
+    source: 'Model B',
+    verdict: 17,
+  })
+  for (const path of [
+    `/staff/review/wq-${id}`,
+    `/staff/review/series/p-${id}`,
+    `/staff/review/sheet?lesson=gl-${id}&mode=pending`,
+  ]) {
+    await page.goto(path)
+    const panel = page
+      .locator('details')
+      .filter({ has: page.locator('summary', { hasText: /^Предложения ИИ$/ }) })
+      .first()
+    await expect(panel).toBeVisible()
+    const comment = page
+      .getByRole('textbox', { name: 'Комментарий', exact: true })
+      .and(page.locator(':enabled'))
+      .first()
+    await comment.fill('Комментарий учителя')
+    await panel.getByRole('button', { name: 'Добавить комментарий' }).click()
+    await expect(comment).toHaveValue('Комментарий учителя\n\nAI предлагает пояснить переход.')
+    const variant = panel.getByRole('article').filter({ hasText: 'Model B' })
+    await variant.getByRole('button', { name: 'Выбрать вердикт' }).click()
+    await expect(comment).toHaveValue('Комментарий учителя\n\nAI предлагает пояснить переход.')
+    await page.reload()
+    await expect(comment).toHaveValue('Комментарий учителя\n\nAI предлагает пояснить переход.')
+    await expect(
+      page
+        .getByRole('button', { name: 'Отправить вердикт', exact: true })
+        .and(page.locator(':enabled'))
+        .first(),
+    ).toBeEnabled()
+  }
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(
+        (dark) => document.documentElement.classList.toggle('dark', dark),
+        theme === 'dark',
+      )
+      await page
+        .locator('details')
+        .filter({ has: page.locator('summary', { hasText: /^Предложения ИИ$/ }) })
+        .first()
+        .screenshot({
+          animations: 'disabled',
+          path: info.outputPath(`ai-panel-${width}-${theme}.png`),
+        })
+    }
+  }
+  const conversation = await page.request.get(`/staff/api/v1/review/sheet/${caseId}/conversation`)
+  expect(await conversation.text()).not.toContain('PRIVATE AI reasoning')
+  await page.request.delete(`/staff/api/v1/ai-review/tokens/${receipt.tokenId}`, {
+    headers: { Origin: origin },
+  })
+  const revoked = await page.request.post('/staff/api/ai-review/v1/tools/list_courses', {
+    headers: { Origin: origin, Authorization: `Bearer ${receipt.secret}` },
+    data: {},
+  })
+  expect(revoked.status()).toBe(401)
+})
+
 // docs/review-sheet.md: two independent sessions, scoped drafts, source CAS and
 // latest-result projections. Dedicated fixtures never share a review with series.
 test('Sheet review: independent cards, foreign verdict conflict and explicit resend', async ({

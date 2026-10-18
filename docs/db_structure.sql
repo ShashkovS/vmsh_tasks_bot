@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: f0d262305c954586463d44cde2bf640971ec62fe819b21687de9144d26391e64
+-- Product schema SHA-256: 92f741b16f168d954d003a4a80f04072df1b26f8df6ca5786d1de9b20283a813
 
 CREATE TABLE achievement_definitions
 (
@@ -13,6 +13,46 @@ CREATE TABLE achievement_definitions
     created_at   text    not null,
     updated_at   text    not null
 );
+
+CREATE TABLE ai_review_events (
+        id INTEGER PRIMARY KEY,
+        account_id INTEGER NOT NULL REFERENCES auth_accounts(id),
+        token_id INTEGER REFERENCES ai_review_tokens(id),
+        event TEXT NOT NULL CHECK(event IN ('token_created','token_revoked','suggestion_uploaded')),
+        subject_id TEXT NOT NULL,
+        created_at TEXT NOT NULL
+        );
+
+CREATE TABLE ai_review_suggestions (
+        id INTEGER PRIMARY KEY,
+        public_id TEXT NOT NULL UNIQUE,
+        token_id INTEGER NOT NULL REFERENCES ai_review_tokens(id),
+        case_thread_id INTEGER NOT NULL REFERENCES submission_threads(id),
+        case_id TEXT NOT NULL CHECK(case_id='st-'||case_thread_id),
+        snapshot TEXT NOT NULL CHECK(length(snapshot)=64),
+        idempotency_key TEXT NOT NULL CHECK(length(idempotency_key) BETWEEN 1 AND 128),
+        payload_hash TEXT NOT NULL CHECK(length(payload_hash)=64),
+        comment TEXT CHECK(comment IS NULL OR length(comment)<=100000),
+        verdict INTEGER REFERENCES verdicts(id),
+        analysis TEXT CHECK(analysis IS NULL OR length(analysis)<=100000),
+        source TEXT NOT NULL CHECK(length(trim(source)) BETWEEN 1 AND 200),
+        model TEXT CHECK(model IS NULL OR length(model)<=200),
+        created_at TEXT NOT NULL,
+        UNIQUE(token_id,idempotency_key),
+        CHECK(comment IS NOT NULL OR verdict IS NOT NULL OR analysis IS NOT NULL)
+        );
+
+CREATE TABLE ai_review_tokens (
+        id INTEGER PRIMARY KEY,
+        public_id TEXT NOT NULL UNIQUE,
+        account_id INTEGER NOT NULL REFERENCES auth_accounts(id),
+        credential_version INTEGER NOT NULL,
+        name TEXT NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 100),
+        secret_hash TEXT NOT NULL UNIQUE CHECK(length(secret_hash)=64),
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL CHECK(expires_at>created_at),
+        revoked_at TEXT
+        );
 
 CREATE TABLE analytics_runs
 (
@@ -3031,6 +3071,8 @@ CREATE TABLE zoom_webhook_receipts (
     request_timestamp TEXT NOT NULL,
     raw_body BLOB NOT NULL
 );
+
+CREATE INDEX ai_review_suggestions_case_idx ON ai_review_suggestions(case_id,id DESC);
 
 CREATE INDEX analytics_runs_course_latest_idx
     on analytics_runs (course_id, state, completed_at desc, id desc);

@@ -6,6 +6,27 @@ import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
 
 afterEach(cleanup)
 describe('review keyboard submission', () => {
+  it('does not reuse confirmation after an external draft change', () => {
+    const submit = vi.fn()
+    const { rerender } = render(
+      <ReviewFeedbackForm
+        verdicts={ternaryVerdictScale}
+        onSubmit={submit}
+        draft={{ verdictValue: 'rejected', comment: '', reactionId: null }}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+    expect(submit).not.toHaveBeenCalled()
+    rerender(
+      <ReviewFeedbackForm
+        verdicts={ternaryVerdictScale}
+        onSubmit={submit}
+        draft={{ verdictValue: 'half', comment: '', reactionId: null }}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+    expect(submit).not.toHaveBeenCalled()
+  })
   it('keeps mouse controls enabled on another sheet form while disabling its global hotkeys', () => {
     const active = vi.fn(),
       other = vi.fn()

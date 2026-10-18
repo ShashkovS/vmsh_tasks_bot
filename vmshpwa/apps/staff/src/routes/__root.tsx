@@ -17,6 +17,7 @@ import {
   ScrollText,
   Users,
   Palette,
+  KeyRound,
 } from 'lucide-react'
 import { useCallback, useState, type ReactNode } from 'react'
 
@@ -186,6 +187,14 @@ const navigation: StaffNavigationItem[] = [
     to: '/audit',
     icon: <ScrollText className="size-4" aria-hidden="true" />,
     capability: 'audit.read',
+  },
+  {
+    get label() {
+      return t`MCP-доступ`
+    },
+    to: '/mcp-access',
+    icon: <KeyRound className="size-4" aria-hidden="true" />,
+    capability: 'review.write',
   },
 ]
 
