@@ -30,7 +30,7 @@ content, realtime, live-marking, statistics, review and submissions once complet
 Record measurements and release state here and in STATUS; never call deployment
 smoke a peak-load performance comparison.
 
-Status: implementation started; no production changes in this increment yet.
+Status: implementation and release gate passed; not deployed yet.
 
 
 ## Implemented components
@@ -56,8 +56,13 @@ CANTOPEN is not reproduced; retry fixes the permanent disabled state after a
 transient failure. Deployment must verify `vmsh_product_analytics_ready` for all
 workers and written events rather than counting successful HTTP204 as persistence.
 
-Verification in progress: full release gate and private host-copy SQL parity/
-benchmarks. The current code has not been deployed in this increment.
+Release gate passed on the implementation in local commit 6e952f6f: 3114 Python
+(6 skipped), 1142 frontend, 384 Storybook, 159 E2E (18 skipped), Chromium, Firefox
+and WebKit; format/types/lint/i18n/build all passed, source_changed=false.
+Gate source digest: adef9731bf5eb883b80d859f668facb9998d5a9a8e4c97f017158b46b7382cda.
+Implementation tree: 672b0f62e061c1ea4af52cc4326fb4dd00eacd7b (later evidence-only
+documentation does not change tested code). Migration 0123 focused checks: 32 passed.
+The current code has not been deployed in this increment.
 
 
 ## Measured index decision

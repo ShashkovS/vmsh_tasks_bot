@@ -1,11 +1,19 @@
 # Анализ производительности
 
-## 2026-10-19 — Исправление очереди чтений начато
+## 2026-10-19 — Исправление очереди чтений проверено
 
 [Контракт](peak-read-admission-20261019.md): scoped personal SQL, bounded personal
 cache, auth snapshot вместо последовательного fan-out, analytics startup/readiness.
 База — deployed e4b3953d; отдельный checkout сохраняет посторонние изменения.
-Production ещё не менялся; gate и замеры ожидаются.
+Миграция 0123 добавляет измеренный partial result_id index. Server-local up/down/up
+на ВМШ/TLF сохраняет все business hashes; ответы scoped SQL совпали. ВМШ progress
+182–225 → 2,9–5,9 мс и personal work 18,5–53 → 2,7–4,9 мс (медианы на копии).
+Release gate PASS: 3114 Python / 6 SKIP, 1142 frontend, 384 Storybook,
+159 E2E / 18 SKIP, три браузера; format/types/lint/i18n/build PASS,
+source_changed=false. Реализация 6e952f6f, backend + index, без frontend-изменений.
+Production ещё не менялся; публикация и выпуск ожидаются. Исторический CANTOPEN
+аналитики не воспроизведён; доступ сейчас исправен, добавлены retry/readiness.
+Production p95/p99 после исправления ещё не измерены.
 
 ## 2026-10-13 — Адресные обновления и scoped SQL
 
