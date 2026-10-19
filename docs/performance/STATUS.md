@@ -11,7 +11,11 @@ cache, auth snapshot вместо последовательного fan-out, an
 Release gate PASS: 3114 Python / 6 SKIP, 1142 frontend, 384 Storybook,
 159 E2E / 18 SKIP, три браузера; format/types/lint/i18n/build PASS,
 source_changed=false. Реализация 6e952f6f, backend + index, без frontend-изменений.
-Production ещё не менялся; публикация и выпуск ожидаются. Исторический CANTOPEN
+Выпущен 3ddb0a8e на оба production (TLF 18:21:36 UTC, ВМШ 18:24:13 UTC).
+Backup до/после и schema/quick_check PASS; по 25 HTTP checks, 4 HTML / 216 assets,
+службы, NATS и maintenance-off PASS. Static сохранён, TG TLF выключен.
+Analytics ready у двух workers каждого хоста, startup failures 0; ВМШ первые
+6 natural events accepted=written. Исторический CANTOPEN
 аналитики не воспроизведён; доступ сейчас исправен, добавлены retry/readiness.
 Production p95/p99 после исправления ещё не измерены.
 

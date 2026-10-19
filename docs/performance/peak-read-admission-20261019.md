@@ -30,7 +30,7 @@ content, realtime, live-marking, statistics, review and submissions once complet
 Record measurements and release state here and in STATUS; never call deployment
 smoke a peak-load performance comparison.
 
-Status: implementation and release gate passed; not deployed yet.
+Status: released on VMSH and TLF from 3ddb0a8e; post-release checks passed.
 
 
 ## Implemented components
@@ -62,7 +62,7 @@ and WebKit; format/types/lint/i18n/build all passed, source_changed=false.
 Gate source digest: adef9731bf5eb883b80d859f668facb9998d5a9a8e4c97f017158b46b7382cda.
 Implementation tree: 672b0f62e061c1ea4af52cc4326fb4dd00eacd7b (later evidence-only
 documentation does not change tested code). Migration 0123 focused checks: 32 passed.
-The current code has not been deployed in this increment.
+The tested implementation is deployed on both production hosts from 3ddb0a8e.
 
 
 ## Measured index decision
@@ -104,3 +104,35 @@ then restoring the previous code and service state; never restore an old data
 snapshot over new user work. Keep maintenance on if rollback cannot be verified.
 Confirm HTTP/assets, 0123, services, NATS and analytics readiness for every worker
 after restart. Inspect accepted/written/error counters on natural traffic.
+
+## Production receipt
+
+19 October UTC: TLF finished at 18:21:36 and VMSH at 18:24:13. Both run
+`3ddb0a8e8d54184c1cacd032cfa77f3a7e2bbdd0` including implementation `6e952f6f`.
+Source was published using ordinary `git push`. No frontend or dependency build
+was needed. Migration 0123 and quick_check passed on both production databases.
+
+- Verified backups before/after each release. TLF's stopped-writer comparison
+  preserved all business tables and configuration, with NATS PID unchanged.
+- 25 read-only HTTP checks per origin; all four HTML files and 216 JS/CSS asset
+  hashes per host match the preserved production static releases. No public maps.
+- PWA and required companion services active, analytics timers active, maintenance
+  off. TLF's main Telegram process remains inactive. No NATS restart was needed.
+- `vmsh_product_analytics_ready=1` for both workers on each host; startup failures
+  zero. VMSH's first six natural telemetry events were accepted and written (6/6).
+  TLF had no new telemetry batch at the first readiness check; no test events were
+  injected. The original historical CANTOPEN cause remains unconfirmed.
+- The first VMSH metrics snapshot includes personal-cache fills/hits and zero
+  waiting main/auth/write operations at that instant. This is an availability and
+  instrumentation check, not a comparable-load p95/p99 or peak queue measurement.
+
+The bounded last-100 PWA journal check found no startup/SQLite-open/NATS errors
+on either host; the single traceback in TLF's sparse tail was an older
+ConnectionResetError at 01:00 UTC, before this release. This is not a complete
+post-release error census.
+
+Private release logs, SQL plans, alternating timing receipts, gate summary and
+source/schema/assets/metrics proofs are retained locally under
+`pwa_tests/reports/peak-read-fix-20261019/`; private diagnostics were excluded from
+the pushed commits. Follow up production tails under comparable natural peak
+load; do not compare a quiet post-deploy period with Monday's earlier peak.
