@@ -61,3 +61,8 @@
 - Add concise cross-references in non-trivial code to the authoritative requirement/decision docs; name the concrete document and related component/file instead of copying the requirement into a comment.
 - In documentation, link requirements and decisions back to the implementing files, components, routes, migrations, or tests.
 - Keep planning files and the relevant `STATUS.md` current as each material increment starts, changes scope, passes a gate, or leaves a known follow-up. Do not report progress only in chat.
+
+## Git Transport
+- Use ordinary local `git` commands, including `git push`, for repository operations.
+- Do not use GitHub CLI (`gh`), GitHub connectors, or direct GitHub APIs unless the user explicitly requests them.
+- If ordinary Git fails, diagnose that Git/SSH transport; do not switch to GitHub API publication as a workaround.
