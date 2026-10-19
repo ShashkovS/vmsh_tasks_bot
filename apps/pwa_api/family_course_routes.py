@@ -23,17 +23,11 @@ from apps.pwa_api.course_routes import (
     course_analytics_payload,
     course_enrollment_payload,
 )
+from apps.pwa_api.personal_reads import course_progress_rows, personal_read
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.content import ContentNotFound
 from db_methods.pwa.family import latest_published_lesson
-from db_methods.pwa.course_achievements import list_student_course_achievements
-from db_methods.pwa.course_analytics import latest_student_course_metrics
-from db_methods.pwa.progress import (
-    list_course_activity_rows,
-    list_course_pending_review_rows,
-    list_course_result_rows,
-)
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.content import ContentKind
@@ -274,46 +268,38 @@ async def get_family_child_home(request: web.Request) -> web.Response:
         if enrollment.student_public_id == student_public_id
     ]
 
-    def read(connection):
-        return [
+    course_reads = []
+    for enrollment in enrollments:
+        rows, pending, analytics, achievements, activity = await course_progress_rows(
+            request,
+            student_user_id=child.student_user_id,
+            student_public_id=student_public_id,
+            enrollment=enrollment,
+        )
+        lesson = await personal_read(
+            request,
             (
-                latest_published_lesson(
+                "latest",
+                student_public_id,
+                enrollment.course_public_id,
+                enrollment.active_group_public_id,
+            ),
+            lambda: _factory(request).run_read_async(
+                lambda connection: latest_published_lesson(
                     connection,
                     course_public_id=enrollment.course_public_id,
                     group_public_id=enrollment.active_group_public_id,
-                ),
-                summarize_course_results(
-                    list_course_result_rows(
-                        connection,
-                        student_user_id=child.student_user_id,
-                        course_id=enrollment.course_id,
-                    ),
-                    list_course_pending_review_rows(
-                        connection,
-                        student_user_id=child.student_user_id,
-                        course_id=enrollment.course_id,
-                    ),
-                    activity_rows=list_course_activity_rows(
-                        connection,
-                        student_user_id=child.student_user_id,
-                        course_id=enrollment.course_id,
-                    ),
-                ),
-                latest_student_course_metrics(
-                    connection,
-                    course_id=enrollment.course_id,
-                    student_user_id=child.student_user_id,
-                ),
-                list_student_course_achievements(
-                    connection,
-                    course_id=enrollment.course_id,
-                    student_user_id=child.student_user_id,
-                ),
+                )
+            ),
+        )
+        course_reads.append(
+            (
+                lesson,
+                summarize_course_results(rows, pending, activity_rows=activity),
+                analytics,
+                achievements,
             )
-            for enrollment in enrollments
-        ]
-
-    course_reads = await _factory(request).run_read_async(read)
+        )
     courses = []
     for enrollment, (lesson, progress, analytics_rows, achievement_rows) in zip(
         enrollments, course_reads, strict=True
@@ -401,11 +387,20 @@ async def get_family_worksheet(request: web.Request) -> web.Response:
     content = None
     if lesson.condition is not None:
         try:
-            problems = await repository.list_student_problems(
-                student_user_id=child.student_user_id,
-                course_public_id=enrollment.course_public_id,
-                group_public_id=group.group_public_id,
-                group_lesson_public_id=lesson.group_lesson_public_id,
+            problems = await personal_read(
+                request,
+                (
+                    "work",
+                    child.student_public_id,
+                    enrollment.course_public_id,
+                    lesson.group_lesson_public_id,
+                ),
+                lambda: repository.list_student_problems(
+                    student_user_id=child.student_user_id,
+                    course_public_id=enrollment.course_public_id,
+                    group_public_id=group.group_public_id,
+                    group_lesson_public_id=lesson.group_lesson_public_id,
+                ),
             )
             content = await repository.get_published_content(
                 group_lesson_public_id=lesson.group_lesson_public_id,

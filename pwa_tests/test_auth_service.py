@@ -89,6 +89,35 @@ def _current() -> CurrentAuthSession:
 
 
 def _service(repository) -> PwaAuthService:
+    async def context(current):
+        children = ()
+        pairs = []
+        scopes = ()
+        if current.session.audience is AuthAudience.STUDENT:
+            pairs = [
+                (current.linked_user_id, record)
+                for record in await repository.list_course_enrollments(
+                    student_user_id=current.linked_user_id
+                )
+            ]
+        elif current.session.audience is AuthAudience.FAMILY:
+            children = await repository.list_family_children(
+                family_account_id=current.session.account_id
+            )
+            for child in children:
+                pairs.extend(
+                    (child.student_user_id, record)
+                    for record in await repository.list_course_enrollments(
+                        student_user_id=child.student_user_id
+                    )
+                )
+        else:
+            scopes = await repository.list_staff_scopes(
+                staff_user_id=current.linked_user_id
+            )
+        return children, tuple(pairs), scopes
+
+    repository.load_principal_context = AsyncMock(side_effect=context)
     hasher = CredentialHasher(
         PasswordHasher(
             time_cost=1,

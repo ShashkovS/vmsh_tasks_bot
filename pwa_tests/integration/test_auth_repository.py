@@ -1803,3 +1803,73 @@ async def test_new_credential_transitions_reject_non_argon2id_values(
             replacement_credential_hash="sha256-is-not-enough",
             request_id="request-weak-credential",
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("audience", list(AuthAudience))
+async def test_principal_context_matches_individual_reads_in_one_auth_admission(
+    auth_fixture, audience, monkeypatch
+):
+    f = auth_fixture
+    session = await _create_student_session(f, suffix="context", refresh_hash="c" * 64)
+    account = await f.repository.find_account_for_login(
+        AuthAudience.STUDENT, "IVANOVA-07"
+    )
+    current = await f.repository.get_current_session(
+        audience=AuthAudience.STUDENT,
+        account_public_id=account.public_id,
+        session_public_id=session.public_id,
+        credential_version=session.credential_version,
+        session_version=session.version,
+    )
+    if audience is AuthAudience.FAMILY:
+        current = replace(
+            current,
+            session=replace(
+                current.session, audience=audience, account_id=f.family_account_id
+            ),
+        )
+        children = await f.repository.list_family_children(
+            family_account_id=f.family_account_id
+        )
+        pairs = []
+        for child in children:
+            records = await f.repository.list_course_enrollments(
+                student_user_id=child.student_user_id
+            )
+            pairs.extend((child.student_user_id, record) for record in records)
+        expected = children, tuple(pairs), ()
+    elif audience is AuthAudience.STAFF:
+        current = replace(
+            current,
+            linked_user_id=f.staff_user_id,
+            session=replace(
+                current.session, audience=audience, account_id=f.staff_account_id
+            ),
+        )
+        expected = (
+            (),
+            (),
+            await f.repository.list_staff_scopes(staff_user_id=f.staff_user_id),
+        )
+    else:
+        expected = (
+            (),
+            tuple(
+                (f.student_user_id, row)
+                for row in await f.repository.list_course_enrollments(
+                    student_user_id=f.student_user_id
+                )
+            ),
+            (),
+        )
+    calls = []
+    original = f.factory.run_auth_async
+
+    async def counted(operation):
+        calls.append(operation)
+        return await original(operation)
+
+    monkeypatch.setattr(f.factory, "run_auth_async", counted)
+    assert await f.repository.load_principal_context(current) == expected
+    assert len(calls) == 1

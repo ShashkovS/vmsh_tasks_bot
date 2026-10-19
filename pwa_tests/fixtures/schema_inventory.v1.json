@@ -93,6 +93,10 @@
       {
         "id": "0122.ai_review_assistant",
         "sha256": "99bc7520c61e3862e05ae1e7c941e29218cd8d643e6f5d831583744bf6364b82"
+      },
+      {
+        "id": "0123.personal_result_lookup",
+        "sha256": "52acc3c6ae1e08ae81f483c4a9cef728e9ce142f81b3f2cbe4b525af832a9725"
       }
     ],
     "repository_head_status": {
@@ -103,7 +107,7 @@
     }
   },
   "product": {
-    "object_count": 532,
+    "object_count": 533,
     "objects": [
       {
         "columns": [
@@ -14584,6 +14588,30 @@
           }
         ],
         "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "result_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "live_mark_cells_result_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
           {
             "columns": [
               {
@@ -32260,6 +32288,13 @@
         "type": "index"
       },
       {
+        "name": "live_mark_cells_result_idx",
+        "object_sha256": "98ca050ad30cc98c89eb8273d2050e0f7127a3372a8af0dafa24069981d8be8d",
+        "sql": "CREATE INDEX live_mark_cells_result_idx ON live_mark_cells(result_id) WHERE result_id IS NOT NULL;",
+        "table_name": "live_mark_cells",
+        "type": "index"
+      },
+      {
         "name": "live_mark_operations_active_context",
         "object_sha256": "b34d5c6696ee170e755a5f018fdae344341b86e2f172b7f2ac42b99014b12571",
         "sql": "CREATE INDEX live_mark_operations_active_context ON live_mark_operations(context_id) WHERE kind='mark' AND undone_at IS NULL;",
@@ -34241,8 +34276,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "c52a6f813d1dc8aa30d09ba9b93d37e466d115a4f3c9354d98799083d60cd863",
-    "sha256": "1a77772e7a8998bbdb719f5fd97e5104c612ddd423a114d5dd344b03d2221b9d"
+    "pragma_structure_sha256": "faa343f4c82ecc9c790ec7f72a0bed3291de57c515d66d7bfbef811be17b79f7",
+    "sha256": "7652e59be2c8abd4a62967299d48ca6ad0b532a76ecfaf91ff6b7190212ab5a2"
   },
   "source_kind": "repository-migration-head"
 }

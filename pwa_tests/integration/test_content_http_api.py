@@ -5607,8 +5607,13 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
 
 async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
     content_http: ContentHttpFixture,
+    monkeypatch,
 ):
     fixture = content_http
+    from apps.pwa_api.personal_reads import PWA_PERSONAL_READ_CACHE
+    personal = fixture.client.app[PWA_PERSONAL_READ_CACHE].cache
+    clock = [personal.clock()]
+    monkeypatch.setattr(personal, "clock", lambda: clock[0])
     revision_a, _ = await _upload_and_compile(
         fixture,
         group_lesson=fixture.group_lesson_a,
@@ -5826,6 +5831,9 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
     assert await cached_repository.list_student_problems(
         **problem_scope
     ) == await repository.list_student_problems(**problem_scope)
+    # Legacy SQL edits do not publish portal events; expire the five-second
+    # personal cache explicitly rather than sleeping in a test.
+    clock[0] += 5
     rechecked = await fixture.client.get(
         "/student/api/v1/courses/c-1/lessons/"
         f"{fixture.group_lesson_a}/problems",
@@ -5878,7 +5886,17 @@ async def test_worker_cache_avoids_sql_on_warm_me_content_and_lesson_reads(
     )
     assert response.status == 200, await response.text()
     await response.read()
-    assert len(reads) == 1  # Fresh personal work; common publication is in RAM.
+    assert reads == []  # Personal and shared projections are warm.
+    pwa_app.invalidate_worker_reads(fixture.client.app, 'pwa_invalidate', {
+        'resources': ['students/u-903101/work', f'group-lessons/{fixture.group_lesson_a}/work'],
+    })
+    response = await fixture.client.get(
+        f"/student/api/v1/courses/c-1/lessons/{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"), headers=_headers(),
+    )
+    assert response.status == 200, await response.text()
+    await response.read()
+    assert len(reads) == 1  # Only personal work reloads after a result event.
 
 
 async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(

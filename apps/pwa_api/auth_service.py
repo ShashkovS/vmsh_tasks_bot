@@ -183,9 +183,17 @@ class PwaAuthService:
             metric_name="auth",
         )
 
-    def invalidate_read_cache(self) -> None:
+    def invalidate_read_cache(
+        self, *, audience=None, account_public_id=None, session_public_id=None
+    ) -> None:
         if self._read_cache is not None:
-            self._read_cache.invalidate()
+            # peak-read-admission-20261019.md: one enrollment/logout must not
+            # force every other account back into the database admission FIFO.
+            self._read_cache.invalidate(lambda key: (
+                (audience is None or key[0] == audience)
+                and (account_public_id is None or key[1] == account_public_id)
+                and (session_public_id is None or key[2] == session_public_id)
+            ))
 
     @classmethod
     async def create(
@@ -672,52 +680,18 @@ class PwaAuthService:
         *,
         access_expires_at: datetime | None = None,
     ) -> AuthenticatedSession:
-        family_children: tuple[FamilyChildRecord, ...] = ()
-        enrollments: list[CourseEnrollmentRecord] = []
-        staff_scopes: tuple[StaffScopeRecord, ...] = ()
-        enrollment_grants = []
-        staff_scope_grants = []
-
-        if current.session.audience is AuthAudience.STUDENT:
-            assert current.linked_user_id is not None
-            student_enrollments = await self.repository.list_course_enrollments(
-                student_user_id=current.linked_user_id,
-            )
-            enrollments.extend(student_enrollments)
-            enrollment_grants.extend(
-                enrollment_grant_from_record(
-                    student_user_id=current.linked_user_id,
-                    record=record,
-                )
-                for record in student_enrollments
-            )
-            family_child_ids: tuple[int, ...] = ()
-        elif current.session.audience is AuthAudience.FAMILY:
-            family_children = await self.repository.list_family_children(
-                family_account_id=current.session.account_id,
-            )
-            family_child_ids = tuple(child.student_user_id for child in family_children)
-            for child in family_children:
-                child_enrollments = await self.repository.list_course_enrollments(
-                    student_user_id=child.student_user_id,
-                )
-                enrollments.extend(child_enrollments)
-                enrollment_grants.extend(
-                    enrollment_grant_from_record(
-                        student_user_id=child.student_user_id,
-                        record=record,
-                    )
-                    for record in child_enrollments
-                )
-        else:
-            assert current.linked_user_id is not None
-            family_child_ids = ()
-            staff_scopes = await self.repository.list_staff_scopes(
-                staff_user_id=current.linked_user_id,
-            )
-            staff_scope_grants.extend(
-                staff_scope_grant_from_record(record) for record in staff_scopes
-            )
+        # One admitted grant snapshot, rather than one FIFO wait per child/course.
+        # See peak-read-admission-20261019.md and PwaAuthRepository.
+        family_children, enrollment_records, staff_scopes = (
+            await self.repository.load_principal_context(current)
+        )
+        enrollments = tuple(record for _, record in enrollment_records)
+        family_child_ids = tuple(child.student_user_id for child in family_children)
+        enrollment_grants = [
+            enrollment_grant_from_record(student_user_id=student_id, record=record)
+            for student_id, record in enrollment_records
+        ]
+        staff_scope_grants = [staff_scope_grant_from_record(record) for record in staff_scopes]
 
         principal = build_authorization_principal(
             account_public_id=current.account_public_id,

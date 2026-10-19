@@ -21,7 +21,11 @@ import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
 from helpers.prometheus_metrics import configure_prometheus
-from helpers.pwa.product_analytics import ProductAnalyticsIngestor
+from helpers.pwa.product_analytics import (
+    ProductAnalyticsIngestor,
+    READY,
+    STARTUP_FAILURES,
+)
 from helpers.pwa.app_keys import (
     ENABLED_ADAPTERS,
     PWA_DATABASE,
@@ -114,17 +118,11 @@ async def math_worker_lifecycle(app: web.Application):
         raise asyncio.CancelledError
 
 
-async def pwa_analytics_lifecycle(app: web.Application):
-    """Prepare and retain the independent best-effort analytics store."""
+ANALYTICS_STARTUP_RETRY_SECONDS = 30
 
-    runtime_config = app[RUNTIME_CONFIG]
-    if not runtime_config.runtime_profile.startswith("pwa-"):
-        yield
-        return
-    state = app[PWA_ANALYTICS_DATABASE]
-    analytics_path = runtime_config.pwa_analytics_db_filename or str(
-        Path(runtime_config.db_filename).with_name("analytics.sqlite3")
-    )
+
+async def _open_product_analytics(analytics_path, state):
+    """One cancellation-safe attempt; peak-read-admission-20261019.md."""
     lifecycle_lock = runtime_database_lock(analytics_path)
     # Same lock/preflight/drain contract as the teaching store, including
     # cancellation during the constructor. See followups-20261018.md.
@@ -132,18 +130,23 @@ async def pwa_analytics_lifecycle(app: web.Application):
         lifecycle_lock.acquire()
     except Exception:
         logger.warning("Product analytics startup unavailable", exc_info=True)
-        yield
-        return
-    preflight = asyncio.create_task(asyncio.to_thread(
-        ProductAnalyticsConnectionFactory, analytics_path,
-    ))
+        STARTUP_FAILURES.inc()
+        return False
+    preflight = asyncio.create_task(
+        asyncio.to_thread(
+            ProductAnalyticsConnectionFactory,
+            analytics_path,
+        )
+    )
     try:
         factory = await asyncio.shield(preflight)
     except BaseException as error:
+
         def release_after_preflight(completed):
             with suppress(BaseException):
                 completed.result()
             lifecycle_lock.release()
+
         if preflight.done():
             release_after_preflight(preflight)
         else:
@@ -151,8 +154,8 @@ async def pwa_analytics_lifecycle(app: web.Application):
         if isinstance(error, asyncio.CancelledError):
             raise
         logger.warning("Product analytics startup unavailable", exc_info=True)
-        yield
-        return
+        STARTUP_FAILURES.inc()
+        return False
     try:
         factory.start_async_workers()
         await factory.run_write_async(
@@ -166,44 +169,74 @@ async def pwa_analytics_lifecycle(app: web.Application):
         if isinstance(error, asyncio.CancelledError):
             raise
         logger.warning("Product analytics startup unavailable", exc_info=True)
-        yield
-        return
+        STARTUP_FAILURES.inc()
+        return False
     state.lifecycle_lock = lifecycle_lock
     state.factory = factory
     state.ingestor = ProductAnalyticsIngestor(factory)
 
-    async def prune_daily() -> None:
-        while True:
-            await asyncio.sleep(24 * 60 * 60)
-            try:
-                await factory.run_write_async(
-                    lambda connection: prune_expired_events(
-                        connection, now=datetime.now(UTC)
-                    )
-                )
-            except Exception:
-                # Product telemetry is never allowed to affect PWA availability.
-                logger.warning("Daily product analytics cleanup failed", exc_info=True)
+    READY.set(1)
+    return True
 
-    cleanup_task = asyncio.create_task(prune_daily())
+
+async def pwa_analytics_lifecycle(app: web.Application):
+    """Optional telemetry recovers from a startup failure without a portal restart."""
+    runtime_config = app[RUNTIME_CONFIG]
+    if not runtime_config.runtime_profile.startswith("pwa-"):
+        yield
+        return
+    state = app[PWA_ANALYTICS_DATABASE]
+    analytics_path = runtime_config.pwa_analytics_db_filename or str(
+        Path(runtime_config.db_filename).with_name("analytics.sqlite3")
+    )
+    READY.set(0)
+    await _open_product_analytics(analytics_path, state)
+
+    async def maintain():
+        next_prune = asyncio.get_running_loop().time() + 24 * 60 * 60
+        while True:
+            await asyncio.sleep(ANALYTICS_STARTUP_RETRY_SECONDS)
+            if state.factory is None:
+                await _open_product_analytics(analytics_path, state)
+                next_prune = asyncio.get_running_loop().time() + 24 * 60 * 60
+            elif asyncio.get_running_loop().time() >= next_prune:
+                try:
+                    await state.factory.run_write_async(
+                        lambda connection: prune_expired_events(
+                            connection, now=datetime.now(UTC)
+                        )
+                    )
+                except Exception:
+                    logger.warning(
+                        "Daily product analytics cleanup failed", exc_info=True
+                    )
+                next_prune = asyncio.get_running_loop().time() + 24 * 60 * 60
+
+    cleanup_task = asyncio.create_task(maintain())
     try:
         yield
     finally:
+
         async def close():
             cleanup_task.cancel()
             with suppress(asyncio.CancelledError):
                 await cleanup_task
             try:
-                await state.ingestor.aclose()
+                if state.ingestor is not None:
+                    await state.ingestor.aclose()
             finally:
                 try:
-                    await factory.aclose()
+                    if state.factory is not None:
+                        await state.factory.aclose()
                 finally:
                     state.ingestor = None
                     state.factory = None
-                    state.lifecycle_lock = None
-                    lifecycle_lock.release()
-        await factory._drain_on_cancel(asyncio.create_task(close()))
+                    if state.lifecycle_lock is not None:
+                        state.lifecycle_lock.release()
+                        state.lifecycle_lock = None
+                    READY.set(0)
+
+        await PwaConnectionFactory._drain_on_cancel(asyncio.create_task(close()))
 
 
 async def on_startup(app):

@@ -166,6 +166,9 @@ async def record_events(request: web.Request) -> web.Response:
 
     factory = _analytics_factory(request)
     if factory is None:
+        from helpers.pwa.product_analytics import EVENTS
+
+        EVENTS.labels("unavailable").inc(len(parsed))
         return web.Response(status=204)
     occurred_at = utc_now_text()
     account_id = session.principal.account_public_id

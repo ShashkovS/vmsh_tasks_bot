@@ -86,19 +86,20 @@ class PwaConnectionFactory:
         self._executors: dict[str, ThreadPoolExecutor] = {}
         self._closed = False
         self._analytics_slots = asyncio.Semaphore(1)
-        self._queue_depth = {"read": 0, "write": 0, "analytics": 0}
+        self._auth_slots = asyncio.Semaphore(1)
+        self._queue_depth = {"read": 0, "write": 0, "analytics": 0, "auth": 0}
         self._close_task: asyncio.Task | None = None
         if verify_schema:
             require_current_schema(self.database_path)
             self._require_wal_mode()
 
     def start_async_workers(self) -> None:
-        """Enable three lazy connections after runtime has acquired its flock."""
+        """Enable bounded lazy connections after runtime has acquired its flock."""
         if self._closed or self._executors:
             raise RuntimeError("SQLite workers already started or closed")
         self._read_slots = asyncio.Semaphore(1)
         self._write_slots = asyncio.Semaphore(1)
-        for role in ("read", "write", "analytics"):
+        for role in ("read", "write", "analytics", "auth"):
             self._executors[role] = ThreadPoolExecutor(
                 max_workers=1, thread_name_prefix=f"pwa-db-{role}"
             )
@@ -121,7 +122,7 @@ class PwaConnectionFactory:
     async def aclose(self) -> None:
         """Drain dispatched operations and close on owner threads before unlock."""
         async def close():
-            async with self._read_slots, self._write_slots, self._analytics_slots:
+            async with self._read_slots, self._write_slots, self._analytics_slots, self._auth_slots:
                 await asyncio.to_thread(self._close_workers)
 
         if self._close_task is None:
@@ -256,6 +257,18 @@ class PwaConnectionFactory:
         self, operation: Callable[[sqlite3.Connection], ResultT]
     ) -> ResultT:
         return await self._run_admitted("read", self._read_slots, self.run_read, operation)
+
+    async def run_auth_async(
+        self, operation: Callable[[sqlite3.Connection], ResultT]
+    ) -> ResultT:
+        """One read-only authority lane; peak-read-admission-20261019.md.
+
+        Keep signed-session misses/revalidation out of the interactive FIFO.
+        Both lanes remain bounded; connections never cross their owner thread.
+        """
+        return await self._run_admitted(
+            "auth", self._auth_slots, self._run_analytics, operation
+        )
 
     async def run_write_async(
         self, operation: Callable[[sqlite3.Connection], ResultT]

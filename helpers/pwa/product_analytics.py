@@ -16,6 +16,14 @@ QUEUED = Gauge(
     multiprocess_mode="liveall",
 )
 
+READY = Gauge(
+    "vmsh_product_analytics_ready", "Product telemetry store is available",
+    multiprocess_mode="liveall",
+)
+STARTUP_FAILURES = Counter(
+    "vmsh_product_analytics_startup_failures", "Failed telemetry store startup attempts"
+)
+
 
 class ProductAnalyticsIngestor:
     """One bounded writer per app; domain/audit writes never use this queue."""

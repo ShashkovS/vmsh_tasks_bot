@@ -4,18 +4,11 @@ from __future__ import annotations
 
 import sqlite3
 
+from .effective_results import scoped_effective_results_ctes
 
-def list_course_result_rows(
-    connection: sqlite3.Connection,
-    *,
-    student_user_id: int,
-    course_id: int,
-) -> list[dict[str, object]]:
-    """Return result facts; aggregation belongs to ``models.pwa.progress``."""
 
-    rows = connection.execute(
-        """
-        WITH problem_scope AS (
+COURSE_RESULTS_SQL = f"""
+        WITH problem_scope AS MATERIALIZED (
             SELECT DISTINCT problem_revision.problem_id,
                             group_lesson.course_id,
                             course_lesson.lesson_number
@@ -26,7 +19,14 @@ def list_course_result_rows(
             JOIN group_lessons AS group_lesson ON group_lesson.id = source.group_lesson_id
             JOIN course_lessons AS course_lesson
               ON course_lesson.id = group_lesson.course_lesson_id
-        )
+            WHERE group_lesson.course_id = :course_id
+              AND problem_revision.problem_id IN (
+                  SELECT problem_id FROM results WHERE student_id = :student_user_id
+              )
+        ), requested_problem_ids AS (
+            SELECT DISTINCT problem_id FROM problem_scope
+        ), requested_student_ids(student_id) AS (VALUES (:student_user_id)),
+        {scoped_effective_results_ctes(students=True, personal=True)}
         SELECT result.id AS result_id,
                result.problem_id,
                result.ts,
@@ -34,17 +34,30 @@ def list_course_result_rows(
                manual.result_id IS NOT NULL AS manual_override,
                problem_scope.lesson_number,
                problem_group.logical_key AS logical_problem_key
-        FROM effective_results AS result
+        FROM scoped_effective_results AS result
         JOIN verdicts AS verdict ON verdict.id = result.verdict
         LEFT JOIN live_mark_cells AS manual ON manual.result_id = result.id
         JOIN problem_scope ON problem_scope.problem_id = result.problem_id
         JOIN result_problem_groups AS problem_group
           ON problem_group.problem_id = result.problem_id
-        WHERE result.student_id = ?
-          AND problem_scope.course_id = ?
+        WHERE result.student_id = :student_user_id
+          AND problem_scope.course_id = :course_id
         ORDER BY result.ts, result.id
-        """,
-        (student_user_id, course_id),
+        """
+
+
+def list_course_result_rows(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+    course_id: int,
+) -> list[dict[str, object]]:
+    """Return result facts; aggregation belongs to ``models.pwa.progress``."""
+
+    # peak-read-admission-20261019.md: scope before choosing effective results.
+    rows = connection.execute(
+        COURSE_RESULTS_SQL,
+        {"student_user_id": student_user_id, "course_id": course_id},
     ).fetchall()
     return [dict(row) for row in rows]
 
@@ -71,10 +84,13 @@ def list_course_activity_rows(
           JOIN content_sources source ON source.id=content.source_id
           JOIN group_lessons lesson ON lesson.id=source.group_lesson_id
           JOIN course_lessons course_lesson ON course_lesson.id=lesson.course_lesson_id
+          WHERE revision.problem_id IN (
+            SELECT problem_id FROM results WHERE student_id=:student_user_id
+          )
         ) scope ON scope.problem_id=result.problem_id
-        WHERE result.student_id=? AND scope.course_id=?
+        WHERE result.student_id=:student_user_id AND scope.course_id=:course_id
         ORDER BY result.ts""",
-        (student_user_id, course_id),
+        {"student_user_id": student_user_id, "course_id": course_id},
     ).fetchall()
     return [dict(row) for row in rows]
 
@@ -109,4 +125,8 @@ def list_course_pending_review_rows(
     return [dict(row) for row in rows]
 
 
-__all__ = ["list_course_activity_rows", "list_course_pending_review_rows", "list_course_result_rows"]
+__all__ = [
+    "list_course_activity_rows",
+    "list_course_pending_review_rows",
+    "list_course_result_rows",
+]

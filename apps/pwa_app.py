@@ -26,6 +26,7 @@ from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.staff_dashboard_routes import staff_dashboard_routes
 from apps.pwa_api.whiteboard_export_routes import routes as whiteboard_export_routes
 from apps.pwa_api.staff_statistics_routes import staff_statistics_routes
+from apps.pwa_api.personal_reads import PWA_PERSONAL_READ_CACHE, PersonalReadCache
 from apps.pwa_api.statistics_cache import PWA_STATISTICS_CACHE, StatisticsReadCache
 from apps.pwa_api.teacher_work_routes import (
     teacher_work_routes, SERVICE as TEACHER_WORK, close_teacher_work, start_teacher_work,
@@ -701,6 +702,8 @@ def invalidate_worker_reads(app, topic=None, payload=None):
     repository = app.get(PWA_CONTENT_REPOSITORY)
     state = app.get(PWA_AUTH_STATE)
     if topic is None:
+        if PWA_PERSONAL_READ_CACHE in app:
+            app[PWA_PERSONAL_READ_CACHE].invalidate()
         if PWA_STATISTICS_CACHE in app:
             app[PWA_STATISTICS_CACHE].invalidate()
         if PWA_BRANDING_CACHE in app:
@@ -715,12 +718,13 @@ def invalidate_worker_reads(app, topic=None, payload=None):
     if topic == NATS_PWA_SESSION_CONTROL:
         from apps.pwa_api.realtime_control import parse_realtime_control_event
 
-        if (
-            parse_realtime_control_event(payload) is not None
-            and state is not None
-            and isinstance(state.service, PwaAuthService)
-        ):
-            state.service.invalidate_read_cache()
+        event = parse_realtime_control_event(payload)
+        if event is not None and state is not None and isinstance(state.service, PwaAuthService):
+            state.service.invalidate_read_cache(
+                audience=event.audience,
+                **({"session_public_id": event.target_id} if event.scope.value == "session"
+                   else {"account_public_id": event.target_id}),
+            )
     elif topic == NATS_PWA_INVALIDATE:
         resources = payload.get("resources")
         if not isinstance(resources, list) or not all(
@@ -729,6 +733,8 @@ def invalidate_worker_reads(app, topic=None, payload=None):
             return
         if isinstance(repository, CachedContentRepository):
             repository.invalidate(resources)
+        if PWA_PERSONAL_READ_CACHE in app:
+            app[PWA_PERSONAL_READ_CACHE].invalidate(resources)
         if PWA_STATISTICS_CACHE in app:
             app[PWA_STATISTICS_CACHE].invalidate(resources)
         if "branding" in resources and PWA_BRANDING_CACHE in app:
@@ -738,7 +744,10 @@ def invalidate_worker_reads(app, topic=None, payload=None):
             and isinstance(state.service, PwaAuthService)
             and any(item in {"courses", "home", "auth"} for item in resources)
         ):
-            state.service.invalidate_read_cache()
+            state.service.invalidate_read_cache(
+                account_public_id=payload.get("accountId"),
+                audience=payload.get("audience"),
+            )
 
 
 async def on_startup(app: web.Application):
@@ -1094,6 +1103,22 @@ async def publish_content_invalidation(
             reason,
             exc_info=True,
         )
+
+
+async def publish_material_reveal_invalidation(
+    app, *, student_public_id, account_public_id, group_lesson_public_id
+):
+    """Fence cached reveal state after commit; peak-read-admission-20261019.md."""
+    resources = [f"students/{student_public_id}/work",
+                 f"group-lessons/{group_lesson_public_id}/work"]
+    payload = {"resources": resources, "reason": "material-revealed",
+               "audience": "student", "accountId": account_public_id}
+    # Local mutation acknowledgement must be fresh even if broker delivery fails.
+    invalidate_worker_reads(app, NATS_PWA_INVALIDATE, payload)
+    try:
+        await app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, payload)
+    except Exception:
+        logger.warning("Material reveal invalidation failed after commit", exc_info=True)
 
 
 async def publish_test_submission_invalidation(
@@ -1955,6 +1980,9 @@ def configure(
     app.middlewares.append(pwa_error_middleware)
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
+    app[PWA_PERSONAL_READ_CACHE] = PersonalReadCache(
+        available=lambda: getattr(broker, "active", broker.nats_is_working)
+    )
     app[PWA_STATISTICS_CACHE] = StatisticsReadCache(
         available=lambda: getattr(broker, "active", broker.nats_is_working)
     )

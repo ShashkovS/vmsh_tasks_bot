@@ -146,7 +146,7 @@ async def test_trace_records_database_stages_without_sql(database_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["read", "write", "analytics"])
+@pytest.mark.parametrize("kind", ["read", "write", "analytics", "auth"])
 async def test_admission_bounds_workers_and_releases_after_failure(async_factory, kind):
     factory = async_factory
     run = getattr(factory, f"run_{kind}_async")
@@ -174,7 +174,7 @@ async def test_admission_bounds_workers_and_releases_after_failure(async_factory
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["read", "analytics"])
+@pytest.mark.parametrize("kind", ["read", "analytics", "auth"])
 async def test_cancelled_worker_keeps_permit_until_connection_closes(async_factory, kind):
     factory = async_factory
     run = getattr(factory, f"run_{kind}_async")
@@ -286,7 +286,7 @@ async def test_persistent_connections_reuse_owner_threads_and_fresh_results(data
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["read", "analytics"])
+@pytest.mark.parametrize("kind", ["read", "analytics", "auth"])
 async def test_cancelled_shutdown_drains_and_closes_on_owner_thread(database_path, kind):
     factory = PwaConnectionFactory(database_path)
     factory.start_async_workers()
@@ -350,3 +350,41 @@ async def test_analytics_snapshot_does_not_block_interactive_work(async_factory)
     with pytest.raises(sqlite3.OperationalError, match="readonly"):
         await factory.run_analytics_async(lambda c: c.execute("DELETE FROM kv"))
     assert await factory.run_analytics_async(lambda c: c.in_transaction) is False
+
+
+@pytest.mark.asyncio
+async def test_authority_lane_bypasses_blocked_interactive_reader_and_is_read_only(
+    async_factory,
+):
+    """Auth cannot spend seconds queued behind a slow progress snapshot."""
+    factory = async_factory
+    entered, release = threading.Event(), threading.Event()
+
+    def heavy(connection):
+        entered.set()
+        assert release.wait(5)
+        return connection.execute("SELECT 1 AS value").fetchone()["value"]
+
+    task = asyncio.create_task(factory.run_read_async(heavy))
+    try:
+        assert await asyncio.to_thread(entered.wait, 2)
+        async with asyncio.timeout(2):
+            assert (
+                await factory.run_auth_async(
+                    lambda c: c.execute("SELECT 2 AS value").fetchone()["value"]
+                )
+                == 2
+            )
+        with pytest.raises(sqlite3.OperationalError, match="readonly"):
+            await factory.run_auth_async(
+                lambda c: c.execute("INSERT INTO kv(key,value) VALUES('bad-auth','1')")
+            )
+    finally:
+        release.set()
+        assert await task == 1
+    assert (
+        await factory.run_auth_async(
+            lambda c: c.execute("SELECT 3 AS value").fetchone()["value"]
+        )
+        == 3
+    )

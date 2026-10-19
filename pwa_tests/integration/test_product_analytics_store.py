@@ -214,3 +214,55 @@ async def test_normal_shutdown_drains_telemetry_before_legacy_task_cancellation(
     finally:
         await ingestor.aclose()
         await factory.aclose()
+
+
+@pytest.mark.asyncio
+async def test_failed_startup_is_visible_and_recovers_without_portal_restart(
+    tmp_path, monkeypatch
+):
+    import main
+    from aiohttp import web
+    from helpers.config import Config
+    from helpers.pwa.app_keys import (
+        PWA_ANALYTICS_DATABASE,
+        RUNTIME_CONFIG,
+        PwaAnalyticsDatabaseState,
+    )
+    from helpers.pwa.product_analytics import STARTUP_FAILURES
+
+    real = main.ProductAnalyticsConnectionFactory
+    attempts = []
+
+    def transient(path):
+        attempts.append(path)
+        if len(attempts) == 1:
+            raise sqlite3.OperationalError("unable to open database file")
+        return real(path)
+
+    monkeypatch.setattr(main, "ProductAnalyticsConnectionFactory", transient)
+    monkeypatch.setattr(main, "ANALYTICS_STARTUP_RETRY_SECONDS", 0.01)
+    app = web.Application()
+    path = tmp_path / "analytics.sqlite3"
+    app[RUNTIME_CONFIG] = Config(
+        runtime_profile="pwa-e2e",
+        db_filename=str(tmp_path / "core"),
+        pwa_analytics_db_filename=str(path),
+    )
+    state = app[PWA_ANALYTICS_DATABASE] = PwaAnalyticsDatabaseState()
+    before = STARTUP_FAILURES._value.get()
+    lifecycle = main.pwa_analytics_lifecycle(app)
+    await anext(lifecycle)
+    assert state.factory is None
+    assert STARTUP_FAILURES._value.get() == before + 1
+    for _ in range(100):
+        if state.ingestor is not None:
+            break
+        await asyncio.sleep(0.01)
+    try:
+        assert state.ingestor is not None
+        assert len(attempts) == 2
+        state.ingestor.submit([event_row()])
+    finally:
+        await lifecycle.aclose()
+    with sqlite3.connect(path) as c:
+        assert c.execute("SELECT count(*) FROM product_events").fetchone()[0] == 1

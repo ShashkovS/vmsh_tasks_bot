@@ -74,7 +74,26 @@ def scoped_query_probes(connection):
     # Actual sheet lookups, protected by 0121; followups-20261018.md.
     from db_methods.pwa.review_sheet import CASE_THREADS_SQL, LATEST_REVIEW_SQL
     thread = connection.execute("SELECT id,public_id FROM submission_threads ORDER BY id DESC LIMIT 1").fetchone()
+    from db_methods.pwa.progress import COURSE_RESULTS_SQL
+    from db_methods.pwa.content import _STUDENT_CACHED_WORK_SELECT
+    selected_course = connection.execute(
+        "SELECT course_id FROM groups WHERE group_id=? LIMIT 1",
+        (pair[2],),
+    ).fetchone() if pair else None
+    progress = {"course_id": selected_course[0] if selected_course else -1,
+                "student_user_id": pair[0] if pair else -1}
+    cached_problems = [dict(problem_public_id=row[0], problem_id=int(row[0][2:]), hint_publication_id=None,
+                            solution_publication_id=None)
+                       for row in connection.execute(
+                           "SELECT public_id FROM problems WHERE id IN (SELECT value FROM json_each(?))",
+                           (json.dumps(problem_ids),),
+                       )]
     return (
+        CriticalQueryProbe("personal-progress-scoped", COURSE_RESULTS_SQL,
+                           required_plan_fragments=("live_mark_cells_result_idx",), parameters=progress),
+        CriticalQueryProbe("personal-work-scoped", _STUDENT_CACHED_WORK_SELECT,
+                           parameters={"student_user_id": progress["student_user_id"],
+                                       "cached_problems": json.dumps(cached_problems)}),
         CriticalQueryProbe("review-sheet-case", CASE_THREADS_SQL,
                            required_plan_fragments=("submission_threads_public_id_idx",),
                            parameters=(thread[1] if thread else "st-empty",)),

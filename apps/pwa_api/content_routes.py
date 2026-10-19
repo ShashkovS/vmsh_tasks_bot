@@ -3713,6 +3713,14 @@ async def reveal_student_problem_material(request: web.Request) -> web.Response:
         kind=kind,
         request_id=_request_id(request),
     )
+    from apps.pwa_app import publish_material_reveal_invalidation
+
+    await publish_material_reveal_invalidation(
+        request.app,
+        student_public_id=authenticated_session(request).current.linked_user_public_id,
+        account_public_id=principal.account_public_id,
+        group_lesson_public_id=scope.group_lesson_public_id,
+    )
     return web.json_response(_student_reveal_payload(revealed))
 
 

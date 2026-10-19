@@ -413,3 +413,27 @@ async def test_review_reaction_keeps_statistics_and_work_views_cached(monkeypatc
         event["resources"] == ["problems/p-1/thread", "students/u-101/work"]
         for event in events
     )
+
+
+@pytest.mark.asyncio
+async def test_addressed_auth_events_preserve_other_accounts_and_sessions():
+    service = _service(SimpleNamespace())
+    service.enable_read_cache()
+    keys = [(AuthAudience.STUDENT, 'a1', '1' * 32, 1, 1, NOW),
+            (AuthAudience.STUDENT, 'a1', '2' * 32, 1, 1, NOW),
+            (AuthAudience.STUDENT, 'a2', '3' * 32, 1, 1, NOW)]
+    for key in keys:
+        await service._read_cache.get(key, AsyncMock(return_value='authority'))
+    app = web.Application()
+    app[PWA_AUTH_STATE] = PwaAuthState(runtime_config=service.runtime_config, service=service)
+    pwa_app.invalidate_worker_reads(app, 'pwa_session_control', {
+        'version': 1, 'type': 'auth.close', 'audience': 'student',
+        'scope': 'session', 'targetId': '1' * 32,
+    })
+    assert set(service._read_cache.entries) == set(keys[1:])
+    pwa_app.invalidate_worker_reads(app, 'pwa_invalidate', {
+        'audience': 'student', 'accountId': 'a1', 'resources': ['courses','home'],
+    })
+    assert set(service._read_cache.entries) == {keys[2]}
+    pwa_app.invalidate_worker_reads(app)
+    assert not service._read_cache.entries

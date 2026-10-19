@@ -15,11 +15,10 @@ from aiohttp import web
 
 from apps.pwa_api.auth_service import AuthenticatedSession
 from apps.pwa_api.content_routes import PWA_CONTENT_REPOSITORY
+from apps.pwa_api.personal_reads import course_progress_rows, personal_read
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.auth import CourseEnrollmentRecord, CourseGroupAccessRecord
-from db_methods.pwa.course_achievements import list_student_course_achievements
-from db_methods.pwa.course_analytics import latest_student_course_metrics
 from db_methods.pwa.content import (
     ContentNotFound,
     ContentRepositoryError,
@@ -27,11 +26,6 @@ from db_methods.pwa.content import (
     StudentProblemSummaryRecord,
     StudentLessonMaterialRecord,
     StudentLessonSummaryRecord,
-)
-from db_methods.pwa.progress import (
-    list_course_activity_rows,
-    list_course_pending_review_rows,
-    list_course_result_rows,
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
@@ -480,46 +474,24 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
             message="Прогресс временно недоступен",
         )
 
-    def read(connection):
-        return (
-            list_course_result_rows(
-                connection,
-                student_user_id=student_user_id,
-                course_id=enrollment.course_id,
-            ),
-            list_course_pending_review_rows(
-                connection,
-                student_user_id=student_user_id,
-                course_id=enrollment.course_id,
-            ),
-            latest_student_course_metrics(
-                connection,
-                course_id=enrollment.course_id,
-                student_user_id=student_user_id,
-            ),
-            list_student_course_achievements(
-                connection,
-                course_id=enrollment.course_id,
-                student_user_id=student_user_id,
-            ),
-            list_course_activity_rows(
-                connection,
-                student_user_id=student_user_id,
-                course_id=enrollment.course_id,
-            ),
-        )
-
     (
         rows,
         pending_review_rows,
         analytics_rows,
         achievement_rows,
         activity_rows,
-    ) = await database.factory.run_read_async(read)
+    ) = await course_progress_rows(
+        request,
+        student_user_id=student_user_id,
+        student_public_id=authenticated.current.linked_user_public_id,
+        enrollment=enrollment,
+    )
     return web.json_response(
         {
             "courseId": enrollment.course_public_id,
-            **summarize_course_results(rows, pending_review_rows, activity_rows=activity_rows),
+            **summarize_course_results(
+                rows, pending_review_rows, activity_rows=activity_rows
+            ),
             "analytics": course_analytics_payload(analytics_rows),
             "achievements": course_achievements_payload(achievement_rows),
         }
@@ -718,11 +690,20 @@ async def list_student_problems(request: web.Request) -> web.Response:
     student_user_id = authenticated.principal.linked_user_id
     assert student_user_id is not None
     try:
-        result = await repository.list_student_problems(
-            student_user_id=student_user_id,
-            course_public_id=enrollment.course_public_id,
-            group_public_id=group.group_public_id,
-            group_lesson_public_id=group_lesson_public_id,
+        result = await personal_read(
+            request,
+            (
+                "work",
+                authenticated.current.linked_user_public_id,
+                enrollment.course_public_id,
+                group_lesson_public_id,
+            ),
+            lambda: repository.list_student_problems(
+                student_user_id=student_user_id,
+                course_public_id=enrollment.course_public_id,
+                group_public_id=group.group_public_id,
+                group_lesson_public_id=group_lesson_public_id,
+            ),
         )
     except ContentNotFound as error:
         raise PwaApiError(

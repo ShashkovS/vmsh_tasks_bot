@@ -1,5 +1,12 @@
 # Анализ производительности
 
+## 2026-10-19 — Исправление очереди чтений начато
+
+[Контракт](peak-read-admission-20261019.md): scoped personal SQL, bounded personal
+cache, auth snapshot вместо последовательного fan-out, analytics startup/readiness.
+База — deployed e4b3953d; отдельный checkout сохраняет посторонние изменения.
+Production ещё не менялся; gate и замеры ожидаются.
+
 ## 2026-10-13 — Адресные обновления и scoped SQL
 
 [Утверждённый план](scoped-reads-20261013.md) реализован: адресные ресурсы и очередь refetch ≤4,

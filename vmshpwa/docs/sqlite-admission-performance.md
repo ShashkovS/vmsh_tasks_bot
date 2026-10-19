@@ -286,3 +286,16 @@ active session marks once. Migration 0120 adds problem/session lookup indexes;
 `db_methods/pwa/performance_guard.py` probes actual cell/board/visits callbacks.
 Before/after reads, ledger, undo and delta versions remain authoritative.
 Production deployment awaits the combined release gate.
+
+## 19 October peak follow-up
+
+[Decision](../../docs/performance/peak-read-admission-20261019.md): the runtime now
+retains one additional bounded read-only `auth` owner thread/connection per worker.
+Signed-session misses, WebSocket authority checks and one combined grant snapshot
+use this lane; ordinary reads, writes and analytics keep their separate limits.
+Cancellation/shutdown drain this lane before releasing the lifecycle lock.
+Main and product_analytics stores remain distinct metric labels; auth is a fixed
+role category. Enrollment/session events invalidate only their target authority.
+Personal progress/work use a five-second bounded worker cache, with NATS event
+fencing and fresh bypass while disconnected; permissions are checked on every
+HTTP request outside the cache. Source SQL scopes logical winners before aggregation.

@@ -801,7 +801,7 @@ class PwaAuthRepository:
                 return None
             return credential_version, session_version
 
-        return await self._factory.run_read_async(read)
+        return await self._factory.run_auth_async(read)
 
     async def get_current_session(
         self,
@@ -915,7 +915,7 @@ class PwaAuthRepository:
                 locale=str(row["account_locale"]),
             )
 
-        return await self._factory.run_read_async(read)
+        return await self._factory.run_auth_async(read)
 
     async def list_sessions(
         self,
@@ -1770,41 +1770,45 @@ class PwaAuthRepository:
         *,
         family_account_id: int,
     ) -> tuple[FamilyChildRecord, ...]:
-        def read(connection):
-            rows = connection.execute(
-                "SELECT l.student_user_id, u.public_id AS student_public_id, "
-                "u.name, u.surname, u.group_id, "
-                "u.grade, u.birthday, l.relationship_label, l.is_primary "
-                "FROM family_student_links AS l "
-                "JOIN auth_accounts AS a ON a.id = l.family_account_id "
-                "JOIN users AS u ON u.id = l.student_user_id "
-                "WHERE l.family_account_id = ? AND a.audience = 'family' "
-                "AND a.status = 'active' AND u.type = ? "
-                "AND u.public_id IS NOT NULL "
-                "AND l.revoked_at IS NULL "
-                "ORDER BY l.is_primary DESC, u.surname, u.name, u.id",
-                (family_account_id, int(USER_TYPE.STUDENT)),
-            ).fetchall()
-            children: list[FamilyChildRecord] = []
-            for row in rows:
-                children.append(
-                    FamilyChildRecord(
-                        student_user_id=int(row["student_user_id"]),
-                        student_public_id=_stored_public_id(
-                            row["student_public_id"], label="Student user public ID"
-                        ),
-                        name=str(row["name"]),
-                        surname=str(row["surname"]),
-                        group_id=_optional_string(row["group_id"]),
-                        grade=_optional_int(row["grade"]),
-                        birthday=_optional_string(row["birthday"]),
-                        relationship_label=_optional_string(row["relationship_label"]),
-                        is_primary=bool(row["is_primary"]),
-                    )
-                )
-            return tuple(children)
+        return await self._factory.run_read_async(
+            lambda connection: self._read_list_family_children(
+                connection, family_account_id=family_account_id
+            )
+        )
 
-        return await self._factory.run_read_async(read)
+    def _read_list_family_children(self, connection, *, family_account_id):
+        rows = connection.execute(
+            "SELECT l.student_user_id, u.public_id AS student_public_id, "
+            "u.name, u.surname, u.group_id, "
+            "u.grade, u.birthday, l.relationship_label, l.is_primary "
+            "FROM family_student_links AS l "
+            "JOIN auth_accounts AS a ON a.id = l.family_account_id "
+            "JOIN users AS u ON u.id = l.student_user_id "
+            "WHERE l.family_account_id = ? AND a.audience = 'family' "
+            "AND a.status = 'active' AND u.type = ? "
+            "AND u.public_id IS NOT NULL "
+            "AND l.revoked_at IS NULL "
+            "ORDER BY l.is_primary DESC, u.surname, u.name, u.id",
+            (family_account_id, int(USER_TYPE.STUDENT)),
+        ).fetchall()
+        children: list[FamilyChildRecord] = []
+        for row in rows:
+            children.append(
+                FamilyChildRecord(
+                    student_user_id=int(row["student_user_id"]),
+                    student_public_id=_stored_public_id(
+                        row["student_public_id"], label="Student user public ID"
+                    ),
+                    name=str(row["name"]),
+                    surname=str(row["surname"]),
+                    group_id=_optional_string(row["group_id"]),
+                    grade=_optional_int(row["grade"]),
+                    birthday=_optional_string(row["birthday"]),
+                    relationship_label=_optional_string(row["relationship_label"]),
+                    is_primary=bool(row["is_primary"]),
+                )
+            )
+        return tuple(children)
 
     async def list_course_enrollments(
         self,
@@ -1816,141 +1820,149 @@ class PwaAuthRepository:
 
         now = self._now()
 
-        def read(connection):
-            condition = "ce.student_user_id = ?"
-            if not include_inactive:
-                condition += " AND ce.status = 'active'"
-            enrollment_rows = connection.execute(
-                "SELECT ce.id, ce.public_id, ce.version, ce.course_id, "
-                "u.public_id AS student_public_id, "
-                "ce.active_group_id, ce.attendance_mode, "
-                "ce.status AS enrollment_status, c.public_id AS course_public_id, "
-                "c.code AS course_code, c.name AS course_name, "
-                "c.subject_code AS course_subject_code, "
-                "c.status AS course_status, c.sort_order AS course_sort_order, "
-                "c.accent_key AS course_accent_key, "
-                "c.version AS course_version, c.has_in_person_classes AS course_has_in_person_classes, "
-                "g.public_id AS active_group_public_id "
-                "FROM course_enrollments AS ce "
-                "JOIN users AS u ON u.id = ce.student_user_id "
-                "JOIN courses AS c ON c.id = ce.course_id "
-                "JOIN groups AS g ON g.course_id = ce.course_id "
-                f"AND g.group_id = ce.active_group_id WHERE {condition} "
-                "AND u.type IN (?,512) AND u.public_id IS NOT NULL "
-                "ORDER BY c.sort_order, c.id, ce.id",
-                (student_user_id, int(USER_TYPE.STUDENT)),
-            ).fetchall()
-            if not enrollment_rows:
-                return ()
+        return await self._factory.run_read_async(
+            lambda connection: self._read_list_course_enrollments(
+                connection,
+                student_user_id=student_user_id,
+                include_inactive=include_inactive,
+                now=now,
+            )
+        )
 
-            enrollment_ids = [int(row["id"]) for row in enrollment_rows]
-            placeholders = ",".join("?" for _ in enrollment_ids)
-            access_rows = connection.execute(
-                "SELECT a.enrollment_id, a.valid_from, a.valid_to, "
-                "c.public_id AS course_public_id, "
-                "g.group_id, g.public_id AS group_public_id, g.short_code, "
-                "g.public_name, g.status, g.color_key, "
-                "coalesce(g.sort_order, 0) AS sort_order, g.version "
-                "FROM course_group_access AS a "
-                "JOIN courses AS c ON c.id = a.course_id "
-                "JOIN groups AS g ON g.course_id = a.course_id "
-                "AND g.group_id = a.group_id "
-                f"WHERE a.enrollment_id IN ({placeholders}) "
-                "ORDER BY a.enrollment_id, coalesce(g.sort_order, 0), g.group_id",
-                enrollment_ids,
-            ).fetchall()
-            access_by_enrollment: dict[int, list[CourseGroupAccessRecord]] = {
-                enrollment_id: [] for enrollment_id in enrollment_ids
-            }
-            for row in access_rows:
-                valid_from = _parse_timestamp(row["valid_from"])
-                valid_to = _parse_optional_timestamp(row["valid_to"])
-                if valid_from > now or (valid_to is not None and valid_to <= now):
-                    continue
-                group_public_id = _optional_string(row["group_public_id"])
-                if group_public_id is None:
-                    # Transitional legacy rows without a public identifier are
-                    # never valid browser authority; the active-group invariant
-                    # below will surface this if the row is required.
-                    continue
-                group_public_id = _stored_public_id(
-                    group_public_id, label="Group public ID"
-                )
-                access_by_enrollment[int(row["enrollment_id"])].append(
-                    CourseGroupAccessRecord(
-                        group_id=str(row["group_id"]),
-                        group_public_id=group_public_id,
-                        course_public_id=_stored_public_id(
-                            row["course_public_id"], label="Course public ID"
-                        ),
-                        short_code=str(row["short_code"]),
-                        public_name=str(row["public_name"]),
-                        status=str(row["status"]),
-                        color_key=_optional_string(row["color_key"]),
-                        sort_order=int(row["sort_order"]),
-                        version=int(row["version"]),
-                        valid_from=valid_from,
-                        valid_to=valid_to,
-                    )
-                )
-            records: list[CourseEnrollmentRecord] = []
-            for row in enrollment_rows:
-                allowed_groups = tuple(access_by_enrollment[int(row["id"])])
-                active_group_id = str(row["active_group_id"])
-                active_group_public_id = _optional_string(row["active_group_public_id"])
-                if str(row["enrollment_status"]) == "active" and (
-                    not allowed_groups
-                    or active_group_id
-                    not in {group.group_id for group in allowed_groups}
-                    or active_group_public_id is None
-                ):
-                    # The TypeScript contract requires a non-empty access set
-                    # and activeGroup ∈ allowedGroups. Returning a partial row
-                    # would turn corrupt import data into accidental authority.
-                    raise PrincipalDataIntegrityError(
-                        "Active enrollment has no authoritative active-group access"
-                    )
-                if active_group_public_id is None:
-                    # Inactive historical rows may predate the public-ID
-                    # backfill, but cannot be used for current authorization.
-                    continue
-                active_group_public_id = _stored_public_id(
-                    active_group_public_id, label="Active group public ID"
-                )
-                records.append(
-                    CourseEnrollmentRecord(
-                        enrollment_id=int(row["id"]),
-                        enrollment_public_id=_stored_public_id(
-                            row["public_id"], label="Course enrollment public ID"
-                        ),
-                        enrollment_version=int(row["version"]),
-                        student_public_id=_stored_public_id(
-                            row["student_public_id"], label="Student user public ID"
-                        ),
-                        course_id=int(row["course_id"]),
-                        course_public_id=_stored_public_id(
-                            row["course_public_id"], label="Course public ID"
-                        ),
-                        course_code=str(row["course_code"]),
-                        course_name=str(row["course_name"]),
-                        course_subject_code=str(row["course_subject_code"]),
-                        course_status=str(row["course_status"]),
-                        course_sort_order=int(row["course_sort_order"]),
-                        course_accent_key=str(row["course_accent_key"]),
-                        course_version=int(row["course_version"]),
-                        course_has_in_person_classes=bool(
-                            row["course_has_in_person_classes"]
-                        ),
-                        active_group_id=active_group_id,
-                        active_group_public_id=active_group_public_id,
-                        attendance_mode=str(row["attendance_mode"]),
-                        enrollment_status=str(row["enrollment_status"]),
-                        allowed_groups=allowed_groups,
-                    )
-                )
-            return tuple(records)
+    def _read_list_course_enrollments(
+        self, connection, *, student_user_id, include_inactive, now
+    ):
+        condition = "ce.student_user_id = ?"
+        if not include_inactive:
+            condition += " AND ce.status = 'active'"
+        enrollment_rows = connection.execute(
+            "SELECT ce.id, ce.public_id, ce.version, ce.course_id, "
+            "u.public_id AS student_public_id, "
+            "ce.active_group_id, ce.attendance_mode, "
+            "ce.status AS enrollment_status, c.public_id AS course_public_id, "
+            "c.code AS course_code, c.name AS course_name, "
+            "c.subject_code AS course_subject_code, "
+            "c.status AS course_status, c.sort_order AS course_sort_order, "
+            "c.accent_key AS course_accent_key, "
+            "c.version AS course_version, c.has_in_person_classes AS course_has_in_person_classes, "
+            "g.public_id AS active_group_public_id "
+            "FROM course_enrollments AS ce "
+            "JOIN users AS u ON u.id = ce.student_user_id "
+            "JOIN courses AS c ON c.id = ce.course_id "
+            "JOIN groups AS g ON g.course_id = ce.course_id "
+            f"AND g.group_id = ce.active_group_id WHERE {condition} "
+            "AND u.type IN (?,512) AND u.public_id IS NOT NULL "
+            "ORDER BY c.sort_order, c.id, ce.id",
+            (student_user_id, int(USER_TYPE.STUDENT)),
+        ).fetchall()
+        if not enrollment_rows:
+            return ()
 
-        return await self._factory.run_read_async(read)
+        enrollment_ids = [int(row["id"]) for row in enrollment_rows]
+        placeholders = ",".join("?" for _ in enrollment_ids)
+        access_rows = connection.execute(
+            "SELECT a.enrollment_id, a.valid_from, a.valid_to, "
+            "c.public_id AS course_public_id, "
+            "g.group_id, g.public_id AS group_public_id, g.short_code, "
+            "g.public_name, g.status, g.color_key, "
+            "coalesce(g.sort_order, 0) AS sort_order, g.version "
+            "FROM course_group_access AS a "
+            "JOIN courses AS c ON c.id = a.course_id "
+            "JOIN groups AS g ON g.course_id = a.course_id "
+            "AND g.group_id = a.group_id "
+            f"WHERE a.enrollment_id IN ({placeholders}) "
+            "ORDER BY a.enrollment_id, coalesce(g.sort_order, 0), g.group_id",
+            enrollment_ids,
+        ).fetchall()
+        access_by_enrollment: dict[int, list[CourseGroupAccessRecord]] = {
+            enrollment_id: [] for enrollment_id in enrollment_ids
+        }
+        for row in access_rows:
+            valid_from = _parse_timestamp(row["valid_from"])
+            valid_to = _parse_optional_timestamp(row["valid_to"])
+            if valid_from > now or (valid_to is not None and valid_to <= now):
+                continue
+            group_public_id = _optional_string(row["group_public_id"])
+            if group_public_id is None:
+                # Transitional legacy rows without a public identifier are
+                # never valid browser authority; the active-group invariant
+                # below will surface this if the row is required.
+                continue
+            group_public_id = _stored_public_id(
+                group_public_id, label="Group public ID"
+            )
+            access_by_enrollment[int(row["enrollment_id"])].append(
+                CourseGroupAccessRecord(
+                    group_id=str(row["group_id"]),
+                    group_public_id=group_public_id,
+                    course_public_id=_stored_public_id(
+                        row["course_public_id"], label="Course public ID"
+                    ),
+                    short_code=str(row["short_code"]),
+                    public_name=str(row["public_name"]),
+                    status=str(row["status"]),
+                    color_key=_optional_string(row["color_key"]),
+                    sort_order=int(row["sort_order"]),
+                    version=int(row["version"]),
+                    valid_from=valid_from,
+                    valid_to=valid_to,
+                )
+            )
+        records: list[CourseEnrollmentRecord] = []
+        for row in enrollment_rows:
+            allowed_groups = tuple(access_by_enrollment[int(row["id"])])
+            active_group_id = str(row["active_group_id"])
+            active_group_public_id = _optional_string(row["active_group_public_id"])
+            if str(row["enrollment_status"]) == "active" and (
+                not allowed_groups
+                or active_group_id not in {group.group_id for group in allowed_groups}
+                or active_group_public_id is None
+            ):
+                # The TypeScript contract requires a non-empty access set
+                # and activeGroup ∈ allowedGroups. Returning a partial row
+                # would turn corrupt import data into accidental authority.
+                raise PrincipalDataIntegrityError(
+                    "Active enrollment has no authoritative active-group access"
+                )
+            if active_group_public_id is None:
+                # Inactive historical rows may predate the public-ID
+                # backfill, but cannot be used for current authorization.
+                continue
+            active_group_public_id = _stored_public_id(
+                active_group_public_id, label="Active group public ID"
+            )
+            records.append(
+                CourseEnrollmentRecord(
+                    enrollment_id=int(row["id"]),
+                    enrollment_public_id=_stored_public_id(
+                        row["public_id"], label="Course enrollment public ID"
+                    ),
+                    enrollment_version=int(row["version"]),
+                    student_public_id=_stored_public_id(
+                        row["student_public_id"], label="Student user public ID"
+                    ),
+                    course_id=int(row["course_id"]),
+                    course_public_id=_stored_public_id(
+                        row["course_public_id"], label="Course public ID"
+                    ),
+                    course_code=str(row["course_code"]),
+                    course_name=str(row["course_name"]),
+                    course_subject_code=str(row["course_subject_code"]),
+                    course_status=str(row["course_status"]),
+                    course_sort_order=int(row["course_sort_order"]),
+                    course_accent_key=str(row["course_accent_key"]),
+                    course_version=int(row["course_version"]),
+                    course_has_in_person_classes=bool(
+                        row["course_has_in_person_classes"]
+                    ),
+                    active_group_id=active_group_id,
+                    active_group_public_id=active_group_public_id,
+                    attendance_mode=str(row["attendance_mode"]),
+                    enrollment_status=str(row["enrollment_status"]),
+                    allowed_groups=allowed_groups,
+                )
+            )
+        return tuple(records)
 
     async def list_staff_scopes(
         self,
@@ -1961,73 +1973,116 @@ class PwaAuthRepository:
 
         now = self._now()
 
-        def read(connection):
-            rows = connection.execute(
-                "SELECT s.id, s.staff_user_id, s.course_id, s.group_id, "
-                "s.role, s.valid_from, s.valid_to, s.version, "
-                "c.public_id AS course_public_id, c.code AS course_code, "
-                "c.name AS course_name, c.status AS course_status, "
-                "g.public_id AS group_public_id, "
-                "g.public_name AS group_public_name, c.sort_order "
-                "FROM staff_scopes AS s "
-                "JOIN courses AS c ON c.id = s.course_id "
-                "JOIN users AS u ON u.id = s.staff_user_id "
-                "JOIN auth_accounts AS a ON a.linked_user_id = s.staff_user_id "
-                "AND a.audience = 'staff' AND a.status = 'active' "
-                "LEFT JOIN groups AS g ON g.course_id = s.course_id "
-                "AND g.group_id = s.group_id "
-                "WHERE s.staff_user_id = ? AND u.type IN (?, ?) "
-                "AND u.public_id IS NOT NULL "
-                "ORDER BY c.sort_order, c.id, s.group_id, s.role, s.id",
-                (
-                    staff_user_id,
-                    int(USER_TYPE.TEACHER),
-                    int(USER_TYPE.ADMIN),
-                ),
-            ).fetchall()
-            scopes: list[StaffScopeRecord] = []
-            for row in rows:
-                valid_from = _parse_timestamp(row["valid_from"])
-                valid_to = _parse_optional_timestamp(row["valid_to"])
-                if valid_from > now or (valid_to is not None and valid_to <= now):
-                    continue
-                group_id = _optional_string(row["group_id"])
-                group_public_id = _optional_string(row["group_public_id"])
-                if group_id is not None and group_public_id is None:
-                    # ``None`` is the course-wide scope sentinel in the
-                    # permission layer. A legacy/corrupt group scope without
-                    # its browser-safe public ID must never be widened into
-                    # course-wide authority.
-                    raise PrincipalDataIntegrityError(
-                        "Group-scoped staff access has no authoritative public ID"
-                    )
-                if group_public_id is not None:
-                    group_public_id = _stored_public_id(
-                        group_public_id, label="Group public ID"
-                    )
-                scopes.append(
-                    StaffScopeRecord(
-                        id=int(row["id"]),
-                        staff_user_id=int(row["staff_user_id"]),
-                        course_id=int(row["course_id"]),
-                        course_public_id=_stored_public_id(
-                            row["course_public_id"], label="Course public ID"
-                        ),
-                        course_code=str(row["course_code"]),
-                        course_name=str(row["course_name"]),
-                        course_status=str(row["course_status"]),
-                        group_id=group_id,
-                        group_public_id=group_public_id,
-                        group_public_name=_optional_string(row["group_public_name"]),
-                        role=StaffScopeRole(str(row["role"])),
-                        valid_from=valid_from,
-                        valid_to=valid_to,
-                        version=int(row["version"]),
-                    )
-                )
-            return tuple(scopes)
+        return await self._factory.run_read_async(
+            lambda connection: self._read_list_staff_scopes(
+                connection, staff_user_id=staff_user_id, now=now
+            )
+        )
 
-        return await self._factory.run_read_async(read)
+    def _read_list_staff_scopes(self, connection, *, staff_user_id, now):
+        rows = connection.execute(
+            "SELECT s.id, s.staff_user_id, s.course_id, s.group_id, "
+            "s.role, s.valid_from, s.valid_to, s.version, "
+            "c.public_id AS course_public_id, c.code AS course_code, "
+            "c.name AS course_name, c.status AS course_status, "
+            "g.public_id AS group_public_id, "
+            "g.public_name AS group_public_name, c.sort_order "
+            "FROM staff_scopes AS s "
+            "JOIN courses AS c ON c.id = s.course_id "
+            "JOIN users AS u ON u.id = s.staff_user_id "
+            "JOIN auth_accounts AS a ON a.linked_user_id = s.staff_user_id "
+            "AND a.audience = 'staff' AND a.status = 'active' "
+            "LEFT JOIN groups AS g ON g.course_id = s.course_id "
+            "AND g.group_id = s.group_id "
+            "WHERE s.staff_user_id = ? AND u.type IN (?, ?) "
+            "AND u.public_id IS NOT NULL "
+            "ORDER BY c.sort_order, c.id, s.group_id, s.role, s.id",
+            (
+                staff_user_id,
+                int(USER_TYPE.TEACHER),
+                int(USER_TYPE.ADMIN),
+            ),
+        ).fetchall()
+        scopes: list[StaffScopeRecord] = []
+        for row in rows:
+            valid_from = _parse_timestamp(row["valid_from"])
+            valid_to = _parse_optional_timestamp(row["valid_to"])
+            if valid_from > now or (valid_to is not None and valid_to <= now):
+                continue
+            group_id = _optional_string(row["group_id"])
+            group_public_id = _optional_string(row["group_public_id"])
+            if group_id is not None and group_public_id is None:
+                # ``None`` is the course-wide scope sentinel in the
+                # permission layer. A legacy/corrupt group scope without
+                # its browser-safe public ID must never be widened into
+                # course-wide authority.
+                raise PrincipalDataIntegrityError(
+                    "Group-scoped staff access has no authoritative public ID"
+                )
+            if group_public_id is not None:
+                group_public_id = _stored_public_id(
+                    group_public_id, label="Group public ID"
+                )
+            scopes.append(
+                StaffScopeRecord(
+                    id=int(row["id"]),
+                    staff_user_id=int(row["staff_user_id"]),
+                    course_id=int(row["course_id"]),
+                    course_public_id=_stored_public_id(
+                        row["course_public_id"], label="Course public ID"
+                    ),
+                    course_code=str(row["course_code"]),
+                    course_name=str(row["course_name"]),
+                    course_status=str(row["course_status"]),
+                    group_id=group_id,
+                    group_public_id=group_public_id,
+                    group_public_name=_optional_string(row["group_public_name"]),
+                    role=StaffScopeRole(str(row["role"])),
+                    valid_from=valid_from,
+                    valid_to=valid_to,
+                    version=int(row["version"]),
+                )
+            )
+        return tuple(scopes)
+
+    async def load_principal_context(self, current):
+        """Read all grants in one snapshot/admission; peak-read-admission-20261019.md."""
+        now = self._now()
+
+        def read(connection):
+            connection.execute("BEGIN")
+            try:
+                audience = current.session.audience
+                children = ()
+                enrollments = []
+                scopes = ()
+                if audience is AuthAudience.FAMILY:
+                    children = self._read_list_family_children(
+                        connection, family_account_id=current.session.account_id
+                    )
+                    student_ids = [child.student_user_id for child in children]
+                elif audience is AuthAudience.STUDENT:
+                    student_ids = [current.linked_user_id]
+                else:
+                    student_ids = []
+                    scopes = self._read_list_staff_scopes(
+                        connection, staff_user_id=current.linked_user_id, now=now
+                    )
+                for student_id in student_ids:
+                    enrollments.extend(
+                        (student_id, record)
+                        for record in self._read_list_course_enrollments(
+                            connection,
+                            student_user_id=student_id,
+                            include_inactive=False,
+                            now=now,
+                        )
+                    )
+                return children, tuple(enrollments), scopes
+            finally:
+                connection.execute("ROLLBACK")
+
+        return await self._factory.run_auth_async(read)
 
 
 def _unique_throttle_keys(

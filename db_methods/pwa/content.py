@@ -60,7 +60,7 @@ from .lesson_blocks import (
 )
 
 from .connection import PwaConnectionFactory
-from .effective_results import STUDENT_EFFECTIVE_RESULTS_CTES
+from .effective_results import STUDENT_EFFECTIVE_RESULTS_CTES, scoped_effective_results_ctes
 
 
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
@@ -1948,11 +1948,24 @@ ORDER BY visible_problem.source_ordinal,
 
 
 _STUDENT_CACHED_WORK_SELECT = f"""
-WITH {STUDENT_EFFECTIVE_RESULTS_CTES}, visible_problem AS MATERIALIZED (
+WITH visible_problem AS MATERIALIZED (
     SELECT problem.id AS problem_id, item.key AS cache_index, item.value AS cached_problem
     FROM json_each(:cached_problems) AS item
-    JOIN problems AS problem ON problem.public_id = json_extract(item.value, '$.problem_public_id')
-), {_STUDENT_PROBLEM_WORK_CTES}
+    JOIN problems AS problem ON problem.id = json_extract(item.value, '$.problem_id')
+     AND problem.public_id = json_extract(item.value, '$.problem_public_id')
+), requested_problem_ids AS (SELECT problem_id FROM visible_problem),
+requested_student_ids(student_id) AS (VALUES (:student_user_id)),
+{scoped_effective_results_ctes(students=True, personal=True)},
+personal_work_problem_ids AS (
+    SELECT problem_id FROM personal_candidate_problem_ids
+    UNION SELECT problem_id FROM written_tasks_queue WHERE student_id=:student_user_id
+    UNION SELECT problem_id FROM written_tasks_discussions WHERE student_id=:student_user_id
+    UNION SELECT problem_id FROM test_attempts WHERE student_user_id=:student_user_id
+    UNION SELECT problem_id FROM submission_threads WHERE student_user_id=:student_user_id
+), personal_work_groups AS MATERIALIZED (
+    SELECT * FROM result_problem_groups WHERE problem_id IN (SELECT problem_id FROM personal_work_problem_ids)
+),
+{_STUDENT_PROBLEM_WORK_CTES.replace("student_effective_results", "scoped_effective_results").replace("result_problem_groups", "personal_work_groups")}
 SELECT visible_problem.cached_problem,
 {_STUDENT_PROBLEM_WORK_COLUMNS},
        EXISTS (SELECT 1 FROM hint_reveals reveal
@@ -2630,6 +2643,8 @@ class PwaContentRepository:
         for problem in lesson.problems:
             prepared.append(
                 {
+                    # 0111 generated public_id is p-<id>; equality is rechecked in SQL.
+                    "problem_id": int(problem.problem_public_id[2:]),
                     "problem_public_id": problem.problem_public_id,
                     "config_version": problem.config_version,
                     "source_ordinal": problem.source_ordinal,

@@ -54,7 +54,7 @@ class WorkerReadCache:
         self._pending = {}
         self._fresh_pending = {}
         self.bytes = 0
-        if metric_name not in {None, "content", "auth", "branding", "statistics"}:
+        if metric_name not in {None, "content", "auth", "branding", "statistics", "personal"}:
             raise ValueError("Unknown cache metric category")
         self.metric_name = metric_name
 

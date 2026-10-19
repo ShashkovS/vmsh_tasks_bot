@@ -65,7 +65,7 @@ student_teacher_choices AS MATERIALIZED (
 """
 
 
-def scoped_effective_results_ctes(*, students=False):
+def scoped_effective_results_ctes(*, students=False, personal=False):
     """Restrict the same winner before aggregation; scoped-reads-20261013.md.
 
     The caller supplies requested_problem_ids(problem_id) and, optionally,
@@ -78,9 +78,28 @@ def scoped_effective_results_ctes(*, students=False):
         WHERE problem_id IN (SELECT problem_id FROM requested_problem_ids)
     ), scoped_problem_members AS MATERIALIZED (
         SELECT pg.* FROM result_problem_groups pg
-        JOIN scoped_logical_keys keys USING(logical_key)
+        WHERE pg.logical_key IN (SELECT logical_key FROM scoped_logical_keys)
     ),
     """
+    if personal:
+        if not students:
+            raise ValueError("Personal projection requires requested students")
+        # peak-read-admission-20261019.md: never enumerate every problem to
+        # discover aliases when only this student's result sources can win.
+        prefix = """
+        personal_candidate_problem_ids AS MATERIALIZED (
+            SELECT problem_id FROM requested_problem_ids
+            UNION SELECT problem_id FROM results
+              WHERE student_id IN (SELECT student_id FROM requested_student_ids)
+            UNION SELECT problem_id FROM live_mark_cells
+              WHERE student_id IN (SELECT student_id FROM requested_student_ids)
+        ),
+        """ + prefix
+        prefix = prefix.replace(
+            "WHERE pg.logical_key IN (SELECT logical_key FROM scoped_logical_keys)",
+            "WHERE pg.logical_key IN (SELECT logical_key FROM scoped_logical_keys) "
+            "AND pg.problem_id IN (SELECT problem_id FROM personal_candidate_problem_ids)",
+        )
     body = STUDENT_EFFECTIVE_RESULTS_CTES.replace(
         "student_teacher_choices", "scoped_teacher_choices"
     ).replace("student_effective_results", "scoped_effective_results")
