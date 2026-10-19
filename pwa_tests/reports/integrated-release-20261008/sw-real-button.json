@@ -1,0 +1,36 @@
+{
+  "exit_code": 0,
+  "seconds": 36.368380500003695,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.228,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/runtime-isolation.spec.ts",
+        "--grep",
+        "byte-different built worker",
+        "--retries",
+        "0"
+      ],
+      "seconds": 35.868,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.029,
+        "key": "26f3291001037efd965d96b6acbe2b2e7f7e21c60de95cd0c0a26c8ab32ac5f1"
+      }
+    }
+  ]
+}

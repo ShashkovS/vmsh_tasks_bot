@@ -1,0 +1,32 @@
+{
+  "host": "prep.leaders.tech",
+  "archive": "prep-20261010T182416Z-8601b62248b2.tar.7z",
+  "archiveBytes": 4979907,
+  "sha256": "cc452e2d84db05a1134493fbec41cca0ec2126dbde5f1b3784bb7928fc59f8da",
+  "sqliteRestore": "ok",
+  "contents": {
+    "nginx": true,
+    "systemd": true,
+    "nginxTarget": true,
+    "systemdTarget": true,
+    "appSecrets": true,
+    "tlsPrivateKeys": true,
+    "backupRecoveryPassword": true,
+    "cron": true,
+    "backupTooling": true,
+    "swiftExcluded": true
+  },
+  "estimatedConfigBytes": 29486564,
+  "legacyArchivesPreserved": 88,
+  "receiverPermissions": "ok",
+  "crossTransfer": "pending-owner-vmsh-install",
+  "lastLocalSuccess": "2026-10-10T18:24:24.078643+00:00",
+  "lastTransferError": "Peer SSH inventory failed; archives preserved",
+  "unchangedActiveServicePids": {
+    "vmshpwa": 1116995,
+    "vmshzoom": 1116997,
+    "nats": 1093
+  },
+  "localTests": {"pytestPassed": 18, "ruff": "PASS", "ownerBootstrapDryRun": "PASS"},
+  "serverProof": "/root/vmsh-cross-backup-release-20261010/verification.json"
+}

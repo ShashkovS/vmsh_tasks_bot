@@ -1,0 +1,75 @@
+{
+  "host": "vmsh",
+  "source_revision": "0d2d88e3127e1e0937c3043346d3a96c3160bd89",
+  "frontend_release": "0d2d88e3127e-20261004223309",
+  "production_frontend": true,
+  "builds": {
+    "landing": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "0d2d88e3127e-20261004223309",
+      "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "landing"
+    },
+    "student": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "0d2d88e3127e-20261004223309",
+      "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "student"
+    },
+    "family": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "0d2d88e3127e-20261004223309",
+      "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "family"
+    },
+    "staff": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "0d2d88e3127e-20261004223309",
+      "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "staff"
+    }
+  },
+  "services": {
+    "vmshpwa.service": {
+      "state": "active",
+      "pid": "66991"
+    },
+    "vmsh-analytics.timer": {
+      "state": "active",
+      "pid": ""
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "state": "active",
+      "pid": "66923"
+    }
+  },
+  "maintenance_cleared": true,
+  "source_sha256": {
+    "vmshpwa/packages/product/src/progress-charts.tsx": "26b3352809e4f473e79f86b4e4441adf87fda199848a8624f0336eb86a4d8754",
+    "vmshpwa/apps/staff/src/staff-distribution-colors.ts": "6dba6f3eeabeeaf8b301ad758d369cd551436cefb7d58e98e7b2a3405e32ee20",
+    "vmshpwa/apps/staff/src/lesson-statistics.tsx": "27684aaf80b6354ef60480ef355580ffa120f60c6c3cfdabb163650df68d7a14",
+    "vmshpwa/apps/staff/src/staff-statistics-page.tsx": "5b0c96c5c669fa94d8a7f2ac802b83ba96b5aa5899aab9f11b980aed56b75eb4"
+  },
+  "service_pids_unchanged": true,
+  "source_matches_local_commit": true
+}

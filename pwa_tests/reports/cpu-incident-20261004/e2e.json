@@ -1,0 +1,42 @@
+{
+  "modes": [
+    "content",
+    "submissions"
+  ],
+  "browser": "chromium",
+  "seconds": 47.942,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.247,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/content-publication.spec.ts",
+        "e2e/test-submission.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 47.244,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.744,
+        "key": "819a4f35664e7d1a087c333e8e35b904d48eab56294cfa2fc9b72cb81010311f"
+      }
+    }
+  ]
+}

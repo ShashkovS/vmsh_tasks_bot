@@ -1,0 +1,32 @@
+[Unit]
+Description=NATS Prometheus Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=nats_exporter
+Group=nats_exporter
+ExecStart=/usr/local/bin/prometheus-nats-exporter -addr 127.0.0.1 -port 7777 -varz -healthz http://127.0.0.1:8222
+Restart=on-failure
+RestartSec=5s
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+{
+  "revision": "c502cd4fa3b721e7de78b904f42bc6dca070f4b2",
+  "source": "clean git archive of unchanged frontend",
+  "command": [
+    "pnpm",
+    "exec",
+    "vitest",
+    "run",
+    "--config",
+    "vitest.storybook.config.ts",
+    "apps/staff/src/live-marking-grid.stories.tsx",
+    "-t",
+    "Large Classroom"
+  ],
+  "exit_code": 1,
+  "seconds": 14.83,
+  "frontend_diff": "none",
+  "threshold_changed": false,
+  "result": "inconclusive: test setup import failed before any test executed",
+  "performance_regression_proven": false,
+  "local_workspace_links_restored_from_frozen_lockfile": true
+}

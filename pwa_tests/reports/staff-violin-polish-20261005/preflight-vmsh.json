@@ -1,0 +1,23 @@
+{
+  "host": "vmsh",
+  "hostname": "vmshbeget",
+  "source_revision": "24ccc3d8db09aee6ec369abdd09508d6ebdfdde5",
+  "tracked_changes": "",
+  "staged_changes": "",
+  "frontend_release": "09bc16f185de-20261004133650",
+  "services": {
+    "vmshpwa.service": {
+      "state": "active",
+      "pid": "66991"
+    },
+    "vmsh-analytics.timer": {
+      "state": "active",
+      "pid": ""
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "state": "active",
+      "pid": "66923"
+    }
+  },
+  "maintenance_cleared": true
+}

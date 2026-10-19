@@ -1,0 +1,58 @@
+# Учёт работы: выпуск на оба портала, 11 октября 2026
+
+[PR #103](https://github.com/ShashkovS/vmsh_tasks_bot/pull/103) влит в `vmshpwa`,
+оба production выпущены в `33f6c950`. Повторный merged gate PASS: 2955 Python /
+12 SKIP, 1090 frontend, 372 Storybook и 9 E2E. [Квитанция](merged-release-gate.json).
+На обоих по 25 HTTP checks, пять защищённых новых API, 48 Staff asset hashes
+совпадают со сборкой, четыре production provenance корректны. Миграция 0118,
+backups, активные сервисы/timers проверены. [Production proof](production-proof.json),
+[record и TLF recovery](../../../docs/deploy/teacher-work/README.md).
+
+Первый live snapshot ВМШ — по admin кнопке или timer; расчёт проверен на свежей
+закрытой серверной копии. TLF получил снимки обоих активных курсов в рабочей
+БД. Первичные алиасы/смены подтверждает admin; production UI acceptance не заявляется.
+
+Ниже сохранены доказательства первоначальной готовности до финального merge.
+
+Ветка `codex/teacher-work-accounting` синхронизирована с `origin/vmshpwa`
+(`a926dc61`). [Требования и план проверки на проде](../../../vmshpwa/docs/teacher-work.md).
+Production не изменён; принятие интерфейса владельцем не заявляется.
+
+## Проверки
+
+`make pwa-check-release PWA_E2E_MODES='teacher-work'`: PASS, источник во время
+прогона не менялся. 2925 Python / 7 штатных SKIP, 1090 frontend, 372 Storybook,
+6 E2E в Chromium/WebKit/Firefox, format/types/lint/i18n и четыре app builds.
+[Квитанция](release-gate.json).
+
+После этого расширен только E2E: подтверждение очной смены, восстановление
+черновика, ручные письменные часы, пересчёт с сохранением поправки и сброс.
+Снимки отчёта и импорта сняты без переходного состояния темы. Финальный
+`python -m vmshpwa.scripts.e2e_runner --mode teacher-work --browser all`
+дал 9 PASS / 0 FAIL, retries=0. [Квитанция](e2e.json).
+Повторные typecheck, ESLint и Prettier для окончательного теста — PASS.
+[Сводка и хеши product files](validation.json).
+
+Снимки `*-teacher-work-report-*.png` и `*-teacher-work-*.png` показывают
+светлую/тёмную тему, desktop 1280 и narrow 390 во всех трёх браузерах.
+Поддержка масштаба 200% проверена в E2E; доступность состояний и interaction
+проверены Storybook. Снимки — новые доказательства, существующие baselines
+не обновлялись. Используются только синтетические пользователи.
+
+## Репетиция миграции
+
+[Миграция 0118](../../../migrations/0118.teacher_work.py) применена, отменена и
+повторно применена на отдельной свежей серверной копии. Все 160 старых таблиц
+сохранили идентичный хеш строк. `integrity_check=ok`, прежние 627 FK violations
+сохранены без изменений, новых нет. 47870 результатов и 8768 Zoom-событий
+сохранены. Расчёт около 0.99 с; 171 ячейка, 39 преподавателей, 54 колонки,
+прямоугольный TSV с тремя заголовками. [Обезличенный результат](migration-rehearsal.json).
+
+Копия и код остались на сервере в закрытом каталоге
+`db/teacher-work-rehearsal-20261011`; полная БД на локальный компьютер не
+переносилась. Репетиционный backup не заменяет свежий backup в момент выпуска.
+`vmsh-analytics.timer` активен, текущий production commit — `a926dc61`.
+
+Первое сопоставление Zoom-подписей и подтверждение очных распределений
+администратор выполняет после выпуска. Старый SQL decoder автоматически
+не загружается: многие старые numeric IDs относятся к другим ролям.

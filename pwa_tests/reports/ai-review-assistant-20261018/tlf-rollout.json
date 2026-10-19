@@ -1,0 +1,80 @@
+{
+  "beforeBackup": {
+    "backup": "20261018T160925.350814Z",
+    "createdAt": "2026-10-18T16:09:25.350814+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 3899
+  },
+  "afterBackup": {
+    "backup": "20261018T161030.859426Z",
+    "createdAt": "2026-10-18T16:10:30.859426+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 3899
+  },
+  "dataParity": {
+    "businessTablesPreserved": 168,
+    "newEmptyTables": [
+      "ai_review_events",
+      "ai_review_suggestions",
+      "ai_review_tokens"
+    ]
+  },
+  "migrationRehearsal": {
+    "upDownUp": "passed",
+    "businessTablesPreserved": 168,
+    "newEmptyTables": [
+      "ai_review_events",
+      "ai_review_suggestions",
+      "ai_review_tokens"
+    ],
+    "performanceGuard": "passed",
+    "integrity": "ok"
+  },
+  "performanceGuard": {
+    "schemaVersion": 1,
+    "viewsChecked": 7,
+    "probes": [
+      {
+        "name": "effective-results-current-test-attempt",
+        "elapsedMs": 4.824
+      },
+      {
+        "name": "review-sheet-case",
+        "elapsedMs": 0.304
+      },
+      {
+        "name": "review-sheet-evidence",
+        "elapsedMs": 0.044
+      },
+      {
+        "name": "statistics-results-scoped",
+        "elapsedMs": 5.644
+      },
+      {
+        "name": "statistics-attempts-scoped",
+        "elapsedMs": 5.712
+      },
+      {
+        "name": "statistics-pending-scoped",
+        "elapsedMs": 0.838
+      },
+      {
+        "name": "statistics-reviews-scoped",
+        "elapsedMs": 0.54
+      },
+      {
+        "name": "live-cell-scoped",
+        "elapsedMs": 2.202
+      },
+      {
+        "name": "live-board-scoped",
+        "elapsedMs": 1.542
+      },
+      {
+        "name": "live-visits-scoped",
+        "elapsedMs": 0.063
+      }
+    ],
+    "status": "passed"
+  }
+}

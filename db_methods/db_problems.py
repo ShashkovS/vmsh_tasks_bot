@@ -3,6 +3,17 @@ from typing import List
 from .db_abc import DB_ABC, sql
 
 
+def problem_read_table(connection, *, active: bool = False) -> str:
+    """Select the display projection, with a fallback for pre-0109 databases."""
+    # vmshpwa/dev/development-plan/06-phase-2-content.md (MATCH-04):
+    # Telegram results/reports share the same display identities.
+    table = "active_problems" if active else "problem_catalog"
+    exists = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='view' AND name=?", (table,)
+    ).fetchone()
+    return table if exists else "problems"
+
+
 # ██████  ██████   ██████  ██████  ██      ███████ ███    ███ ███████
 # ██   ██ ██   ██ ██    ██ ██   ██ ██      ██      ████  ████ ██
 # ██████  ██████  ██    ██ ██████  ██      █████   ██ ████ ██ ███████
@@ -41,34 +52,37 @@ class DB_PROBLEM(DB_ABC):
             """, payload)
             return cur.lastrowid
 
+    def _read_table(self, *, active: bool = False) -> str:
+        return problem_read_table(self.db.conn, active=active)
+
     def get_all(self) -> List[dict]:
         """Получить список вообще всех задача"""
-        return self.db.conn.execute("""
-            SELECT p.*, g.short_code as group_code FROM problems p
+        return self.db.conn.execute(f"""
+            SELECT p.*, g.short_code as group_code FROM {self._read_table(active=True)} p
             left join groups g on g.group_id = p.group_id
         """).fetchall()
 
     def get_all_by_lesson(self, group_id: str, lesson: int) -> List[dict]:
         """Получить список задач данного урока и группы"""
-        return self.db.conn.execute("""
-            SELECT p.*, g.short_code as group_code FROM problems p
+        return self.db.conn.execute(f"""
+            SELECT p.*, g.short_code as group_code FROM {self._read_table(active=True)} p
             left join groups g on g.group_id = p.group_id
             where p.group_id = :group_id and p.lesson = :lesson
         """, locals()).fetchall()
 
     def get_by_id(self, problem_id: int) -> dict:
         """Получить атрибуты задачи про её id"""
-        return self.db.conn.execute("""
-            SELECT p.*, g.short_code as group_code FROM problems p
+        return self.db.conn.execute(f"""
+            SELECT p.*, g.short_code as group_code FROM {self._read_table(active=False)} p
             left join groups g on g.group_id = p.group_id
             where p.id = :problem_id limit 1
         """, locals()).fetchone()
 
-    def get_by_text_number(self, group_id: str, lesson: int, prob: int, item: '') -> dict:
+    def get_by_text_number(self, group_id: str, lesson: int, prob: int, item: str) -> dict:
         """Получить атрибуты задачи по четвёрке (group_id, lesson, prob, item),
         которая является уникальным идентификатором задачи"""
-        return self.db.conn.execute("""
-            SELECT p.*, g.short_code as group_code FROM problems p
+        return self.db.conn.execute(f"""
+            SELECT p.*, g.short_code as group_code FROM {self._read_table(active=True)} p
             left join groups g on g.group_id = p.group_id
             where p.group_id = :group_id
               and p.lesson = :lesson

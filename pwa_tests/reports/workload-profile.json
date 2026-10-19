@@ -1,0 +1,2930 @@
+{
+  "schemaVersion": 1,
+  "sourceUnchanged": true,
+  "coverage": "No completeness/selection metadata accompanies these files; metrics describe only observed records and are not season-wide forecasts.",
+  "semantics": {
+    "rawRecord": "one physical JSONL line emitted or copied into a source",
+    "metricsEvent": "one canonical distinct valid JSON object after removing byte- or whitespace-equivalent duplicates",
+    "trace": "one distinct raw trace_id, normally one Telegram update or Zoom webhook, with zero or more downstream event records",
+    "flow": "raw user/chat grouping used only in memory; only distinct counts per minute are reported"
+  },
+  "files": [
+    {
+      "path": "logs/events.jsonl",
+      "lineCount": 189,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 189,
+        "traceCount": 37,
+        "eventCounts": {
+          "callback.routed": 50,
+          "command.invoked": 3,
+          "queue.written.dequeued": 5,
+          "queue.written.discussion_added": 4,
+          "queue.written.enqueued": 1,
+          "queue.written.status_changed": 5,
+          "reaction.saved": 2,
+          "result.saved": 10,
+          "state.transition": 39,
+          "student.problem.selected": 10,
+          "student.test_answer.submitted": 5,
+          "student.written_solution.submitted": 1,
+          "teacher.written_check.started": 5,
+          "teacher.written_queue.requested": 4,
+          "teacher.written_verdict.saved": 5,
+          "update.callback.received": 25,
+          "update.message.received": 12,
+          "user.group.changed": 3
+        },
+        "sourceCounts": {
+          "tg.callback": 143,
+          "tg.message": 46
+        },
+        "actorTypeCounts": {
+          "student": 95,
+          "teacher": 94
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 189,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 189,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 189,
+            "legacyNumericMappedRecords": 0,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-20T00:01:28.457",
+          "lastObserved": "2026-03-20T10:28:35.483",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 28,
+          "peakEventsPerMinute": 19,
+          "peakTraceStartsPerMinute": 3,
+          "peakIngressUpdatesPerMinute": 3,
+          "peakSubmissionEventsPerMinute": 1,
+          "peakReviewCompletionEventsPerMinute": 1,
+          "peakDistinctFlowsPerMinute": 2
+        },
+        "traceShape": {
+          "singleEventTraces": 0,
+          "multiEventTraces": 37,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 10.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.086,
+          "observedSpanSecondsP95": 0.451,
+          "observedSpanSecondsMax": 0.506,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 189,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 0,
+          "writtenPhotoMessageProxyCount": 0,
+          "photoSizeVariantHistogramAtIngress": {},
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 4,
+          "maxReportedWrittenCount": 29,
+          "maxReportedSosCount": 0,
+          "maxReportedSelectedCount": 13,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-02",
+      "lineCount": 17699,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 17699,
+        "traceCount": 3116,
+        "eventCounts": {
+          "admin.broadcast.completed": 10,
+          "admin.command.invoked": 38,
+          "admin.data.sync": 8,
+          "admin.sleep_state.set": 1,
+          "admin.state.mass_reset": 2,
+          "auth.failed": 1,
+          "auth.signon_attempt": 22,
+          "auth.start": 31,
+          "auth.success": 21,
+          "callback.routed": 3235,
+          "command.invoked": 106,
+          "queue.written.dequeued": 212,
+          "queue.written.discussion_added": 91,
+          "queue.written.enqueued": 73,
+          "queue.written.status_changed": 45,
+          "reaction.saved": 37,
+          "result.saved": 969,
+          "state.transition": 7184,
+          "student.problem.selected": 996,
+          "student.sos.started": 3,
+          "student.sos.submitted": 2,
+          "student.test_answer.submitted": 784,
+          "student.written_solution.submitted": 74,
+          "teacher.oral_round.finished": 64,
+          "teacher.written_check.started": 46,
+          "teacher.written_queue.requested": 17,
+          "teacher.written_verdict.saved": 43,
+          "update.callback.received": 1618,
+          "update.message.received": 1154,
+          "user.group.changed": 40,
+          "user.mode.changed": 23,
+          "zoom.conversation.started": 61,
+          "zoom.queue.changed": 344,
+          "zoom.webhook.received": 344
+        },
+        "sourceCounts": {
+          "tg.callback": 7977,
+          "tg.message": 9034,
+          "zoom.webhook": 688
+        },
+        "actorTypeCounts": {
+          "anonymous": 37,
+          "other-actor": 688,
+          "student": 9476,
+          "teacher": 7495,
+          "unknown_user": 3
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 17699,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 17699,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 16990,
+            "legacyNumericMappedRecords": 21,
+            "missingRecords": 688,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 688,
+            "missingBySafeSource": {
+              "zoom.webhook": 688
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-02T11:00:56.384",
+          "lastObserved": "2026-03-03T06:18:59.322",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 429,
+          "peakEventsPerMinute": 870,
+          "peakTraceStartsPerMinute": 38,
+          "peakIngressUpdatesPerMinute": 38,
+          "peakSubmissionEventsPerMinute": 13,
+          "peakReviewCompletionEventsPerMinute": 9,
+          "peakDistinctFlowsPerMinute": 12
+        },
+        "traceShape": {
+          "singleEventTraces": 111,
+          "multiEventTraces": 3005,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 5.0,
+          "eventsPerTraceMax": 1604,
+          "observedSpanSecondsP50": 0.068,
+          "observedSpanSecondsP95": 0.343,
+          "observedSpanSecondsMax": 443.333,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 17699,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 68,
+          "writtenPhotoMessageProxyCount": 61,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 4,
+            "3": 6,
+            "4": 55,
+            "5": 3
+          },
+          "writtenMediaGroupCount": 1,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 17,
+          "maxReportedWrittenCount": 52,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 17,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-03",
+      "lineCount": 53088,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 53088,
+        "traceCount": 11465,
+        "eventCounts": {
+          "admin.broadcast.completed": 12,
+          "admin.command.invoked": 50,
+          "admin.data.sync": 5,
+          "admin.state.mass_reset": 1,
+          "auth.failed": 19,
+          "auth.signon_attempt": 55,
+          "auth.start": 53,
+          "auth.success": 36,
+          "callback.routed": 12741,
+          "command.invoked": 274,
+          "queue.written.dequeued": 848,
+          "queue.written.discussion_added": 1197,
+          "queue.written.enqueued": 733,
+          "queue.written.status_changed": 796,
+          "reaction.saved": 167,
+          "result.saved": 3075,
+          "state.transition": 11750,
+          "student.problem.selected": 3413,
+          "student.sos.started": 13,
+          "student.sos.submitted": 11,
+          "student.test_answer.submitted": 2320,
+          "student.written_solution.submitted": 746,
+          "teacher.oral_round.finished": 89,
+          "teacher.student_lookup": 1,
+          "teacher.written_check.started": 801,
+          "teacher.written_queue.requested": 497,
+          "teacher.written_verdict.saved": 665,
+          "update.callback.received": 6372,
+          "update.message.received": 4150,
+          "user.group.changed": 143,
+          "user.mode.changed": 77,
+          "zoom.conversation.started": 88,
+          "zoom.queue.changed": 945,
+          "zoom.webhook.received": 945
+        },
+        "sourceCounts": {
+          "tg.callback": 33849,
+          "tg.message": 17349,
+          "zoom.webhook": 1890
+        },
+        "actorTypeCounts": {
+          "anonymous": 284,
+          "other-actor": 1890,
+          "student": 33418,
+          "teacher": 17484,
+          "unknown_user": 12
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 53088,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 53088,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 51162,
+            "legacyNumericMappedRecords": 36,
+            "missingRecords": 1890,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 1890,
+            "missingBySafeSource": {
+              "zoom.webhook": 1890
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-03T00:14:20.653",
+          "lastObserved": "2026-03-15T23:58:36.985",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 4850,
+          "peakEventsPerMinute": 780,
+          "peakTraceStartsPerMinute": 31,
+          "peakIngressUpdatesPerMinute": 31,
+          "peakSubmissionEventsPerMinute": 7,
+          "peakReviewCompletionEventsPerMinute": 7,
+          "peakDistinctFlowsPerMinute": 11
+        },
+        "traceShape": {
+          "singleEventTraces": 243,
+          "multiEventTraces": 11222,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 1604,
+          "observedSpanSecondsP50": 0.074,
+          "observedSpanSecondsP95": 0.447,
+          "observedSpanSecondsMax": 302.308,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 53088,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 7,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 7,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 560,
+          "writtenPhotoMessageProxyCount": 531,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 13,
+            "3": 42,
+            "4": 485,
+            "5": 20
+          },
+          "writtenMediaGroupCount": 20,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 497,
+          "maxReportedWrittenCount": 206,
+          "maxReportedSosCount": 3,
+          "maxReportedSelectedCount": 26,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-04",
+      "lineCount": 4915,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 4915,
+        "traceCount": 1247,
+        "eventCounts": {
+          "admin.broadcast.completed": 4,
+          "admin.command.invoked": 13,
+          "admin.data.sync": 1,
+          "auth.failed": 8,
+          "auth.signon_attempt": 12,
+          "auth.start": 12,
+          "auth.success": 4,
+          "callback.routed": 1268,
+          "command.invoked": 39,
+          "queue.written.dequeued": 88,
+          "queue.written.discussion_added": 62,
+          "queue.written.enqueued": 41,
+          "queue.written.status_changed": 33,
+          "reaction.saved": 15,
+          "result.saved": 289,
+          "state.transition": 812,
+          "student.problem.selected": 283,
+          "student.sos.started": 4,
+          "student.sos.submitted": 4,
+          "student.test_answer.submitted": 195,
+          "student.written_solution.submitted": 48,
+          "teacher.oral_round.finished": 28,
+          "teacher.written_check.started": 33,
+          "teacher.written_queue.requested": 41,
+          "teacher.written_verdict.saved": 26,
+          "update.callback.received": 634,
+          "update.message.received": 364,
+          "user.group.changed": 28,
+          "zoom.conversation.started": 28,
+          "zoom.queue.changed": 249,
+          "zoom.webhook.received": 249
+        },
+        "sourceCounts": {
+          "tg.callback": 3099,
+          "tg.message": 1318,
+          "zoom.webhook": 498
+        },
+        "actorTypeCounts": {
+          "anonymous": 60,
+          "other-actor": 498,
+          "student": 2794,
+          "teacher": 1555,
+          "unknown_user": 8
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 4915,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 4915,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 4413,
+            "legacyNumericMappedRecords": 4,
+            "missingRecords": 498,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 498,
+            "missingBySafeSource": {
+              "zoom.webhook": 498
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-04T00:03:24.191",
+          "lastObserved": "2026-03-04T23:00:45.682",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 403,
+          "peakEventsPerMinute": 51,
+          "peakTraceStartsPerMinute": 17,
+          "peakIngressUpdatesPerMinute": 17,
+          "peakSubmissionEventsPerMinute": 4,
+          "peakReviewCompletionEventsPerMinute": 2,
+          "peakDistinctFlowsPerMinute": 7
+        },
+        "traceShape": {
+          "singleEventTraces": 39,
+          "multiEventTraces": 1208,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 7.0,
+          "eventsPerTraceMax": 18,
+          "observedSpanSecondsP50": 0.055,
+          "observedSpanSecondsP95": 0.4,
+          "observedSpanSecondsMax": 110.684,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 4915,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 3,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 3,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 42,
+          "writtenPhotoMessageProxyCount": 41,
+          "photoSizeVariantHistogramAtIngress": {
+            "3": 1,
+            "4": 41
+          },
+          "writtenMediaGroupCount": 6,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 41,
+          "maxReportedWrittenCount": 53,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 21,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-05",
+      "lineCount": 4409,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 4409,
+        "traceCount": 908,
+        "eventCounts": {
+          "admin.command.invoked": 3,
+          "admin.data.sync": 1,
+          "auth.failed": 2,
+          "auth.signon_attempt": 16,
+          "auth.start": 3,
+          "auth.success": 14,
+          "callback.routed": 1114,
+          "command.invoked": 21,
+          "queue.written.dequeued": 83,
+          "queue.written.discussion_added": 133,
+          "queue.written.enqueued": 68,
+          "queue.written.status_changed": 94,
+          "reaction.saved": 9,
+          "result.saved": 244,
+          "state.transition": 927,
+          "student.problem.selected": 270,
+          "student.sos.started": 2,
+          "student.sos.submitted": 1,
+          "student.test_answer.submitted": 167,
+          "student.written_solution.submitted": 69,
+          "teacher.oral_round.finished": 1,
+          "teacher.written_check.started": 97,
+          "teacher.written_queue.requested": 72,
+          "teacher.written_verdict.saved": 75,
+          "update.callback.received": 557,
+          "update.message.received": 351,
+          "user.group.changed": 13,
+          "user.mode.changed": 1,
+          "zoom.conversation.started": 1
+        },
+        "sourceCounts": {
+          "tg.callback": 3050,
+          "tg.message": 1359
+        },
+        "actorTypeCounts": {
+          "anonymous": 55,
+          "student": 2596,
+          "teacher": 1758
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 4409,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 4409,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 4395,
+            "legacyNumericMappedRecords": 14,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-05T01:06:52.059",
+          "lastObserved": "2026-03-05T23:43:47.488",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 388,
+          "peakEventsPerMinute": 51,
+          "peakTraceStartsPerMinute": 9,
+          "peakIngressUpdatesPerMinute": 9,
+          "peakSubmissionEventsPerMinute": 4,
+          "peakReviewCompletionEventsPerMinute": 2,
+          "peakDistinctFlowsPerMinute": 4
+        },
+        "traceShape": {
+          "singleEventTraces": 10,
+          "multiEventTraces": 898,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 18,
+          "observedSpanSecondsP50": 0.083,
+          "observedSpanSecondsP95": 0.472,
+          "observedSpanSecondsMax": 2.267,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 4409,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 53,
+          "writtenPhotoMessageProxyCount": 49,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 1,
+            "3": 2,
+            "4": 48,
+            "5": 2
+          },
+          "writtenMediaGroupCount": 1,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 72,
+          "maxReportedWrittenCount": 46,
+          "maxReportedSosCount": 3,
+          "maxReportedSelectedCount": 23,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-06",
+      "lineCount": 4196,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 4196,
+        "traceCount": 879,
+        "eventCounts": {
+          "auth.start": 2,
+          "callback.routed": 1026,
+          "command.invoked": 14,
+          "queue.written.dequeued": 67,
+          "queue.written.discussion_added": 147,
+          "queue.written.enqueued": 88,
+          "queue.written.status_changed": 71,
+          "reaction.saved": 7,
+          "result.saved": 240,
+          "state.transition": 885,
+          "student.problem.selected": 285,
+          "student.sos.started": 1,
+          "student.test_answer.submitted": 182,
+          "student.written_solution.submitted": 91,
+          "teacher.written_check.started": 71,
+          "teacher.written_queue.requested": 62,
+          "teacher.written_verdict.saved": 66,
+          "update.callback.received": 514,
+          "update.message.received": 365,
+          "user.group.changed": 11,
+          "user.mode.changed": 1
+        },
+        "sourceCounts": {
+          "tg.callback": 2787,
+          "tg.message": 1409
+        },
+        "actorTypeCounts": {
+          "anonymous": 6,
+          "student": 2793,
+          "teacher": 1397
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 4196,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 4196,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 4196,
+            "legacyNumericMappedRecords": 0,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-06T07:16:40.676",
+          "lastObserved": "2026-03-06T23:59:51.856",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 372,
+          "peakEventsPerMinute": 85,
+          "peakTraceStartsPerMinute": 17,
+          "peakIngressUpdatesPerMinute": 17,
+          "peakSubmissionEventsPerMinute": 5,
+          "peakReviewCompletionEventsPerMinute": 5,
+          "peakDistinctFlowsPerMinute": 4
+        },
+        "traceShape": {
+          "singleEventTraces": 22,
+          "multiEventTraces": 857,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.088,
+          "observedSpanSecondsP95": 0.423,
+          "observedSpanSecondsMax": 1.398,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 4196,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 78,
+          "writtenPhotoMessageProxyCount": 74,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 4,
+            "3": 1,
+            "4": 71,
+            "5": 2
+          },
+          "writtenMediaGroupCount": 2,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 62,
+          "maxReportedWrittenCount": 81,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 21,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-07",
+      "lineCount": 7187,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 7187,
+        "traceCount": 1504,
+        "eventCounts": {
+          "admin.broadcast.completed": 1,
+          "admin.command.invoked": 1,
+          "auth.failed": 1,
+          "auth.signon_attempt": 4,
+          "auth.start": 1,
+          "auth.success": 3,
+          "callback.routed": 1800,
+          "command.invoked": 67,
+          "queue.written.dequeued": 109,
+          "queue.written.discussion_added": 212,
+          "queue.written.enqueued": 119,
+          "queue.written.status_changed": 137,
+          "reaction.saved": 13,
+          "result.saved": 390,
+          "state.transition": 1518,
+          "student.problem.selected": 483,
+          "student.sos.started": 1,
+          "student.test_answer.submitted": 296,
+          "student.written_solution.submitted": 123,
+          "teacher.written_check.started": 139,
+          "teacher.written_queue.requested": 95,
+          "teacher.written_verdict.saved": 106,
+          "update.callback.received": 900,
+          "update.message.received": 604,
+          "user.group.changed": 30,
+          "user.mode.changed": 34
+        },
+        "sourceCounts": {
+          "tg.callback": 4869,
+          "tg.message": 2318
+        },
+        "actorTypeCounts": {
+          "anonymous": 13,
+          "student": 4753,
+          "teacher": 2421
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 7187,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 7187,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 7184,
+            "legacyNumericMappedRecords": 3,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-07T00:03:45.748",
+          "lastObserved": "2026-03-07T23:58:32.103",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 577,
+          "peakEventsPerMinute": 76,
+          "peakTraceStartsPerMinute": 12,
+          "peakIngressUpdatesPerMinute": 12,
+          "peakSubmissionEventsPerMinute": 4,
+          "peakReviewCompletionEventsPerMinute": 5,
+          "peakDistinctFlowsPerMinute": 5
+        },
+        "traceShape": {
+          "singleEventTraces": 24,
+          "multiEventTraces": 1480,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.076,
+          "observedSpanSecondsP95": 0.423,
+          "observedSpanSecondsMax": 1.368,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 7187,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 88,
+          "writtenPhotoMessageProxyCount": 75,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 1,
+            "3": 2,
+            "4": 81,
+            "5": 4
+          },
+          "writtenMediaGroupCount": 4,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 95,
+          "maxReportedWrittenCount": 82,
+          "maxReportedSosCount": 3,
+          "maxReportedSelectedCount": 21,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-08",
+      "lineCount": 9256,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 9256,
+        "traceCount": 1877,
+        "eventCounts": {
+          "admin.broadcast.completed": 1,
+          "admin.command.invoked": 1,
+          "auth.failed": 3,
+          "auth.signon_attempt": 12,
+          "auth.start": 8,
+          "auth.success": 9,
+          "callback.routed": 2170,
+          "command.invoked": 82,
+          "queue.written.dequeued": 178,
+          "queue.written.discussion_added": 331,
+          "queue.written.enqueued": 221,
+          "queue.written.status_changed": 180,
+          "reaction.saved": 22,
+          "result.saved": 493,
+          "state.transition": 1932,
+          "student.problem.selected": 672,
+          "student.test_answer.submitted": 351,
+          "student.written_solution.submitted": 224,
+          "teacher.written_check.started": 184,
+          "teacher.written_queue.requested": 57,
+          "teacher.written_verdict.saved": 175,
+          "update.callback.received": 1085,
+          "update.message.received": 792,
+          "user.group.changed": 24,
+          "user.mode.changed": 49
+        },
+        "sourceCounts": {
+          "tg.callback": 6116,
+          "tg.message": 3140
+        },
+        "actorTypeCounts": {
+          "anonymous": 48,
+          "student": 6599,
+          "teacher": 2604,
+          "unknown_user": 5
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 9256,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 9256,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 9247,
+            "legacyNumericMappedRecords": 9,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-08T00:01:50.667",
+          "lastObserved": "2026-03-08T23:57:32.140",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 602,
+          "peakEventsPerMinute": 98,
+          "peakTraceStartsPerMinute": 22,
+          "peakIngressUpdatesPerMinute": 22,
+          "peakSubmissionEventsPerMinute": 7,
+          "peakReviewCompletionEventsPerMinute": 9,
+          "peakDistinctFlowsPerMinute": 7
+        },
+        "traceShape": {
+          "singleEventTraces": 15,
+          "multiEventTraces": 1862,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 10.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.08,
+          "observedSpanSecondsP95": 0.458,
+          "observedSpanSecondsMax": 109.502,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 9256,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 1,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 1,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 146,
+          "writtenPhotoMessageProxyCount": 137,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 1,
+            "3": 4,
+            "4": 137,
+            "5": 4
+          },
+          "writtenMediaGroupCount": 6,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 57,
+          "maxReportedWrittenCount": 226,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 27,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-09",
+      "lineCount": 6076,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 6076,
+        "traceCount": 1041,
+        "eventCounts": {
+          "admin.broadcast.completed": 8,
+          "admin.command.invoked": 19,
+          "admin.data.sync": 1,
+          "admin.sleep_state.set": 1,
+          "auth.signon_attempt": 6,
+          "auth.start": 6,
+          "auth.success": 6,
+          "callback.routed": 1160,
+          "command.invoked": 70,
+          "queue.written.dequeued": 74,
+          "queue.written.discussion_added": 62,
+          "queue.written.enqueued": 24,
+          "queue.written.status_changed": 84,
+          "reaction.saved": 12,
+          "result.saved": 241,
+          "state.transition": 2424,
+          "student.problem.selected": 246,
+          "student.sos.started": 1,
+          "student.sos.submitted": 1,
+          "student.test_answer.submitted": 170,
+          "student.written_solution.submitted": 24,
+          "teacher.oral_round.finished": 7,
+          "teacher.written_check.started": 85,
+          "teacher.written_queue.requested": 55,
+          "teacher.written_verdict.saved": 69,
+          "update.callback.received": 580,
+          "update.message.received": 347,
+          "user.group.changed": 27,
+          "user.mode.changed": 31,
+          "zoom.conversation.started": 7,
+          "zoom.queue.changed": 114,
+          "zoom.webhook.received": 114
+        },
+        "sourceCounts": {
+          "tg.callback": 3016,
+          "tg.message": 2832,
+          "zoom.webhook": 228
+        },
+        "actorTypeCounts": {
+          "anonymous": 31,
+          "other-actor": 228,
+          "student": 2610,
+          "teacher": 3207
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 6076,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 6076,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 5842,
+            "legacyNumericMappedRecords": 6,
+            "missingRecords": 228,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 228,
+            "missingBySafeSource": {
+              "zoom.webhook": 228
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-09T00:08:00.928",
+          "lastObserved": "2026-03-09T23:59:27.803",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 371,
+          "peakEventsPerMinute": 247,
+          "peakTraceStartsPerMinute": 14,
+          "peakIngressUpdatesPerMinute": 14,
+          "peakSubmissionEventsPerMinute": 5,
+          "peakReviewCompletionEventsPerMinute": 4,
+          "peakDistinctFlowsPerMinute": 7
+        },
+        "traceShape": {
+          "singleEventTraces": 20,
+          "multiEventTraces": 1021,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 1604,
+          "observedSpanSecondsP50": 0.066,
+          "observedSpanSecondsP95": 0.471,
+          "observedSpanSecondsMax": 443.922,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 6076,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 26,
+          "writtenPhotoMessageProxyCount": 21,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 1,
+            "3": 10,
+            "4": 14,
+            "5": 1
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 55,
+          "maxReportedWrittenCount": 121,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 19,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-10",
+      "lineCount": 6342,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 6342,
+        "traceCount": 1503,
+        "eventCounts": {
+          "admin.broadcast.completed": 2,
+          "admin.command.invoked": 11,
+          "auth.signon_attempt": 4,
+          "auth.start": 3,
+          "auth.success": 4,
+          "callback.routed": 1520,
+          "command.invoked": 32,
+          "queue.written.dequeued": 86,
+          "queue.written.discussion_added": 84,
+          "queue.written.enqueued": 43,
+          "queue.written.status_changed": 84,
+          "reaction.saved": 15,
+          "result.saved": 426,
+          "state.transition": 1206,
+          "student.problem.selected": 424,
+          "student.sos.started": 3,
+          "student.sos.submitted": 2,
+          "student.test_answer.submitted": 343,
+          "student.written_solution.submitted": 43,
+          "teacher.oral_round.finished": 22,
+          "teacher.written_check.started": 86,
+          "teacher.written_queue.requested": 52,
+          "teacher.written_verdict.saved": 68,
+          "update.callback.received": 760,
+          "update.message.received": 511,
+          "user.group.changed": 17,
+          "user.mode.changed": 5,
+          "zoom.conversation.started": 22,
+          "zoom.queue.changed": 232,
+          "zoom.webhook.received": 232
+        },
+        "sourceCounts": {
+          "tg.callback": 3988,
+          "tg.message": 1890,
+          "zoom.webhook": 464
+        },
+        "actorTypeCounts": {
+          "anonymous": 23,
+          "other-actor": 464,
+          "student": 4016,
+          "teacher": 1839
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 6342,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 6342,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 5874,
+            "legacyNumericMappedRecords": 4,
+            "missingRecords": 464,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 464,
+            "missingBySafeSource": {
+              "zoom.webhook": 464
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-10T00:11:34.452",
+          "lastObserved": "2026-03-10T23:48:29.140",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 471,
+          "peakEventsPerMinute": 87,
+          "peakTraceStartsPerMinute": 15,
+          "peakIngressUpdatesPerMinute": 15,
+          "peakSubmissionEventsPerMinute": 6,
+          "peakReviewCompletionEventsPerMinute": 5,
+          "peakDistinctFlowsPerMinute": 8
+        },
+        "traceShape": {
+          "singleEventTraces": 35,
+          "multiEventTraces": 1468,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 12,
+          "observedSpanSecondsP50": 0.066,
+          "observedSpanSecondsP95": 0.447,
+          "observedSpanSecondsMax": 113.759,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 6342,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 39,
+          "writtenPhotoMessageProxyCount": 36,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 8,
+            "3": 8,
+            "4": 21,
+            "5": 2
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 52,
+          "maxReportedWrittenCount": 50,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 15,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-11",
+      "lineCount": 5190,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 5190,
+        "traceCount": 1310,
+        "eventCounts": {
+          "admin.broadcast.completed": 1,
+          "admin.command.invoked": 6,
+          "auth.failed": 1,
+          "auth.signon_attempt": 3,
+          "auth.start": 1,
+          "auth.success": 2,
+          "callback.routed": 1250,
+          "command.invoked": 33,
+          "queue.written.dequeued": 62,
+          "queue.written.discussion_added": 70,
+          "queue.written.enqueued": 51,
+          "queue.written.status_changed": 30,
+          "reaction.saved": 14,
+          "result.saved": 325,
+          "state.transition": 920,
+          "student.problem.selected": 342,
+          "student.sos.started": 2,
+          "student.test_answer.submitted": 287,
+          "student.written_solution.submitted": 51,
+          "teacher.oral_round.finished": 29,
+          "teacher.written_check.started": 32,
+          "teacher.written_queue.requested": 40,
+          "teacher.written_verdict.saved": 25,
+          "update.callback.received": 625,
+          "update.message.received": 439,
+          "user.group.changed": 23,
+          "user.mode.changed": 5,
+          "zoom.conversation.started": 29,
+          "zoom.queue.changed": 246,
+          "zoom.webhook.received": 246
+        },
+        "sourceCounts": {
+          "tg.callback": 3116,
+          "tg.message": 1582,
+          "zoom.webhook": 492
+        },
+        "actorTypeCounts": {
+          "anonymous": 13,
+          "other-actor": 492,
+          "student": 3422,
+          "teacher": 1263
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 5190,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 5190,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 4696,
+            "legacyNumericMappedRecords": 2,
+            "missingRecords": 492,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 492,
+            "missingBySafeSource": {
+              "zoom.webhook": 492
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-11T00:17:04.082",
+          "lastObserved": "2026-03-11T23:52:47.313",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 392,
+          "peakEventsPerMinute": 58,
+          "peakTraceStartsPerMinute": 17,
+          "peakIngressUpdatesPerMinute": 17,
+          "peakSubmissionEventsPerMinute": 8,
+          "peakReviewCompletionEventsPerMinute": 3,
+          "peakDistinctFlowsPerMinute": 7
+        },
+        "traceShape": {
+          "singleEventTraces": 40,
+          "multiEventTraces": 1270,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 7.0,
+          "eventsPerTraceMax": 12,
+          "observedSpanSecondsP50": 0.062,
+          "observedSpanSecondsP95": 0.332,
+          "observedSpanSecondsMax": 109.942,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 5190,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 40,
+          "writtenPhotoMessageProxyCount": 37,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 3,
+            "3": 5,
+            "4": 32
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 40,
+          "maxReportedWrittenCount": 12,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 9,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-12",
+      "lineCount": 5440,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 5440,
+        "traceCount": 1117,
+        "eventCounts": {
+          "admin.command.invoked": 2,
+          "admin.data.sync": 1,
+          "auth.failed": 1,
+          "auth.signon_attempt": 8,
+          "auth.start": 2,
+          "auth.success": 7,
+          "callback.routed": 1393,
+          "command.invoked": 9,
+          "queue.written.dequeued": 89,
+          "queue.written.discussion_added": 151,
+          "queue.written.enqueued": 76,
+          "queue.written.status_changed": 113,
+          "reaction.saved": 11,
+          "result.saved": 317,
+          "state.transition": 1165,
+          "student.problem.selected": 361,
+          "student.test_answer.submitted": 240,
+          "student.written_solution.submitted": 76,
+          "teacher.written_check.started": 115,
+          "teacher.written_queue.requested": 91,
+          "teacher.written_verdict.saved": 88,
+          "update.callback.received": 697,
+          "update.message.received": 420,
+          "user.group.changed": 7
+        },
+        "sourceCounts": {
+          "tg.callback": 3806,
+          "tg.message": 1634
+        },
+        "actorTypeCounts": {
+          "anonymous": 28,
+          "student": 3354,
+          "teacher": 2058
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 5440,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 5440,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 5433,
+            "legacyNumericMappedRecords": 7,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-12T03:47:26.383",
+          "lastObserved": "2026-03-12T23:55:06.140",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 427,
+          "peakEventsPerMinute": 64,
+          "peakTraceStartsPerMinute": 12,
+          "peakIngressUpdatesPerMinute": 12,
+          "peakSubmissionEventsPerMinute": 6,
+          "peakReviewCompletionEventsPerMinute": 4,
+          "peakDistinctFlowsPerMinute": 5
+        },
+        "traceShape": {
+          "singleEventTraces": 10,
+          "multiEventTraces": 1107,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.084,
+          "observedSpanSecondsP95": 0.469,
+          "observedSpanSecondsMax": 3.26,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 5440,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 70,
+          "writtenPhotoMessageProxyCount": 61,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 1,
+            "3": 12,
+            "4": 56,
+            "5": 1
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 91,
+          "maxReportedWrittenCount": 46,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 20,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-13",
+      "lineCount": 4151,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 4151,
+        "traceCount": 870,
+        "eventCounts": {
+          "admin.broadcast.completed": 2,
+          "admin.command.invoked": 2,
+          "auth.failed": 2,
+          "auth.signon_attempt": 9,
+          "auth.start": 5,
+          "auth.success": 7,
+          "callback.routed": 1004,
+          "command.invoked": 13,
+          "queue.written.dequeued": 63,
+          "queue.written.discussion_added": 93,
+          "queue.written.enqueued": 48,
+          "queue.written.status_changed": 66,
+          "reaction.saved": 8,
+          "result.saved": 287,
+          "state.transition": 895,
+          "student.problem.selected": 303,
+          "student.sos.started": 1,
+          "student.sos.submitted": 1,
+          "student.test_answer.submitted": 241,
+          "student.written_solution.submitted": 48,
+          "teacher.written_check.started": 66,
+          "teacher.written_queue.requested": 45,
+          "teacher.written_verdict.saved": 61,
+          "update.callback.received": 503,
+          "update.message.received": 367,
+          "user.group.changed": 9,
+          "user.mode.changed": 2
+        },
+        "sourceCounts": {
+          "tg.callback": 2730,
+          "tg.message": 1421
+        },
+        "actorTypeCounts": {
+          "anonymous": 31,
+          "student": 2911,
+          "teacher": 1209
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 4151,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 4151,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 4144,
+            "legacyNumericMappedRecords": 7,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-13T00:15:06.110",
+          "lastObserved": "2026-03-13T23:58:45.527",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 364,
+          "peakEventsPerMinute": 64,
+          "peakTraceStartsPerMinute": 11,
+          "peakIngressUpdatesPerMinute": 11,
+          "peakSubmissionEventsPerMinute": 4,
+          "peakReviewCompletionEventsPerMinute": 3,
+          "peakDistinctFlowsPerMinute": 4
+        },
+        "traceShape": {
+          "singleEventTraces": 8,
+          "multiEventTraces": 862,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.078,
+          "observedSpanSecondsP95": 0.427,
+          "observedSpanSecondsMax": 28.448,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 4151,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 2,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 2,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 40,
+          "writtenPhotoMessageProxyCount": 36,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 2,
+            "3": 1,
+            "4": 37
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 45,
+          "maxReportedWrittenCount": 38,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 17,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-14",
+      "lineCount": 6708,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 6708,
+        "traceCount": 1441,
+        "eventCounts": {
+          "admin.command.invoked": 3,
+          "auth.failed": 1,
+          "auth.signon_attempt": 9,
+          "auth.start": 11,
+          "auth.success": 8,
+          "callback.routed": 1762,
+          "command.invoked": 27,
+          "queue.written.dequeued": 55,
+          "queue.written.discussion_added": 158,
+          "queue.written.enqueued": 103,
+          "queue.written.status_changed": 68,
+          "reaction.saved": 5,
+          "result.saved": 382,
+          "state.transition": 1430,
+          "student.problem.selected": 586,
+          "student.sos.started": 1,
+          "student.sos.submitted": 3,
+          "student.test_answer.submitted": 343,
+          "student.written_solution.submitted": 106,
+          "teacher.written_check.started": 68,
+          "teacher.written_queue.requested": 67,
+          "teacher.written_verdict.saved": 53,
+          "update.callback.received": 882,
+          "update.message.received": 559,
+          "user.group.changed": 14,
+          "user.mode.changed": 4
+        },
+        "sourceCounts": {
+          "tg.callback": 4505,
+          "tg.message": 2203
+        },
+        "actorTypeCounts": {
+          "anonymous": 41,
+          "student": 5339,
+          "teacher": 1318,
+          "unknown_user": 10
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 6708,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 6708,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 6700,
+            "legacyNumericMappedRecords": 8,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-14T00:00:39.592",
+          "lastObserved": "2026-03-14T23:59:41.782",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 582,
+          "peakEventsPerMinute": 63,
+          "peakTraceStartsPerMinute": 12,
+          "peakIngressUpdatesPerMinute": 12,
+          "peakSubmissionEventsPerMinute": 6,
+          "peakReviewCompletionEventsPerMinute": 3,
+          "peakDistinctFlowsPerMinute": 5
+        },
+        "traceShape": {
+          "singleEventTraces": 16,
+          "multiEventTraces": 1425,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 7.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.075,
+          "observedSpanSecondsP95": 0.362,
+          "observedSpanSecondsMax": 1.268,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 6708,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 91,
+          "writtenPhotoMessageProxyCount": 88,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 3,
+            "3": 17,
+            "4": 71
+          },
+          "writtenMediaGroupCount": 3,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 67,
+          "maxReportedWrittenCount": 73,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 22,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-15",
+      "lineCount": 10764,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 10764,
+        "traceCount": 1892,
+        "eventCounts": {
+          "admin.broadcast.completed": 2,
+          "admin.command.invoked": 5,
+          "admin.sleep_state.set": 1,
+          "auth.failed": 1,
+          "auth.signon_attempt": 10,
+          "auth.start": 6,
+          "auth.success": 9,
+          "callback.routed": 2276,
+          "command.invoked": 60,
+          "queue.written.dequeued": 151,
+          "queue.written.discussion_added": 226,
+          "queue.written.enqueued": 140,
+          "queue.written.status_changed": 170,
+          "reaction.saved": 12,
+          "result.saved": 561,
+          "state.transition": 3528,
+          "student.problem.selected": 702,
+          "student.sos.started": 4,
+          "student.sos.submitted": 1,
+          "student.test_answer.submitted": 423,
+          "student.written_solution.submitted": 142,
+          "teacher.oral_round.finished": 2,
+          "teacher.student_lookup": 1,
+          "teacher.written_check.started": 174,
+          "teacher.written_queue.requested": 73,
+          "teacher.written_verdict.saved": 145,
+          "update.callback.received": 1139,
+          "update.message.received": 753,
+          "user.group.changed": 26,
+          "user.mode.changed": 19,
+          "zoom.conversation.started": 2
+        },
+        "sourceCounts": {
+          "tg.callback": 6234,
+          "tg.message": 4530
+        },
+        "actorTypeCounts": {
+          "anonymous": 49,
+          "student": 6524,
+          "teacher": 4185,
+          "unknown_user": 6
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 10764,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 10764,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 10755,
+            "legacyNumericMappedRecords": 9,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-15T00:00:25.510",
+          "lastObserved": "2026-03-15T23:58:46.625",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 644,
+          "peakEventsPerMinute": 269,
+          "peakTraceStartsPerMinute": 15,
+          "peakIngressUpdatesPerMinute": 15,
+          "peakSubmissionEventsPerMinute": 6,
+          "peakReviewCompletionEventsPerMinute": 4,
+          "peakDistinctFlowsPerMinute": 7
+        },
+        "traceShape": {
+          "singleEventTraces": 28,
+          "multiEventTraces": 1864,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 10.0,
+          "eventsPerTraceMax": 1604,
+          "observedSpanSecondsP50": 0.073,
+          "observedSpanSecondsP95": 0.469,
+          "observedSpanSecondsMax": 405.963,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 10764,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 2,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 2,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 112,
+          "writtenPhotoMessageProxyCount": 102,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 3,
+            "3": 6,
+            "4": 99,
+            "5": 4
+          },
+          "writtenMediaGroupCount": 3,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 73,
+          "maxReportedWrittenCount": 126,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 25,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-16",
+      "lineCount": 22989,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 22989,
+        "traceCount": 5236,
+        "eventCounts": {
+          "admin.broadcast.completed": 14,
+          "admin.command.invoked": 47,
+          "admin.data.sync": 1,
+          "admin.state.mass_reset": 1,
+          "auth.failed": 3,
+          "auth.signon_attempt": 17,
+          "auth.start": 29,
+          "auth.success": 14,
+          "callback.routed": 5427,
+          "command.invoked": 162,
+          "queue.written.dequeued": 417,
+          "queue.written.discussion_added": 353,
+          "queue.written.enqueued": 176,
+          "queue.written.status_changed": 248,
+          "reaction.saved": 69,
+          "result.saved": 1266,
+          "state.transition": 5334,
+          "student.problem.selected": 1240,
+          "student.sos.started": 3,
+          "student.sos.submitted": 3,
+          "student.test_answer.submitted": 857,
+          "student.written_solution.submitted": 178,
+          "teacher.oral_round.finished": 96,
+          "teacher.student_lookup": 2,
+          "teacher.written_check.started": 249,
+          "teacher.written_queue.requested": 209,
+          "teacher.written_verdict.saved": 205,
+          "update.callback.received": 2718,
+          "update.message.received": 1619,
+          "user.group.changed": 96,
+          "user.mode.changed": 45,
+          "zoom.conversation.started": 93,
+          "zoom.queue.changed": 899,
+          "zoom.webhook.received": 899
+        },
+        "sourceCounts": {
+          "tg.callback": 13876,
+          "tg.message": 7315,
+          "zoom.webhook": 1798
+        },
+        "actorTypeCounts": {
+          "anonymous": 91,
+          "other-actor": 1798,
+          "student": 12056,
+          "teacher": 9044
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 22989,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 22989,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 21177,
+            "legacyNumericMappedRecords": 14,
+            "missingRecords": 1798,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 1798,
+            "missingBySafeSource": {
+              "zoom.webhook": 1798
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-16T00:14:07.924",
+          "lastObserved": "2026-03-20T10:26:09.461",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 1623,
+          "peakEventsPerMinute": 807,
+          "peakTraceStartsPerMinute": 35,
+          "peakIngressUpdatesPerMinute": 35,
+          "peakSubmissionEventsPerMinute": 6,
+          "peakReviewCompletionEventsPerMinute": 5,
+          "peakDistinctFlowsPerMinute": 11
+        },
+        "traceShape": {
+          "singleEventTraces": 180,
+          "multiEventTraces": 5056,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 1604,
+          "observedSpanSecondsP50": 0.062,
+          "observedSpanSecondsP95": 0.439,
+          "observedSpanSecondsMax": 129.275,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 22989,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 5,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 5,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 130,
+          "writtenPhotoMessageProxyCount": 110,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 4,
+            "3": 9,
+            "4": 117
+          },
+          "writtenMediaGroupCount": 2,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 209,
+          "maxReportedWrittenCount": 65,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 25,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-17",
+      "lineCount": 3145,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 3145,
+        "traceCount": 788,
+        "eventCounts": {
+          "admin.broadcast.completed": 1,
+          "admin.command.invoked": 9,
+          "admin.data.sync": 1,
+          "auth.signon_attempt": 2,
+          "auth.start": 2,
+          "auth.success": 2,
+          "callback.routed": 842,
+          "command.invoked": 13,
+          "queue.written.dequeued": 53,
+          "queue.written.discussion_added": 33,
+          "queue.written.enqueued": 18,
+          "queue.written.status_changed": 37,
+          "reaction.saved": 20,
+          "result.saved": 177,
+          "state.transition": 540,
+          "student.problem.selected": 187,
+          "student.sos.submitted": 3,
+          "student.test_answer.submitted": 126,
+          "student.written_solution.submitted": 18,
+          "teacher.oral_round.finished": 16,
+          "teacher.written_check.started": 37,
+          "teacher.written_queue.requested": 29,
+          "teacher.written_verdict.saved": 18,
+          "update.callback.received": 421,
+          "update.message.received": 220,
+          "user.group.changed": 11,
+          "zoom.conversation.started": 15,
+          "zoom.queue.changed": 147,
+          "zoom.webhook.received": 147
+        },
+        "sourceCounts": {
+          "tg.callback": 2104,
+          "tg.message": 747,
+          "zoom.webhook": 294
+        },
+        "actorTypeCounts": {
+          "anonymous": 9,
+          "other-actor": 294,
+          "student": 1782,
+          "teacher": 1060
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 3145,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 3145,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 2849,
+            "legacyNumericMappedRecords": 2,
+            "missingRecords": 294,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 294,
+            "missingBySafeSource": {
+              "zoom.webhook": 294
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-17T00:00:01.272",
+          "lastObserved": "2026-03-17T23:51:53.012",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 337,
+          "peakEventsPerMinute": 36,
+          "peakTraceStartsPerMinute": 10,
+          "peakIngressUpdatesPerMinute": 10,
+          "peakSubmissionEventsPerMinute": 3,
+          "peakReviewCompletionEventsPerMinute": 3,
+          "peakDistinctFlowsPerMinute": 8
+        },
+        "traceShape": {
+          "singleEventTraces": 34,
+          "multiEventTraces": 754,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 7.0,
+          "eventsPerTraceMax": 18,
+          "observedSpanSecondsP50": 0.061,
+          "observedSpanSecondsP95": 0.428,
+          "observedSpanSecondsMax": 113.103,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 3145,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 1,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 1,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 10,
+          "writtenPhotoMessageProxyCount": 5,
+          "photoSizeVariantHistogramAtIngress": {
+            "3": 1,
+            "4": 9
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 29,
+          "maxReportedWrittenCount": 39,
+          "maxReportedSosCount": 2,
+          "maxReportedSelectedCount": 23,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-18",
+      "lineCount": 3083,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 3083,
+        "traceCount": 788,
+        "eventCounts": {
+          "admin.command.invoked": 3,
+          "auth.signon_attempt": 2,
+          "auth.start": 4,
+          "auth.success": 2,
+          "callback.routed": 788,
+          "command.invoked": 22,
+          "queue.written.dequeued": 53,
+          "queue.written.discussion_added": 61,
+          "queue.written.enqueued": 31,
+          "queue.written.status_changed": 35,
+          "reaction.saved": 15,
+          "result.saved": 164,
+          "state.transition": 525,
+          "student.problem.selected": 162,
+          "student.sos.started": 1,
+          "student.sos.submitted": 1,
+          "student.test_answer.submitted": 111,
+          "student.written_solution.submitted": 31,
+          "teacher.oral_round.finished": 10,
+          "teacher.student_lookup": 1,
+          "teacher.written_check.started": 35,
+          "teacher.written_queue.requested": 31,
+          "teacher.written_verdict.saved": 26,
+          "update.callback.received": 395,
+          "update.message.received": 231,
+          "user.group.changed": 8,
+          "user.mode.changed": 1,
+          "zoom.conversation.started": 10,
+          "zoom.queue.changed": 162,
+          "zoom.webhook.received": 162
+        },
+        "sourceCounts": {
+          "tg.callback": 1964,
+          "tg.message": 795,
+          "zoom.webhook": 324
+        },
+        "actorTypeCounts": {
+          "anonymous": 18,
+          "other-actor": 324,
+          "student": 1587,
+          "teacher": 1154
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 3083,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 3083,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 2757,
+            "legacyNumericMappedRecords": 2,
+            "missingRecords": 324,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 324,
+            "missingBySafeSource": {
+              "zoom.webhook": 324
+            }
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-18T00:02:24.860",
+          "lastObserved": "2026-03-18T23:31:55.274",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 354,
+          "peakEventsPerMinute": 51,
+          "peakTraceStartsPerMinute": 11,
+          "peakIngressUpdatesPerMinute": 11,
+          "peakSubmissionEventsPerMinute": 4,
+          "peakReviewCompletionEventsPerMinute": 2,
+          "peakDistinctFlowsPerMinute": 6
+        },
+        "traceShape": {
+          "singleEventTraces": 31,
+          "multiEventTraces": 757,
+          "eventsPerTraceP50": 4.0,
+          "eventsPerTraceP95": 7.0,
+          "eventsPerTraceMax": 22,
+          "observedSpanSecondsP50": 0.046,
+          "observedSpanSecondsP95": 0.391,
+          "observedSpanSecondsMax": 1.156,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 3083,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 24,
+          "writtenPhotoMessageProxyCount": 19,
+          "photoSizeVariantHistogramAtIngress": {
+            "3": 3,
+            "4": 20,
+            "5": 1
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 31,
+          "maxReportedWrittenCount": 44,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 24,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    },
+    {
+      "path": "logs/events.jsonl.2026-03-19",
+      "lineCount": 1886,
+      "exactDuplicateLineCount": 0,
+      "invalidJsonCount": 0,
+      "invalidRecordCount": 0,
+      "invalidTimestampCount": 0,
+      "metrics": {
+        "eventCount": 1886,
+        "traceCount": 389,
+        "eventCounts": {
+          "admin.command.invoked": 1,
+          "auth.signon_attempt": 2,
+          "auth.start": 2,
+          "auth.success": 2,
+          "callback.routed": 486,
+          "command.invoked": 11,
+          "queue.written.dequeued": 31,
+          "queue.written.discussion_added": 67,
+          "queue.written.enqueued": 38,
+          "queue.written.status_changed": 39,
+          "reaction.saved": 5,
+          "result.saved": 89,
+          "state.transition": 393,
+          "student.problem.selected": 113,
+          "student.test_answer.submitted": 62,
+          "student.written_solution.submitted": 38,
+          "teacher.written_check.started": 39,
+          "teacher.written_queue.requested": 39,
+          "teacher.written_verdict.saved": 30,
+          "update.callback.received": 244,
+          "update.message.received": 145,
+          "user.group.changed": 10
+        },
+        "sourceCounts": {
+          "tg.callback": 1312,
+          "tg.message": 574
+        },
+        "actorTypeCounts": {
+          "anonymous": 14,
+          "student": 1118,
+          "teacher": 754
+        },
+        "labelQuality": {
+          "event": {
+            "reviewedRecords": 1886,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherEventRecords": 0
+          },
+          "source": {
+            "reviewedRecords": 1886,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherSourceRecords": 0
+          },
+          "actor": {
+            "reviewedRecords": 1884,
+            "legacyNumericMappedRecords": 2,
+            "missingRecords": 0,
+            "unreviewedRecords": 0,
+            "otherActorRecords": 0,
+            "missingBySafeSource": {}
+          }
+        },
+        "timeRange": {
+          "firstObserved": "2026-03-19T07:33:12.811",
+          "lastObserved": "2026-03-19T23:59:31.697",
+          "timezoneSemantics": "naive-local-timezone-unknown"
+        },
+        "minuteProxies": {
+          "observedMinuteBuckets": 229,
+          "peakEventsPerMinute": 38,
+          "peakTraceStartsPerMinute": 8,
+          "peakIngressUpdatesPerMinute": 8,
+          "peakSubmissionEventsPerMinute": 3,
+          "peakReviewCompletionEventsPerMinute": 2,
+          "peakDistinctFlowsPerMinute": 3
+        },
+        "traceShape": {
+          "singleEventTraces": 2,
+          "multiEventTraces": 387,
+          "eventsPerTraceP50": 5.0,
+          "eventsPerTraceP95": 8.0,
+          "eventsPerTraceMax": 10,
+          "observedSpanSecondsP50": 0.089,
+          "observedSpanSecondsP95": 0.437,
+          "observedSpanSecondsMax": 1.525,
+          "spanIsNotRequestLatency": true
+        },
+        "outcomeSignals": {
+          "okTrueRecords": 1886,
+          "okFalseRecords": 0,
+          "okMissingRecords": 0,
+          "okTruePartialSignalRecords": 0,
+          "partialSignals": {
+            "positiveBadCountWithOkTrue": 0,
+            "positiveErrorsCountWithOkTrue": 0
+          },
+          "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+        },
+        "media": {
+          "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+          "logicalPageCount": null,
+          "logicalPhotoMessageProxyCount": 30,
+          "writtenPhotoMessageProxyCount": 27,
+          "photoSizeVariantHistogramAtIngress": {
+            "2": 2,
+            "3": 3,
+            "4": 25
+          },
+          "writtenMediaGroupCount": 0,
+          "writtenDocumentMessageCount": 0,
+          "documentSizeObservationCount": 0,
+          "observedDocumentBytes": null,
+          "photoBytes": null,
+          "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+        },
+        "queueDepthProxies": {
+          "observationCount": 39,
+          "maxReportedWrittenCount": 50,
+          "maxReportedSosCount": 1,
+          "maxReportedSelectedCount": 23,
+          "outboxDepth": null
+        },
+        "concurrency": {
+          "directConcurrentSessions": null,
+          "supportedProxies": [
+            "peakTraceStartsPerMinute",
+            "peakIngressUpdatesPerMinute",
+            "peakDistinctFlowsPerMinute"
+          ],
+          "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+        },
+        "writeLatency": null
+      }
+    }
+  ],
+  "combined": {
+    "rawLineCount": 176713,
+    "exactDuplicateLineCount": 0,
+    "exactDuplicateEventRecordCount": 0,
+    "metricsUseCanonicalRecordDeduplication": true,
+    "metrics": {
+      "eventCount": 176713,
+      "traceCount": 37408,
+      "eventCounts": {
+        "admin.broadcast.completed": 58,
+        "admin.command.invoked": 214,
+        "admin.data.sync": 19,
+        "admin.sleep_state.set": 3,
+        "admin.state.mass_reset": 4,
+        "auth.failed": 43,
+        "auth.signon_attempt": 193,
+        "auth.start": 181,
+        "auth.success": 150,
+        "callback.routed": 41312,
+        "command.invoked": 1058,
+        "queue.written.dequeued": 2724,
+        "queue.written.discussion_added": 3535,
+        "queue.written.enqueued": 2092,
+        "queue.written.status_changed": 2335,
+        "reaction.saved": 458,
+        "result.saved": 9945,
+        "state.transition": 43407,
+        "student.problem.selected": 11078,
+        "student.sos.started": 40,
+        "student.sos.submitted": 33,
+        "student.test_answer.submitted": 7503,
+        "student.written_solution.submitted": 2131,
+        "teacher.oral_round.finished": 364,
+        "teacher.student_lookup": 5,
+        "teacher.written_check.started": 2362,
+        "teacher.written_queue.requested": 1576,
+        "teacher.written_verdict.saved": 1949,
+        "update.callback.received": 20669,
+        "update.message.received": 13403,
+        "user.group.changed": 540,
+        "user.mode.changed": 297,
+        "zoom.conversation.started": 356,
+        "zoom.queue.changed": 3338,
+        "zoom.webhook.received": 3338
+      },
+      "sourceCounts": {
+        "tg.callback": 108541,
+        "tg.message": 61496,
+        "zoom.webhook": 6676
+      },
+      "actorTypeCounts": {
+        "anonymous": 851,
+        "other-actor": 6676,
+        "student": 107243,
+        "teacher": 61899,
+        "unknown_user": 44
+      },
+      "labelQuality": {
+        "event": {
+          "reviewedRecords": 176713,
+          "missingRecords": 0,
+          "unreviewedRecords": 0,
+          "otherEventRecords": 0
+        },
+        "source": {
+          "reviewedRecords": 176713,
+          "missingRecords": 0,
+          "unreviewedRecords": 0,
+          "otherSourceRecords": 0
+        },
+        "actor": {
+          "reviewedRecords": 169887,
+          "legacyNumericMappedRecords": 150,
+          "missingRecords": 6676,
+          "unreviewedRecords": 0,
+          "otherActorRecords": 6676,
+          "missingBySafeSource": {
+            "zoom.webhook": 6676
+          }
+        }
+      },
+      "timeRange": {
+        "firstObserved": "2026-03-02T11:00:56.384",
+        "lastObserved": "2026-03-20T10:28:35.483",
+        "timezoneSemantics": "naive-local-timezone-unknown"
+      },
+      "minuteProxies": {
+        "observedMinuteBuckets": 9184,
+        "peakEventsPerMinute": 870,
+        "peakTraceStartsPerMinute": 38,
+        "peakIngressUpdatesPerMinute": 38,
+        "peakSubmissionEventsPerMinute": 13,
+        "peakReviewCompletionEventsPerMinute": 11,
+        "peakDistinctFlowsPerMinute": 12
+      },
+      "traceShape": {
+        "singleEventTraces": 868,
+        "multiEventTraces": 36540,
+        "eventsPerTraceP50": 4.0,
+        "eventsPerTraceP95": 8.0,
+        "eventsPerTraceMax": 1604,
+        "observedSpanSecondsP50": 0.071,
+        "observedSpanSecondsP95": 0.438,
+        "observedSpanSecondsMax": 443.922,
+        "spanIsNotRequestLatency": true
+      },
+      "outcomeSignals": {
+        "okTrueRecords": 176713,
+        "okFalseRecords": 0,
+        "okMissingRecords": 0,
+        "okTruePartialSignalRecords": 21,
+        "partialSignals": {
+          "positiveBadCountWithOkTrue": 21,
+          "positiveErrorsCountWithOkTrue": 0
+        },
+        "interpretation": "ok defaults to true in emit_trace; positive bad_count/errors_count is therefore reported separately as partial success."
+      },
+      "media": {
+        "photoCountFieldMeaning": "Telegram PhotoSize variants, not pages",
+        "logicalPageCount": null,
+        "logicalPhotoMessageProxyCount": 1647,
+        "writtenPhotoMessageProxyCount": 1510,
+        "photoSizeVariantHistogramAtIngress": {
+          "2": 51,
+          "3": 133,
+          "4": 1419,
+          "5": 44
+        },
+        "writtenMediaGroupCount": 37,
+        "writtenDocumentMessageCount": 0,
+        "documentSizeObservationCount": 0,
+        "observedDocumentBytes": null,
+        "photoBytes": null,
+        "limitation": "One photo message is a logical-photo proxy; albums emit multiple messages. Page count and compressed/original photo bytes are absent."
+      },
+      "queueDepthProxies": {
+        "observationCount": 1576,
+        "maxReportedWrittenCount": 226,
+        "maxReportedSosCount": 3,
+        "maxReportedSelectedCount": 27,
+        "outboxDepth": null
+      },
+      "concurrency": {
+        "directConcurrentSessions": null,
+        "supportedProxies": [
+          "peakTraceStartsPerMinute",
+          "peakIngressUpdatesPerMinute",
+          "peakDistinctFlowsPerMinute"
+        ],
+        "limitation": "Trace logs contain emitted event times, not session intervals or complete request start/finish timing."
+      },
+      "writeLatency": null
+    }
+  }
+}

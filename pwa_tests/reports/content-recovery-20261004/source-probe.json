@@ -1,0 +1,49 @@
+{
+  "usl-04-n.tex": {
+    "sourceSha256": "7cb5255371118445e7dd42a75d1066cb69933ad55ec2383452c54fce52bbed5c",
+    "encoding": "windows-1251",
+    "roles": {
+      "condition": {
+        "errors": [],
+        "selectedFigureCount": 6
+      },
+      "hint": {
+        "errors": [],
+        "selectedFigureCount": 6
+      },
+      "solution": {
+        "errors": [],
+        "selectedFigureCount": 6
+      }
+    }
+  },
+  "usl-04-p-sol.tex": {
+    "sourceSha256": "95912aa7b95f6b5f51e92b72819d82cfe77fb72edbf3694f69a06cbd7bb0e0bf",
+    "encoding": "windows-1251",
+    "roles": {
+      "condition": {
+        "errors": [],
+        "selectedFigureCount": 4
+      },
+      "hint": {
+        "errors": [],
+        "selectedFigureCount": 4
+      },
+      "solution": {
+        "errors": [
+          {
+            "code": "asset.missing",
+            "line": 125,
+            "column": 30
+          },
+          {
+            "code": "asset.missing",
+            "line": 128,
+            "column": 30
+          }
+        ],
+        "selectedFigureCount": 8
+      }
+    }
+  }
+}

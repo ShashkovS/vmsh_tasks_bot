@@ -1,0 +1,62 @@
+{
+  "modes": [
+    "review",
+    "student-results"
+  ],
+  "browser": "chromium",
+  "seconds": 76.657,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 17.624,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 33.736,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.723,
+        "key": "d18d86dc5b0672c26d9d55869cafa8bc7a43cfb6f5ed09dce3217ef0b28164ce"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/student-results.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 24.04,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.053,
+        "key": "d18d86dc5b0672c26d9d55869cafa8bc7a43cfb6f5ed09dce3217ef0b28164ce"
+      }
+    }
+  ]
+}

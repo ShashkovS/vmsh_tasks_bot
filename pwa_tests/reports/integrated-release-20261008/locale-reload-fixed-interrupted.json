@@ -1,0 +1,16 @@
+{
+  "actual_exit_code": 130,
+  "browser": "all",
+  "source_change": "All eight locale journeys await real main-frame reload; formatting and typed ESLint PASS",
+  "completed": "Chromium locale journeys passed; WebKit cold boot/teardown failures repeated",
+  "remaining": [
+    "complete i18n regression",
+    "figure-layout",
+    "runtime-isolation",
+    "statistics",
+    "visual",
+    "production branch fast-forward",
+    "both deployments"
+  ],
+  "production_changed": false
+}

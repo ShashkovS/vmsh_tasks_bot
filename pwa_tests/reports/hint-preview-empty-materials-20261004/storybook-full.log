@@ -1,0 +1,25 @@
+$ vitest run --config vitest.storybook.config.ts
+(node:99589) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+│
+▲  One or more extensionless imports detected: "../vite-branding" in file
+│  "/Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/.storybook/main.ts".
+│  For more information on how to resolve the issue:
+│  ]8;;https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensionshttps://storybook.js.org/docs/faq#extensionless-imports-in-st...]8;;
+│
+▲  One or more extensionless imports detected: "../vite-i18n" in file
+│  "/Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/.storybook/main.ts".
+│  For more information on how to resolve the issue:
+│  ]8;;https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensionshttps://storybook.js.org/docs/faq#extensionless-imports-in-st...]8;;
+│
+▲  No story files found for the specified pattern:
+│  dev/design-system/**/*.stories.@(ts|tsx)
+
+ RUN  v4.1.10 /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa
+
+
+ Test Files  74 passed (74)
+      Tests  356 passed (356)
+   Start at  14:49:15
+   Duration  58.75s (transform 0ms, setup 17.45s, import 1.80s, tests 34.46s, environment 0ms)
+

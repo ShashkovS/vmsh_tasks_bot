@@ -1,0 +1,501 @@
+{
+  "recorded_at": "2026-10-08T16:01:46.369423+00:00",
+  "host": "tlf",
+  "source_revision": "d4bf4a30ce9ddee3723fd13ed22eec95f9670ef0",
+  "frontend_release": "tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+  "builds": {
+    "landing": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "landing"
+    },
+    "student": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "student"
+    },
+    "family": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "family"
+    },
+    "staff": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+      "msw": false,
+      "prototype": false,
+      "application": "staff"
+    }
+  },
+  "public_assets": [
+    {
+      "path": "/landing/assets/index-C-8ajyVd.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "8eb7e88a9cf4cd9a2b98ed622b12e50c2e27b46755afcf42a1176c405dc2f740"
+    },
+    {
+      "path": "/landing/assets/index-BbNld60i.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "34870b3c2627a61912138bf2d9f003df93c7452a694c5a58a66d9384d8eb9909"
+    },
+    {
+      "path": "/landing/assets/catalog-ru-iC31xPog.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "559ee68a5b549e3c71eadfd112301cb6709bc4a8de2e6006213ccc71c7efe810"
+    },
+    {
+      "path": "/student/assets/index-B9egAHi0.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "2c7b38dfc701f8b27f8808032e312ebb025d71bda82c656b9add87d98c9bc157"
+    },
+    {
+      "path": "/student/assets/useStore-CcKO72-p.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "201df9107778657cc38ffb3fd773ed2cca95bdab6754674f528bdee8fc976b4f"
+    },
+    {
+      "path": "/student/assets/src-fQiQ1a4C.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "b089196540490f3ae1a07d40cdda2d0ed1191e048eed1edcfe6374ad91a95671"
+    },
+    {
+      "path": "/student/assets/matchContext-DrrnSWJl.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "7424a20eb6b3a648e475e5223ce61ed321f166e5d00bf96d21f156e39aa77a44"
+    },
+    {
+      "path": "/student/assets/Match-DezLPr3A.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "183606a3c0fe6ff9dca09170d6159c266dde2d9ef5655d96c362f39aad191964"
+    },
+    {
+      "path": "/student/assets/useNavigate-_scT50Kp.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "828400f189a11be404dc8ea9add15c6f13cf363ec862964a870fc1d7ecb4fb82"
+    },
+    {
+      "path": "/student/assets/preload-helper-BrMLVwyT.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "c3850b72acd37932d7781c40312f7b0b7f530c522d9ac3f73526006334b82a76"
+    },
+    {
+      "path": "/student/assets/pwa-update-events-BP7-3Up-.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "7c71cd285b031ef492651f2def386f09ecb1713aea46a0b149f58dea6bf1d9a5"
+    },
+    {
+      "path": "/student/assets/offline-student-data-x33UxzBz.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "2a39cd77740b5c1a2a928df1ea2a72d7b6756b34b655c08769169de298372867"
+    },
+    {
+      "path": "/student/assets/login-CdIA03Gf.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "f550562c2892a8d64fc570177b1311639ea1d87c0c687e70c9a9b3243eb9822f"
+    },
+    {
+      "path": "/student/assets/progress-DkDeqBQi.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "9c52574d8b5216fe27e13d6d7ef7e3e7cff1422c16a3beeec5815b60e72b1e7a"
+    },
+    {
+      "path": "/student/assets/news._postId-CisM-EfI.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "4f8a5e941c8b935cc0008f6c395b12a75dc9d1c267632eeb774796b65108b4af"
+    },
+    {
+      "path": "/student/assets/organizers.index-5QGw8WAc.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "af222ec1a4560de9a12ed14170f374543a519fe253688198591697260a6964bf"
+    },
+    {
+      "path": "/student/assets/organizers._threadId-DgvgirGs.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "5f4d52c0a320901f671778d02a189c517e69668c300878ccccdad9d3dc3c5002"
+    },
+    {
+      "path": "/student/assets/organizers.new-DWManUHt.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "4ec0055ed53ce7f6052dd4d6ca4d4700818cfca9c242e5d76a63c8787837f5a2"
+    },
+    {
+      "path": "/student/assets/questions._threadId-CMsd1Iyy.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "1b7fd274c7f8ba199c1619b8396fa729ca8519324417fdecea6aae394f0c6391"
+    },
+    {
+      "path": "/student/assets/questions.new-C59MNS4z.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "81fd73bf6b75bf0885eced54019c4f7c2f6173643afaf481275fcc0afe927661"
+    },
+    {
+      "path": "/student/assets/submissions._submissionId-D2v9jRJ3.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "6eef8e784921f058ff7832eab51badacd3d0ab10e860806e15dd36edffd0e3cb"
+    },
+    {
+      "path": "/student/assets/tasks.index-_5m3VnJP.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "7443d8a515b9f3d21fd548b2de7e38ef070f510aa5eddc0cbd23705d9e7676c8"
+    },
+    {
+      "path": "/student/assets/tasks._courseCode._groupCode._lessonNumber-DSxvyCRm.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "acd7b993594eadd8c6509526bbc106a371dc8d29bfe873ea958b87a7da13b0f4"
+    },
+    {
+      "path": "/student/assets/src-Dmm8mtms.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "ca7bd5ff51a30067f4b4e1652273f08c06f82d18cc9578aedce4fcfdd4a6beb4"
+    },
+    {
+      "path": "/student/assets/index-DH2lJ8Zr.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "ad5460d5fc29a8d23daf8be6f6ba65ab7dc1e9a3b8f7edf26279fe3acaa67a34"
+    },
+    {
+      "path": "/student/assets/catalog-ru-BbU_h2gj.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "1602c18176d1fb1d3611d75642c97c5237128cb9654170026fe6f63424d170cc"
+    },
+    {
+      "path": "/student/assets/image-compression.worker-aCdjqHy8.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "971ba7a3bec05b2faa41ddf5dd4e76f8b723071bae61e3b92d3bf28ecec3d665"
+    },
+    {
+      "path": "/family/assets/index-Du-lZS1v.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "88587515731266d4927b8b48b55074f7b46426af1ae7a05e8c6c61385406a351"
+    },
+    {
+      "path": "/family/assets/useStore-CcKO72-p.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "201df9107778657cc38ffb3fd773ed2cca95bdab6754674f528bdee8fc976b4f"
+    },
+    {
+      "path": "/family/assets/src-BrCzVTAR.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "dc40dc54d3bb71fabe9f2b04ecb6f68a3a564197cca72126cf7c2acd939078c0"
+    },
+    {
+      "path": "/family/assets/matchContext-DrrnSWJl.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "7424a20eb6b3a648e475e5223ce61ed321f166e5d00bf96d21f156e39aa77a44"
+    },
+    {
+      "path": "/family/assets/Match-DezLPr3A.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "183606a3c0fe6ff9dca09170d6159c266dde2d9ef5655d96c362f39aad191964"
+    },
+    {
+      "path": "/family/assets/useNavigate-_scT50Kp.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "828400f189a11be404dc8ea9add15c6f13cf363ec862964a870fc1d7ecb4fb82"
+    },
+    {
+      "path": "/family/assets/preload-helper-DTLtn5aT.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "1bb9abbf77e19091614c965e6fe2b4314759eaca8af1360cef10fa44191716ae"
+    },
+    {
+      "path": "/family/assets/tasks._courseCode._groupCode._lessonNumber-cq8UE2zn.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "74ab4099ccaa4577a6aeb90a05c4c2a937fec73895da70d7bec5296b4b37997f"
+    },
+    {
+      "path": "/family/assets/login-VHxooAb-.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "3a4a3f96ea19e3d03a9f6e277390454751465617e9b987f83a25f061176db787"
+    },
+    {
+      "path": "/family/assets/children._childId-D0F3xzA2.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "784f7667ea6bea0d2765537f003a888c415c58e77bee466c6c9274a5a56cecbe"
+    },
+    {
+      "path": "/family/assets/news._postId-Bp7-bWXJ.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "050bbde5d40b2534c126d9d170a47c6c8e0cc82adb25bec005ffc8c1c95f99f2"
+    },
+    {
+      "path": "/family/assets/organizers.index-DrAotNUn.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "bf0f8eb839ee1d001566a89ed65b30127ff5e53ccb559cf60cde0228bfabc118"
+    },
+    {
+      "path": "/family/assets/organizers._threadId-DB1Pynvc.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "346cf878053ee409b12352236d84f38eb369aa6f93886254395e956116e60ead"
+    },
+    {
+      "path": "/family/assets/organizers.new-WNZsscsG.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "800bca01e87701a3932272d06f470a302a58ec6a953f47a5bd432e7f09e7e900"
+    },
+    {
+      "path": "/family/assets/src-_JI6vdSD.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "74f487327b20d7c6b53178758f9a3262ac5f3bece37485efab3f8e16fe35dcb5"
+    },
+    {
+      "path": "/family/assets/index-Bv_KmTO4.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "085bd5dedfb14798b1c96bb108f36cf0ff3f71bf4f4e82a790b3971fdc597836"
+    },
+    {
+      "path": "/family/assets/catalog-ru-nEFJGA4x.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "0e03447d6de3c4d3b4bcc8ea55b89e61008a249d3e44b43745029832db5b68c3"
+    },
+    {
+      "path": "/family/assets/image-compression.worker-aCdjqHy8.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "971ba7a3bec05b2faa41ddf5dd4e76f8b723071bae61e3b92d3bf28ecec3d665"
+    },
+    {
+      "path": "/staff/assets/index-BS1Wq1Uz.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "661f8de4a40a5e26b8739c9b7b1c74be6a4e075321c03dfcaf72fdcf1e1dbd69"
+    },
+    {
+      "path": "/staff/assets/react-mKr9-DnF.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "17e7361dbfa19dde3e76871823d852a718fb49617635c01e7e6ddbaddb93dc8a"
+    },
+    {
+      "path": "/staff/assets/shim-Ds6aH16P.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "89979d3fcd4f1027bee311903a5aae809306f2329e087ac61dbd6529490e8f3f"
+    },
+    {
+      "path": "/staff/assets/katex-BGO3dCoX.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "482f0e4d9b733271217a94c7a45306065ed76b8f9817cabacee146afd0be6885"
+    },
+    {
+      "path": "/staff/assets/utils-CLNeIYXQ.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "3169381a0efc3e80c5000bae4ca862a68693e3c3576f748321e99f216d3373f0"
+    },
+    {
+      "path": "/staff/assets/with-selector-CZAIagi8.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "bc85942c28c9d5ead1660cdb9a76a463d7eeb7e0c8b8d50ad6c808769d583fca"
+    },
+    {
+      "path": "/staff/assets/useStore-A5sfJPwP.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "765f4dea19dc22aa6130eb4668f7db4d5c83856661c10e5abe908c8bbe6c6f1f"
+    },
+    {
+      "path": "/staff/assets/matchContext-IcQ_MhI9.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "8a31e6e9dedc8e57cd198a7eb9089cd82e48c0795a14b1190731d645da1120e3"
+    },
+    {
+      "path": "/staff/assets/Match-BkpI4yKZ.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "6ed6a6e789118e108d2837b599eec6a8e863133a5870130bd26f2b3f9f861228"
+    },
+    {
+      "path": "/staff/assets/react-dom-DwDvjPh7.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "ee395683701aa94fc697f73bb91443bd4470da72c1235a032fd3f96d71c229ae"
+    },
+    {
+      "path": "/staff/assets/useMatch-jX9jBjqw.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "43e183ab707fe3f1a4b3f23ec772a847e4891bd0b5677fef7e155d32301b2819"
+    },
+    {
+      "path": "/staff/assets/fileRoute-THZwHHoK.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "e7bea51e37b132f0838834dad51de07676e7fbdf7de52184f4e6a75c4a0a1984"
+    },
+    {
+      "path": "/staff/assets/lazyRouteComponent-BoGBjV5P.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "d6c4c391546cb778349c78e3aea2e0678ebb64edaa15c092823a3321a9246b1c"
+    },
+    {
+      "path": "/staff/assets/preload-helper-DHPNwG7e.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "ac487dc3684eb308fe090c68fb99f8bd971d077a27991b4303ef348cb647898a"
+    },
+    {
+      "path": "/staff/assets/problems.synonyms-BHhiBgHa.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "510d47fe514a2b42a0f57b66334065cef9b472377f4eecff706588b15a7592b8"
+    },
+    {
+      "path": "/staff/assets/problems.synonyms-C-Cya0bg.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "e3b97ae561248a1a234b4b4be1965a0a2f117fbc8bfce377b42780d988d3736e"
+    },
+    {
+      "path": "/staff/assets/src-COP6A2Wi.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "b7e421d03e264f60c5c4d4c3d09820f405e7bef1ee25ed7038b7f86d0f58a70b"
+    },
+    {
+      "path": "/staff/assets/src-B0O3vl2c.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "afa867658fd188caae31dc90b4a3b1d5b48d613e85f010ee7842ffdfcffe4cc7"
+    },
+    {
+      "path": "/staff/assets/useRouterState-zoSFJqDx.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "20a3067e19296d3c1069c31c214cdeb718a63bf65d4b052d4cbc6f226136756b"
+    },
+    {
+      "path": "/staff/assets/client-B4rcP9Xu.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "9492312218c5e2f539dbe77f6fdfebe0ac2d04d4627fbc9ddf6302a931d6a535"
+    },
+    {
+      "path": "/staff/assets/coerce-CdKG48tl.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "2ab65fc2d595f731327b643a5bc53af8a01eebe175777ccd7502cac24411f0e9"
+    },
+    {
+      "path": "/staff/assets/statistics-CK7w9S7N.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "1eb93c6ad511839ad22e11dacfc342aee1321684c5c125ae4c86a21a2ef89cfd"
+    },
+    {
+      "path": "/staff/assets/clipboard-check-62I9UmnO.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "9bdbdfeee4df65d5511ee0e11b6736a838fff97439958aaae87922dfc15c7cfb"
+    },
+    {
+      "path": "/staff/assets/lessons._lessonId-CGgiTgmq.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "921b58eed9537acfbcc794df021bafebb332ebe3dce96426ebdcf49ce153d2c1"
+    },
+    {
+      "path": "/staff/assets/audit-UQ4-C8uu.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "02ec029bde9f52d4cec2b7ac49f7da6a6f096f559be4d6b2a042e0ba7e38947d"
+    },
+    {
+      "path": "/staff/assets/classrooms-DVcIef89.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "c7a067a4b363791aa7033484cad73fac93c1bed591e4b017ab85d32193e16e08"
+    },
+    {
+      "path": "/staff/assets/courses-BoJam7mn.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "41847938a308cd3038cfd598b8d9d488b172c733a0ce389ff87bec990df8c793"
+    },
+    {
+      "path": "/staff/assets/live-marking-state-CBULeLrO.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "b1b85e3adc85c7ac70a34d8630b8a9982d46c0190c8b8d9fbe3dec042fde0be6"
+    },
+    {
+      "path": "/staff/assets/in-person-ocRvsbJV.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "1083ea9544e370325ec8a73b1a07335e3655576f74f7fc6527e9ba9afa065202"
+    },
+    {
+      "path": "/staff/assets/login-BafjlS5k.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "f0750d25713456540fdda429d7780b1e25ca0aafcc93eba7941b00b7658613c8"
+    },
+    {
+      "path": "/staff/assets/news-DO4kAE1M.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "20caa041ff9d272e59bc54ecc614a56a068066447ea944d6a03a0affd4e25f6b"
+    },
+    {
+      "path": "/staff/assets/oral-CLj-g4G1.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "de29d87aedd7b54ff8f35d46bd14d4868537158398a742287f9751ef2aa059c1"
+    },
+    {
+      "path": "/staff/assets/review-series-model-CbFJ_WhV.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "29b489b1bd540a12b59ccdbd008ba173d1f46f7742d1061f6d2c3b68badf2b0f"
+    },
+    {
+      "path": "/staff/assets/review-PxNJvzuN.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "1b127933fa75bd3ee804dabf6fde451436619ad228235439c8e556442f8405ec"
+    },
+    {
+      "path": "/staff/assets/student-results-BjkSjZQI.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "c836fc123eb3c34ab99d4fd018e3aff59340c045ff2c2bd2bf09a9243acd4e77"
+    },
+    {
+      "path": "/staff/assets/users-svDIjKwv.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "561cdab239ba8edfeaa281f19c5773f627a5b72f69f56393c381c1daf53cf206"
+    },
+    {
+      "path": "/staff/assets/whiteboard-export-C8fQsHmH.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "90c737ecd87ec32892732588ca2883146e99002d52d2438031d3850177c8d92a"
+    },
+    {
+      "path": "/staff/assets/problems._problemId-DlOsJAsr.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "0ebd23ab7dea27ac2ade311c79b1d3f8fb61a6f6a243f76f4c71d7cf6e6ed595"
+    },
+    {
+      "path": "/staff/assets/questions.index-xyoFrBjN.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "216d2fc0950b5452df5d35199f6a43f26e7b396229c807b810214521ffd7eaa7"
+    },
+    {
+      "path": "/staff/assets/questions._threadId-e0lG7zzG.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "7bb25e84b8a0382dd1ce50b5381b89d151643234e7879444f43ac765aabb6455"
+    },
+    {
+      "path": "/staff/assets/review._submissionId-w8Bsp6Pq.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "d66ff10d8d5fdb72d4bc60f8a07f9bcc8644a230f8fcea864f7328b870b6f969"
+    },
+    {
+      "path": "/staff/assets/review.history-DKSeZEXr.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "f407851a67f97e2925f57e9b33fe0d6d4526d2597967bb508e27d5d61556560c"
+    },
+    {
+      "path": "/staff/assets/questions.organizers.index-BLQrL7Uv.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "b97435078401a588fe84a00614ab50e4fb9a4e745b3e9777abb32fb0baad0a9e"
+    },
+    {
+      "path": "/staff/assets/questions.organizers._threadId-Er2hJyn2.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "efa8e77a8ca7f1526aaac771108c50375b5a84501a96f6b2649e9c92396aa878"
+    },
+    {
+      "path": "/staff/assets/review.series._problemId-CrYOl3LN.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "f9088d107e11ba31848095fc504bf4390d4e9217010f4cdf4a1522d78481b511"
+    },
+    {
+      "path": "/staff/assets/src-BiSw-3T6.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "5ebe98fe1f2277c245adb12cba36528fddab4f6d29abe8c5ef0967dc842fe59b"
+    },
+    {
+      "path": "/staff/assets/index-C9U6SzEF.css?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "d056a67d46801634747269ce286362896de8f76811968a6598e2145b86d81479"
+    },
+    {
+      "path": "/staff/assets/catalog-ru-CRPJcMpQ.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "e7dc8311b866ee538721c8a4270674871f5108115f192c62131b4c1454aa9ae1"
+    },
+    {
+      "path": "/staff/assets/image-compression.worker-aCdjqHy8.js?release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "sha256": "971ba7a3bec05b2faa41ddf5dd4e76f8b723071bae61e3b92d3bf28ecec3d665"
+    }
+  ],
+  "services": {
+    "vmshpwa.service": {
+      "state": "active",
+      "pid": "1116995",
+      "restarts": "0"
+    },
+    "vmsh-analytics.timer": {
+      "state": "active",
+      "pid": "",
+      "restarts": ""
+    },
+    "vmshzoom.service": {
+      "state": "active",
+      "pid": "1116997",
+      "restarts": "0"
+    },
+    "nats.service": {
+      "state": "active",
+      "pid": "1093",
+      "restarts": "0"
+    }
+  },
+  "maintenance_cleared": true,
+  "schema_current": true,
+  "expected_migrations": [
+    "0111.current_schema",
+    "0112.scheduled_publication_lifecycle",
+    "0113.content_upload_compiler_generation",
+    "0114.browser_image_uploads",
+    "0115.vmsh_public_media_domain",
+    "0116.notification_push_candidate_index"
+  ],
+  "remaining_old_presentation_urls": {
+    "media_assets.public_url": 0,
+    "content_derivatives.content_text": 0,
+    "publication_figure_layouts.document_json": 0,
+    "publication_figure_layouts.telegram_html": 0,
+    "lesson_block_revisions.markdown": 0,
+    "lesson_block_revisions.document_json": 0,
+    "news_media.public_url": 0,
+    "news_revisions.content_json": 0,
+    "news_revisions.markdown_source": 0,
+    "news_revisions.rich_document_json": 0,
+    "group_banner_media.public_url": 0,
+    "group_banners.html_sanitized": 0,
+    "group_banners.markdown_source": 0,
+    "group_banners.rich_document_json": 0
+  },
+  "rewritten_hash_checks": {
+    "content_derivatives.content_text": 0,
+    "publication_figure_layouts.telegram_html": 0
+  },
+  "immutability_triggers_restored": true,
+  "upload_and_push_indexes_present": true,
+  "image_upload_states": {},
+  "credentials_unchanged": true,
+  "existing_product_rows_preserved": true,
+  "rehearsal_up_down_up": true,
+  "direct_s3_verified": false,
+  "backup_before": {
+    "backup": "20261008T155837.940038Z",
+    "createdAt": "2026-10-08T15:58:37.940038+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 1956
+  },
+  "backup_after": {
+    "backup": "20261008T155907.173917Z",
+    "createdAt": "2026-10-08T15:59:07.173917+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 1956
+  }
+}

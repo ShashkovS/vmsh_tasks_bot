@@ -1,0 +1,140 @@
+{
+  "modes": [
+    "support",
+    "organizers",
+    "submissions",
+    "review",
+    "figure-layout",
+    "statistics",
+    "visual"
+  ],
+  "browser": "all",
+  "seconds": 355.198,
+  "exit_code": 1,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.23,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/support-dialogue.spec.ts",
+        "e2e/browser-image-upload.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 71.411,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.049,
+        "key": "ab2a7dca94099945617c45f9c415fdc3fa42b480ad7922718e30e8e226f03cb0"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/organizer-questions.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 33.09,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.049,
+        "key": "ab2a7dca94099945617c45f9c415fdc3fa42b480ad7922718e30e8e226f03cb0"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/test-submission.spec.ts",
+        "e2e/review-workspace.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 85.141,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.029,
+        "key": "ab2a7dca94099945617c45f9c415fdc3fa42b480ad7922718e30e8e226f03cb0"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/figure-layout.spec.ts",
+        "e2e/whiteboard-export.spec.ts",
+        "e2e/worksheet-print.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 88.249,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.024,
+        "key": "ab2a7dca94099945617c45f9c415fdc3fa42b480ad7922718e30e8e226f03cb0"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.statistics.config.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 57.307,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 4.274,
+        "key": "13586aadb9a5a20508ad10f9bc881073ab5109d94804375eeb5f07d9d0bd376e"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--grep",
+        "@visual",
+        "--retries",
+        "0"
+      ],
+      "seconds": 19.446,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

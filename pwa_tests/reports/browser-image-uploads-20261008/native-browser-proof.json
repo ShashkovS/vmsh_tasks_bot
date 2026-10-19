@@ -1,0 +1,372 @@
+{
+  "date": "2026-10-08",
+  "command": "make pwa-e2e-support",
+  "scope": "isolated filesystem backend; Chromium/WebKit/Firefox",
+  "e2ePassed": 15,
+  "completedNativeOrganizerIntents": 26,
+  "limitations": [
+    "Synthetic raster corpus; handwritten-text visual review and production speed comparison remain separate.",
+    "Direct S3 browser proof not executed because pinned provider checksum prerequisites failed."
+  ],
+  "cases": [
+    {
+      "browser": "chromium",
+      "photos": 1,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 165.09999990463257
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 43.69999980926514
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 28.59999990463257
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "photos": 2,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 130.09999990463257
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 30.699999809265137
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 68.60000014305115
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 24.399999856948853
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 23.200000047683716
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "photos": 10,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 110.59999990463257
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 28.600000143051147
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 27
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 105.29999995231628
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 24.700000047683716
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 30.899999856948853
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 104.20000004768372
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 20.799999952316284
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 22
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 92.20000004768372
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 152.5
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 17.299999952316284
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 20.09999990463257
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 19.5
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 11.900000095367432
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 12.799999952316284
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 10.5
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 11.399999856948853
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 12.900000095367432
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 16.700000047683716
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 12.300000190734863
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "photos": 1,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 2
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 289
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "photos": 2,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 5
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 461
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "photos": 10,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 8
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 0
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 1724
+        }
+      ]
+    },
+    {
+      "browser": "firefox",
+      "photos": 1,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 147
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 39
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 55
+        }
+      ]
+    },
+    {
+      "browser": "firefox",
+      "photos": 2,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 138
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 44
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 35
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 98
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 42
+        }
+      ]
+    },
+    {
+      "browser": "firefox",
+      "photos": 10,
+      "status": "passed",
+      "timings": [
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 185
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 49
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 71
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 179
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 223
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 34
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 198
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 67
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 38
+        },
+        {
+          "name": "vmsh.image.prepare",
+          "milliseconds": 181
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 54
+        },
+        {
+          "name": "vmsh.image.send-to-message-receipt",
+          "milliseconds": 357
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 41
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 41
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 37
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 27
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 30
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 29
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 24
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 30
+        },
+        {
+          "name": "vmsh.image.send-to-upload-receipt",
+          "milliseconds": 27
+        }
+      ]
+    }
+  ]
+}

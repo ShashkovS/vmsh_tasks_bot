@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-08",
+  "source_base": "55ed5e9c7e9c6b050a889e8e59a42dfe4c73e2d9",
+  "vmsh": {
+    "source": "55ed5e9c7e9c6b050a889e8e59a42dfe4c73e2d9",
+    "static": "55ed5e9c7e9c-20261008065457",
+    "tracked_clean": true,
+    "services_active": [
+      "vmshpwa",
+      "gunicorn.vmsh_tasks_bot",
+      "vmsh-analytics.timer",
+      "nats-server"
+    ],
+    "installed_deploy_public_media_origin": "https://vmshstor.shashkovs.ru",
+    "migration_head": "0113.content_upload_compiler_generation",
+    "legacy_media_assets_url_rows": 6486
+  },
+  "tlf": {
+    "source": "0d2d88e3127e1e0937c3043346d3a96c3160bd89",
+    "static": "tlfprep-20261005-violin-polish-0d2d88e3127e",
+    "tracked_clean": true,
+    "services_active": [
+      "vmshpwa",
+      "vmshzoom",
+      "vmsh-analytics.timer",
+      "nats"
+    ],
+    "migration_head": "0113.content_upload_compiler_generation",
+    "legacy_vmsh_media_assets_url_rows": 0,
+    "zoom_receipts": 1934,
+    "direct_image_uploads_verified": false,
+    "toolchain": {
+      "node": "26.9.0",
+      "pnpm": "11.15.1",
+      "python": "3.14.4"
+    }
+  },
+  "scope": "Untracked runtime DB/config/receipt files retained; no production source/data changed during preflight."
+}

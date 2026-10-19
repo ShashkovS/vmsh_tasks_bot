@@ -1,0 +1,34 @@
+{
+  "profile": "fast",
+  "modes": [
+    "content"
+  ],
+  "started_at": "2026-10-04T10:47:44.841322+00:00",
+  "steps": [
+    {
+      "name": "e2e",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.e2e_runner",
+        "--browser",
+        "chromium",
+        "--report",
+        ".runtime/vmshpwa/checks/20261004T103156.006547Z-upload-e2e/e2e.json",
+        "--mode",
+        "content"
+      ],
+      "seconds": 50.662,
+      "exit_code": 0
+    }
+  ],
+  "exit_code": 0,
+  "revision": "c502cd4fa3b721e7de78b904f42bc6dca070f4b2",
+  "source_digest": "d43185f46d1251edb4a0dbdca8780f390f35ea6e391527bee474458dd123061b",
+  "source_changed": false,
+  "seconds": 52.78
+}

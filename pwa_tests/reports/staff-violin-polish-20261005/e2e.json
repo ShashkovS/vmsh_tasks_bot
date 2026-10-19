@@ -1,0 +1,41 @@
+{
+  "modes": [
+    "statistics"
+  ],
+  "browser": "chromium",
+  "seconds": 39.545,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.498,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.statistics.config.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 37.498,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.045,
+        "key": "bdb4305282a97399715f85d094c6c0ef63c50699bc0eeee3d81fbbfb7e900235"
+      }
+    }
+  ]
+}

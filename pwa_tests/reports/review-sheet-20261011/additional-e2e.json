@@ -1,0 +1,109 @@
+{
+  "modes": [
+    "review",
+    "submissions",
+    "course-attendance",
+    "rich-files",
+    "support",
+    "figure-layout",
+    "statistics",
+    "visual",
+    "problem-release"
+  ],
+  "browser": "all",
+  "seconds": 372.687,
+  "exit_code": 1,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.1,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "e2e/test-submission.spec.ts",
+        "e2e/course-attendance.spec.ts",
+        "e2e/rich-file-attachments.spec.ts",
+        "e2e/support-dialogue.spec.ts",
+        "e2e/browser-image-upload.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 211.635,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.52,
+        "key": "c76ca0fd3dadafe9e3e4322dda504661c44af9d0d1c3faa290882d11dc7e9969"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/figure-layout.spec.ts",
+        "e2e/whiteboard-export.spec.ts",
+        "e2e/worksheet-print.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 89.895,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.03,
+        "key": "c76ca0fd3dadafe9e3e4322dda504661c44af9d0d1c3faa290882d11dc7e9969"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.statistics.config.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 51.656,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 3.783,
+        "key": "7305267df39283829eca830a12253d91e62f4e787cba32bf0689edf89834eeb3"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--grep",
+        "@visual",
+        "--retries",
+        "0"
+      ],
+      "seconds": 19.148,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ],
+  "source_digest": "342ce9ea8646cf818329729c7c2ae68b4fa55bbf41962af4eaf473dde57e4288",
+  "source_changed": false
+}

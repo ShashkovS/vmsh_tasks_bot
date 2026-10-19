@@ -1,0 +1,64 @@
+{
+  "publications": [
+    [
+      13,
+      "condition",
+      51,
+      46,
+      "published",
+      1,
+      48
+    ],
+    [
+      13,
+      "hint",
+      60,
+      68,
+      "published",
+      1,
+      null
+    ],
+    [
+      13,
+      "solution",
+      59,
+      64,
+      "scheduled",
+      1,
+      null
+    ],
+    [
+      14,
+      "condition",
+      52,
+      47,
+      "published",
+      1,
+      49
+    ],
+    [
+      14,
+      "hint",
+      62,
+      76,
+      "published",
+      1,
+      null
+    ]
+  ],
+  "gl14_latest_hint": [
+    "cr-76",
+    6,
+    "ready",
+    3
+  ],
+  "cr75": [
+    "cr-75",
+    "invalid",
+    7
+  ],
+  "migration_ids": [
+    "0110.pwa_written_result_precedence",
+    "0111.current_schema"
+  ]
+}

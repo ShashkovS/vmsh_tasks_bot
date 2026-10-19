@@ -1,0 +1,25 @@
+{
+  "sample_count": 3,
+  "public_origin": "https://vmshstor.shashkovs.ru",
+  "old_and_new_objects_match": true,
+  "samples": [
+    {
+      "both_origins_status": 200,
+      "length": "5388",
+      "mime": "image/svg+xml",
+      "same_etag": true
+    },
+    {
+      "both_origins_status": 200,
+      "length": "8316",
+      "mime": "image/svg+xml",
+      "same_etag": true
+    },
+    {
+      "both_origins_status": 200,
+      "length": "6514",
+      "mime": "image/webp",
+      "same_etag": true
+    }
+  ]
+}
