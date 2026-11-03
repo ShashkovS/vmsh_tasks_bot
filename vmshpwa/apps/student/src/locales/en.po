@@ -496,8 +496,8 @@ msgid "Изменяете отправленное решение — оно з�
 msgstr "You are editing a submitted solution; it will be replaced in one operation."
 
 #: apps/student/src/login-page.tsx
-msgid "Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль."
-msgstr "Use the login from your registration email and your current Telegram bot token as the password."
+msgid "Используйте логин и пароль из письма после регистрации."
+msgstr "Use the login and password from your registration email."
 
 #: apps/student/src/pages.tsx
 msgid "История"
@@ -570,8 +570,8 @@ msgid "Логин"
 msgstr "Login"
 
 #: apps/student/src/login-page.tsx
-msgid "Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз."
-msgstr "The login or token is incorrect. Check the keyboard layout and try again."
+msgid "Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз."
+msgstr "The login or password did not match. Check your keyboard layout and try again."
 
 #: apps/student/src/main.tsx
 msgid "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
@@ -1046,6 +1046,10 @@ msgstr "In-person lesson"
 msgid "Очные занятия"
 msgstr "In-person lessons"
 
+#: apps/student/src/login-page.tsx
+msgid "Пароль"
+msgstr "Password"
+
 #: apps/student/src/pages.tsx
 msgid "Первое письменное решение зачтено"
 msgstr "First written solution accepted"
@@ -1479,10 +1483,6 @@ msgstr "Current worksheet and class archive. Problems within a worksheet are alw
 #: apps/student/src/routes/__root.tsx
 msgid "Тестирование учителем. Отправки не входят в общую статистику. <0>Вернуться в Staff</0>"
 msgstr "Teacher testing. Submissions are not included in the overall statistics. <0>Back to Staff</0>"
-
-#: apps/student/src/login-page.tsx
-msgid "Токен Telegram-бота"
-msgstr "Telegram bot token"
 
 #: apps/student/src/student-tasks-view.ts
 msgid "Только условие"

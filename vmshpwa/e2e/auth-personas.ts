@@ -60,13 +60,9 @@ function parseFixture(): Record<AuthPersonaName, AuthPersona> {
 /** Test-only personas. No application or production bundle imports this module. */
 export const AUTH_PERSONAS = parseFixture()
 
-export function credentialLabel(persona: AuthPersona): string {
-  return persona.credentialField === 'telegramToken' ? 'Токен Telegram-бота' : 'Пароль'
-}
-
 export async function submitLoginForm(page: Page, persona: AuthPersona): Promise<void> {
   await page.getByLabel('Логин').fill(persona.username)
-  await page.getByLabel(credentialLabel(persona), { exact: true }).fill(persona.credential)
+  await page.getByLabel('Пароль', { exact: true }).fill(persona.credential)
 
   const loginResponse = page.waitForResponse(
     (response) =>

@@ -105,7 +105,7 @@ export const Login: Story = {
   render: () => <StudentLoginPage />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const password = canvas.getByLabelText('Токен Telegram-бота')
+    const password = canvas.getByLabelText('Пароль')
     await expect(password).toHaveAttribute('type', 'password')
     await userEvent.click(canvas.getByRole('button', { name: 'Показать пароль' }))
     await expect(password).toHaveAttribute('type', 'text')
@@ -161,7 +161,7 @@ export const LoginStateMatrix: Story = {
     const canvas = within(canvasElement)
     const state = canvas.getByLabelText('Состояние формы')
     const cases = [
-      ['invalid', 'Логин или токен не подошли'],
+      ['invalid', 'Логин или пароль не подошли'],
       ['rate-limited', 'Слишком много попыток'],
       ['account-unavailable', 'учётной записи сейчас недоступен'],
       ['blocked', 'Доступ к аккаунту приостановлен'],
@@ -176,7 +176,7 @@ export const LoginStateMatrix: Story = {
     await userEvent.selectOptions(state, 'pending')
     await expect(canvas.getByRole('button', { name: 'Входим…' })).toBeDisabled()
     await expect(canvas.getByLabelText('Логин')).toBeDisabled()
-    await expect(canvas.getByLabelText('Токен Telegram-бота')).toBeDisabled()
+    await expect(canvas.getByLabelText('Пароль')).toBeDisabled()
   },
 }
 

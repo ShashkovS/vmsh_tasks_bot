@@ -2,7 +2,6 @@ import { fileURLToPath } from 'node:url'
 
 import {
   AUTH_PERSONAS,
-  credentialLabel,
   loginThroughUi,
   submitLoginForm,
   type AuthAudience,
@@ -733,9 +732,7 @@ for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONA
   }) => {
     await page.goto(`/${persona.audience}/login`)
     await page.getByLabel('Логин').fill(persona.username)
-    await page
-      .getByLabel(credentialLabel(persona), { exact: true })
-      .fill(`${persona.credential}-wrong`)
+    await page.getByLabel('Пароль', { exact: true }).fill(`${persona.credential}-wrong`)
     const loginResponsePromise = page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&
@@ -749,9 +746,7 @@ for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONA
     expect(errorPayload).toMatchObject({ error: { code: 'invalid_credentials' } })
     expect(JSON.stringify(errorPayload)).not.toContain(persona.username)
     expect(JSON.stringify(errorPayload)).not.toContain(persona.credential)
-    await expect(page.getByRole('alert')).toContainText(
-      persona.audience === 'student' ? 'Логин или токен не подошли' : 'Логин или пароль не подошли',
-    )
+    await expect(page.getByRole('alert')).toContainText('Логин или пароль не подошли')
     await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
   })
 }

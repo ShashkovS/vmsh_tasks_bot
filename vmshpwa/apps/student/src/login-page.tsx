@@ -48,9 +48,9 @@ export function StudentLoginPage({
   const online = useBrowserOnline()
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState(initialUsername)
-  const [telegramToken, setTelegramToken] = useState('')
+  const [password, setPassword] = useState('')
   const errorCopy = {
-    invalid: t`Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз.`,
+    invalid: t`Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз.`,
     'rate-limited': t`Слишком много попыток. Подождите немного и попробуйте ещё раз.`,
     'account-unavailable': t`Вход для этой учётной записи сейчас недоступен. Напишите администраторам.`,
     blocked: t`Доступ к аккаунту приостановлен. Напишите администраторам.`,
@@ -63,14 +63,14 @@ export function StudentLoginPage({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pending || !username.trim() || !telegramToken) return
-    await onSubmit?.({ username, telegramToken })
+    if (pending || !username.trim() || !password) return
+    await onSubmit?.({ username, telegramToken: password })
   }
 
   return (
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
-        description={t`Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль.`}
+        description={t`Используйте логин и пароль из письма после регистрации.`}
         eyebrow={
           <span className="inline-flex items-center gap-2">
             <Sign179 size={32} />
@@ -112,7 +112,7 @@ export function StudentLoginPage({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="student-password">
-                  <Trans>Токен Telegram-бота</Trans>
+                  <Trans>Пароль</Trans>
                 </Label>
                 <div className="relative">
                   <Input
@@ -121,11 +121,11 @@ export function StudentLoginPage({
                     disabled={pending}
                     id="student-password"
                     maxLength={512}
-                    name="telegramToken"
-                    onChange={(event) => setTelegramToken(event.target.value)}
+                    name="password"
+                    onChange={(event) => setPassword(event.target.value)}
                     required
                     type={showPassword ? 'text' : 'password'}
-                    value={telegramToken}
+                    value={password}
                   />
                   <Button
                     aria-label={showPassword ? t`Скрыть пароль` : t`Показать пароль`}
@@ -143,7 +143,7 @@ export function StudentLoginPage({
               <Button
                 aria-busy={pending}
                 className="w-full"
-                disabled={pending || !username.trim() || !telegramToken}
+                disabled={pending || !username.trim() || !password}
                 type="submit"
               >
                 <Send aria-hidden="true" /> {pending ? t`Входим…` : t`Войти`}

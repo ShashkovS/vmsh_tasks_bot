@@ -19,7 +19,7 @@ describe('Student login page', () => {
 
     expect(screen.getByRole('button', { name: 'Войти' }).hasAttribute('disabled')).toBe(true)
     fireEvent.change(screen.getByLabelText('Логин'), { target: { value: 'petrov-14' } })
-    fireEvent.change(screen.getByLabelText('Токен Telegram-бота'), {
+    fireEvent.change(screen.getByLabelText('Пароль'), {
       target: { value: 'synthetic-token' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Войти' }))
@@ -40,6 +40,6 @@ describe('Student login page', () => {
     rerender(<StudentLoginPage loginState="pending" />)
     expect(screen.getByRole('button', { name: 'Входим…' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByLabelText('Логин').hasAttribute('disabled')).toBe(true)
-    expect(screen.getByLabelText('Токен Telegram-бота').hasAttribute('disabled')).toBe(true)
+    expect(screen.getByLabelText('Пароль').hasAttribute('disabled')).toBe(true)
   })
 })
