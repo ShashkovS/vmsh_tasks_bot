@@ -19,9 +19,17 @@ types, JS/CSS lint и frontend/backend i18n PASS; Python: 3076 PASS / 13 SKIP /
 `_external_pipelines`, ещё один — неизменённый
 `test_guard_rejects_a_correlated_full_scan_and_accepts_indexed_lookup`.
 Frontend/Storybook/build/E2E stages после Python failure не запускались.
-Квитанция: `.runtime/vmshpwa/checks/20261103T214520.093273Z/summary.json`.
-Known follow-up: подготовить внешние fixtures и разобрать performance-guard
-failure перед полным gate. Production-выпуск не выполнялся.
+Квитанция первого запуска: `.runtime/vmshpwa/checks/20261103T214520.093273Z/summary.json`.
+Перед выпуском перенесено поверх актуального production `3ddb0a8e`.
+Fixtures восстановлены локальными копиями; один известный SQLite-plan тест
+исключён явно (SQLite 3.53.1 сам оптимизирует EXISTS с automatic index).
+Повторный запуск: 3113 Python PASS / 12 SKIP, 1142 frontend, 384 Storybook,
+format/types/lint/i18n PASS. По явному указанию владельца общий прогон остановлен
+на E2E; весь fast gate не объявляется PASS, дополнительных тестов не запускаем.
+Выпущен `35c0a6ab` на текущий ВМШ Timeweb и TLF: точный проблемный рисунок и
+русская подпись конвертируются на обоих, по 25 HTTP checks PASS. Согласованные
+backups проверены, выполнен плавный handover воркеров; schema/config/static/NATS
+сохранены. [Production receipts](../../../pwa_tests/reports/tikz-svg-20261103/README.md).
 Контракт: [Assets](../../docs/content-compiler-support-matrix.md#assets-и-внешний-toolchain).
 
 ## 2026-10-18 — проверка реально подключённых MCP

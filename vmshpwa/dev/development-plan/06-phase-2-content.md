@@ -148,6 +148,9 @@ Production migration не начинает историю с занятия 39. 
 2. Parse LaTeX в canonical typed document AST; unknown macro даёт diagnostic с file/line/column.
 3. Для первого условия создать задачи по порядку без отдельного экрана сопоставления. Для следующей revision автоматически сохранить позиционное соответствие при неизменной структуре; только несовместимое изменение условия требует ручного сопоставления. Подсказки и решения обязаны совпадать с условиями по порядку и при расхождении блокируются с просьбой исправить TeX.
 4. Content-address assets; каждый TikZ автоматически нормализуется, разрешается через versioned cache и при cache miss собирается в SVG; raster → WebP. Способ обработки рисунка Staff не выбирает. По решению 2026-11-03 выход `pdf2svg` сохраняется без allowlist элементов/атрибутов; sanitizer применяется к прямым SVG uploads. Контракт и реализация: [support matrix, Assets](../../docs/content-compiler-support-matrix.md#assets-и-внешний-toolchain), `helpers/pwa/content/assets.py`.
+   Исправление выбора кириллических шрифтов по тексту вне комментариев и этот
+   SVG boundary выпущены на оба production в `35c0a6ab`:
+   [проверки исходного рисунка и rollout](../../../pwa_tests/reports/tikz-svg-20261103/README.md).
 5. Сгенерировать web AST/HTML для client KaTeX, Telegram-rich dialect и PDF.
 6. Проверить link/media/Telegram limits и sanitizer/CSP. Поддерживаемый корпус — KaTeX + конструкции исторического `a16_html_from_tex.py`.
 7. Сохранить compiler version/hash. Recompile не меняет publication до явного действия.
