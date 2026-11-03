@@ -8,8 +8,12 @@
 [E2E-помощник](../../e2e/auth-personas.ts) используют «Пароль» / “Password”;
 существующий API-контракт сохраняется. `make pwa-i18n-extract` и
 `make pwa-i18n-check` PASS; 3 существующих unit-теста формы и format-check PASS.
-Начат изолированный production build и frontend-выпуск на ВМШ/TLF с проверкой
-реально отдаваемых страниц. Полный gate не запускается по просьбе владельца.
+ВМШ и TLF выпущены: `eed1c127`, атомарная смена только frontend.
+Production build и проверка артефактов PASS; по 25 HTTP checks на сайт,
+обе локали в Chromium 390px PASS, скриншоты проверены. TLF private sourcemap
+upload подтверждён. Конфигурация, службы и локальные исправления сохранены.
+[Production proof](../../../pwa_tests/reports/login-password-20261104/README.md).
+Полный gate не запускается по просьбе владельца.
 
 ## 2026-10-18 — проверка реально подключённых MCP
 
