@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Final
 
 from helpers.pwa.toolchain import CommandResult, resolve_executable, run_fixed_command
+from .scanner import is_escaped, skip_comment
 
 
 _SVG_NAMESPACE: Final = "http://www.w3.org/2000/svg"
@@ -354,11 +355,21 @@ def _validate_tikz_source(source: str) -> str:
 
 
 def _standalone_document(tikz_source: str) -> str:
+    # Ignore TeX comments when selecting fonts; see the usl-09-x regression in
+    # vmshpwa/docs/content-compiler-support-matrix.md (Assets).
+    visible_source: list[str] = []
+    cursor = 0
+    while cursor < len(tikz_source):
+        if tikz_source[cursor] == "%" and not is_escaped(tikz_source, cursor):
+            cursor = skip_comment(tikz_source, cursor, len(tikz_source))
+        else:
+            visible_source.append(tikz_source[cursor])
+            cursor += 1
     cyrillic_preamble = (
         "\\usepackage[T1,T2A]{fontenc}\n"
         "\\usepackage[utf8]{inputenc}\n"
         "\\usepackage[russian,english]{babel}\n"
-        if _CYRILLIC_TEXT.search(tikz_source)
+        if _CYRILLIC_TEXT.search("".join(visible_source))
         else ""
     )
     return (
@@ -421,8 +432,8 @@ def _safe_paint_or_reference(value: str) -> bool:
     return _LOCAL_URL.fullmatch(value.strip()) is not None
 
 
-def sanitize_svg(svg: bytes) -> bytes:
-    """Fail closed to a presentation-only SVG subset and canonical bytes."""
+def _parse_svg(svg: bytes) -> ElementTree.Element:
+    """Read bounded SVG XML without restricting its drawing vocabulary."""
 
     if not isinstance(svg, bytes):
         raise TypeError("SVG payload must be bytes")
@@ -456,13 +467,19 @@ def sanitize_svg(svg: bytes) -> bytes:
             "asset.svg_root", "svg-sanitizer", "SVG root or namespace is invalid"
         )
 
-    node_count = 0
-    for element in root.iter():
-        node_count += 1
+    for node_count, _ in enumerate(root.iter(), start=1):
         if node_count > _MAX_SVG_NODES:
             raise AssetConversionError(
                 "asset.svg_nodes", "svg-sanitizer", "SVG contains too many nodes"
             )
+    return root
+
+
+def sanitize_svg(svg: bytes) -> bytes:
+    """Fail closed for direct uploads to a presentation-only SVG subset."""
+
+    root = _parse_svg(svg)
+    for element in root.iter():
         element_namespace, element_name = _split_svg_name(element.tag)
         if (
             element_namespace != _SVG_NAMESPACE
@@ -681,19 +698,21 @@ class ContentAssetConverter:
                 output_path=svg_path,
                 maximum_bytes=_MAX_SVG_BYTES,
             )
-        sanitized_svg = sanitize_svg(raw_svg)
-        width, height = _svg_dimensions(sanitized_svg)
+        # pdf2svg owns this XML; preserve its full output, including bitmap
+        # glyphs. See content-compiler-support-matrix.md, Assets.
+        _parse_svg(raw_svg)
+        width, height = _svg_dimensions(raw_svg)
         return ConvertedAsset(
             source_sha256=_sha256(source_bytes),
-            output_sha256=_sha256(sanitized_svg),
+            output_sha256=_sha256(raw_svg),
             media_type="image/svg+xml",
-            data=sanitized_svg,
+            data=raw_svg,
             width=width,
             height=height,
         )
 
     async def svg_to_svg(self, payload: bytes) -> ConvertedAsset:
-        """Sanitize an uploaded SVG through the same presentation allowlist.
+        """Sanitize an uploaded SVG through the presentation allowlist.
 
         Direct SVG uploads deliberately do not enter ImageMagick: keeping the
         vector is useful for mathematical figures, while ``sanitize_svg``
@@ -739,13 +758,13 @@ class ContentAssetConverter:
                 output_path=svg_path,
                 maximum_bytes=_MAX_SVG_BYTES,
             )
-        sanitized_svg = sanitize_svg(raw_svg)
-        width, height = _svg_dimensions(sanitized_svg)
+        _parse_svg(raw_svg)
+        width, height = _svg_dimensions(raw_svg)
         return ConvertedAsset(
             source_sha256=_sha256(payload),
-            output_sha256=_sha256(sanitized_svg),
+            output_sha256=_sha256(raw_svg),
             media_type="image/svg+xml",
-            data=sanitized_svg,
+            data=raw_svg,
             width=width,
             height=height,
         )

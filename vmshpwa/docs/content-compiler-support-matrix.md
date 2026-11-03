@@ -68,6 +68,13 @@ TeX-определения из `newlistok.sty` compiler не исполняет
 
 - TikZ converter использует фиксированный argv `pdflatex -no-shell-escape` →
   `pdf2svg`, isolated temporary files, timeout и redacted failures.
+- Кириллическая преамбула включается только по тексту вне TeX-комментариев
+  (с учётом экранированного `\%`). Регрессия `usl-09-x.tex`, рисунок
+  `tikz-52fa6f5d8d036181`: русские комментарии при латинских подписях
+  необоснованно выбирали T2A; при отсутствии векторных font maps подписи
+  превращались в запрещённые SVG `image`. Реализация:
+  [`assets.py`](../../helpers/pwa/content/assets.py), проверки:
+  [`test_content_tikz.py`](../../pwa_tests/domain/test_content_tikz.py).
 - Effective TikZ source формирует
   [`helpers/pwa/content/tikz.py`](../../helpers/pwa/content/tikz.py): explicit
   `% addToTikz`, dependency-scoped macros/constants/styles/libraries и layout
@@ -76,8 +83,13 @@ TeX-определения из `newlistok.sty` compiler не исполняет
 - Raster converter принимает bounded input, уменьшает изображение до 1920 px и
   сохраняет только WebP; исходный HEIC/JPEG/PNG не является производной для
   хранения.
-- SVG проходит allowlist sanitizer: запрещены scripts, event handlers,
-  external/data URLs, unsafe CSS и чрезмерные размеры/число nodes.
+- Произвольный загруженный SVG проходит allowlist sanitizer: запрещены scripts,
+  event handlers, external/data URLs и unsafe CSS. SVG, созданный нашим `pdf2svg`
+  из TikZ или PDF, сохраняется без фильтра элементов/атрибутов, в том числе
+  со встроенными растровыми glyphs (`image` с data URL). Для обоих путей
+  сохраняются XML/root validation, запрет declarations и ограничения
+  размера, числа nodes и viewBox. Покрытие обоих converter paths:
+  [`test_content_assets.py`](../../pwa_tests/domain/test_content_assets.py).
 - Converter сам не имеет storage side effects. Unit-tested
   [`ContentAssetService`](../../helpers/pwa/content/asset_service.py) соединяет
   его с общим `ObjectStorage`, content-addressed key, immutable media row и

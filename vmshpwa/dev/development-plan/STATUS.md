@@ -1,5 +1,29 @@
 # Статус плана разработки
 
+## 2026-11-03 — TikZ: комментарии и выбор шрифта
+
+Найден точный source hash `tikz-52fa6f5d8d036181` в `usl-09-x.tex`
+2026–2027. Русские комментарии ошибочно включали T2A для латинских подписей.
+При отключённых векторных font maps локально воспроизведены SVG `image`
+и отказ sanitizer; состояние production fonts не проверено (SSH timeout).
+В `helpers/pwa/content/assets.py` выбор преамбулы теперь исключает комментарии;
+регрессии добавлены в `pwa_tests/domain/test_content_tikz.py`.
+По уточнению владельца allowlist SVG элементов/атрибутов снят с выхода нашего
+`pdf2svg` (TikZ и PDF); для прямых SVG uploads sanitizer сохранён. XML/root,
+declarations, размеры и node budget проверяются в обоих путях.
+Профильные тесты: 38 PASS. Реальный toolchain: все 3 рисунка исходного файла,
+русская подпись и PDF с bitmap glyphs → SVG PASS.
+Fast gate (`make pwa-check-fast PWA_E2E_MODES=content`): dependencies, format,
+types, JS/CSS lint и frontend/backend i18n PASS; Python: 3076 PASS / 13 SKIP /
+15 FAIL. Из них 14 зависят от отсутствующих `_vmsh_examples` и
+`_external_pipelines`, ещё один — неизменённый
+`test_guard_rejects_a_correlated_full_scan_and_accepts_indexed_lookup`.
+Frontend/Storybook/build/E2E stages после Python failure не запускались.
+Квитанция: `.runtime/vmshpwa/checks/20261103T214520.093273Z/summary.json`.
+Known follow-up: подготовить внешние fixtures и разобрать performance-guard
+failure перед полным gate. Production-выпуск не выполнялся.
+Контракт: [Assets](../../docs/content-compiler-support-matrix.md#assets-и-внешний-toolchain).
+
 ## 2026-10-18 — проверка реально подключённых MCP
 
 Оба сервера подключены владельцем в Codex. Все 14 read tools на каждом прошли:

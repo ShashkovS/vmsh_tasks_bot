@@ -101,6 +101,7 @@ def test_svg_sanitizer_accepts_pdf2svg_shape_and_is_deterministic() -> None:
         b'<!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg"/>',
         b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
         b'<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg>',
+        b'<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png;base64,AA=="/></svg>',
         b'<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>',
         b'<svg xmlns="http://www.w3.org/2000/svg"><use href="https://example.test/a"/></svg>',
         b'<svg xmlns="http://www.w3.org/2000/svg"><path style="fill:url(https://example.test/a)"/></svg>',
@@ -114,8 +115,9 @@ def test_svg_sanitizer_fails_closed_for_active_or_external_content(
 
 
 @pytest.mark.asyncio
-async def test_tikz_pipeline_uses_fixed_argv_sanitizes_and_cleans_tempdir(
-    tmp_path: Path,
+@pytest.mark.parametrize("source_kind", ["tikz", "pdf"])
+async def test_generated_svg_preserves_bitmap_glyphs_and_cleans_tempdir(
+    tmp_path: Path, source_kind: str,
 ) -> None:
     tools_dir = tmp_path / "tools"
     tools_dir.mkdir()
@@ -132,7 +134,7 @@ pathlib.Path(output, 'content.pdf').write_bytes(b'%PDF-1.7 synthetic')""",
         tools_dir,
         "pdf2svg",
         """import pathlib, sys
-pathlib.Path(sys.argv[2]).write_text('<svg xmlns="http://www.w3.org/2000/svg" width="640pt" height="480pt" viewBox="0 0 640 480"><path style="fill:none;stroke:rgb(0%,0%,0%);stroke-width:1" d="M0 0L1 1"/></svg>')""",
+pathlib.Path(sys.argv[2]).write_text('<svg xmlns="http://www.w3.org/2000/svg" width="640pt" height="480pt" viewBox="0 0 640 480"><image href="data:image/png;base64,AA==" width="1" height="1"/></svg>')""",
     )
     unused = _executable(tools_dir, "unused", "raise SystemExit(99)")
     converter = ContentAssetConverter(
@@ -146,14 +148,18 @@ pathlib.Path(sys.argv[2]).write_text('<svg xmlns="http://www.w3.org/2000/svg" wi
         timeout_seconds=5,
     )
 
-    result = await converter.tikz_to_svg(
-        r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
-    )
+    if source_kind == "tikz":
+        result = await converter.tikz_to_svg(
+            r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
+        )
+    else:
+        result = await converter.pdf_to_svg(b"%PDF-1.7 synthetic")
 
     assert result.media_type == "image/svg+xml"
     assert (result.width, result.height) == (640, 480)
     assert result.output_sha256 != result.source_sha256
     assert b"<svg" in result.data
+    assert b'<image href="data:image/png;base64,AA=="' in result.data
     assert list(temp_root.iterdir()) == []
 
 

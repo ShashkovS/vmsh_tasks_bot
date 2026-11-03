@@ -225,6 +225,25 @@ def test_parser_recovers_tikz_from_unclosed_print_center() -> None:
     assert not result.has_errors
 
 
+@pytest.mark.parametrize(
+    ("body", "needs_cyrillic"),
+    [
+        ("% Русский комментарий\n" + r"\node {A 1};", False),
+        (r"\node {A}; \\% Русский комментарий" + "\n", False),
+        (r"\node {\% Пример};", True),
+        ("% English comment\n" + r"\node {Пример};", True),
+    ],
+)
+def test_standalone_fonts_follow_text_outside_comments(
+    body: str, needs_cyrillic: bool,
+) -> None:
+    source = "\\begin{tikzpicture}\n" + body + "\n\\end{tikzpicture}"
+    document = prepare_tikz_standalone_document(source)
+
+    assert (r"\usepackage[T1,T2A]{fontenc}" in document) == needs_cyrillic
+    assert source in document
+
+
 def test_standalone_preparation_is_pure_and_keeps_security_boundary() -> None:
     document = prepare_tikz_standalone_document(
         r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
