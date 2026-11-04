@@ -1,0 +1,44 @@
+{
+  "sourceBefore": "eed1c1277d54047328f44535f74f244e97c33949",
+  "sourceAfter": "e0666d3e6de68eacb1e2e3309942a0806b1ada61",
+  "origin": "https://vmsh.shashkovs.ru",
+  "static": "/web/vmsh_tasks_bot/vmshpwa/releases/login-password-20261104-eed1c1277d54",
+  "schemaChanged": false,
+  "unrelatedFiles": [
+    "helpers/pwa/content/metadata_generation.py",
+    "helpers/pwa/locales/en.po",
+    "vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py"
+  ],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 935,
+      "workersBefore": [
+        17619,
+        17620
+      ],
+      "workersAfter": [
+        28770,
+        28771
+      ]
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "master": 883,
+      "workersBefore": [
+        16798,
+        16799
+      ],
+      "workersAfter": [
+        28786,
+        28787
+      ]
+    }
+  },
+  "status": "PASS",
+  "tikzChecks": [
+    "TikZ production conversion PASS 0 52e11881d47267c8 17036 151 52",
+    "TikZ production conversion PASS 1 3bc2038d9506b3ed 3562 52 25"
+  ],
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true
+}

@@ -154,6 +154,8 @@ Production migration не начинает историю с занятия 39. 
    Standalone захватывает весь source одной страницей, включая вложенные
    `resizebox`/`tabular`; реальный regression test двух цветных рисунков:
    `pwa_tests/integration/test_content_assets_smoke.py`.
+   Выпуск на оба production `e0666d3e`:
+   [составные рисунки, проверки и квитанции](../../../pwa_tests/reports/tikz-wrapper-20261104/README.md).
 5. Сгенерировать web AST/HTML для client KaTeX, Telegram-rich dialect и PDF.
 6. Проверить link/media/Telegram limits и sanitizer/CSP. Поддерживаемый корпус — KaTeX + конструкции исторического `a16_html_from_tex.py`.
 7. Сохранить compiler version/hash. Recompile не меняет publication до явного действия.
