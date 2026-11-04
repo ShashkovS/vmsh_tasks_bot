@@ -29,6 +29,16 @@ _OBJECT_TYPES = {
     "problem_synonym",
     "news_post",
     "staff_scope",
+    "account_batch",
+    "auth_account",
+    "branding",
+    "course_enrollment_batch",
+    "course_runtime_settings",
+    "group_lesson",
+    "season",
+    "staff_member",
+    "staff_member_batch",
+    "student",
 }
 _QUERY_KEYS = {"objectType", "q", "cursor", "limit"}
 

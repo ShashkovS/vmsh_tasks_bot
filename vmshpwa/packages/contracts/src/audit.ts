@@ -14,6 +14,16 @@ export const auditObjectTypeSchema = z.enum([
   'problem_synonym',
   'news_post',
   'staff_scope',
+  'account_batch',
+  'auth_account',
+  'branding',
+  'course_enrollment_batch',
+  'course_runtime_settings',
+  'group_lesson',
+  'season',
+  'staff_member',
+  'staff_member_batch',
+  'student',
 ])
 export type AuditObjectType = z.infer<typeof auditObjectTypeSchema>
 
@@ -27,7 +37,9 @@ export const auditEventSchema = z
     occurredAt: z.iso.datetime({ offset: true }),
     audience: z.enum(['student', 'family', 'staff', 'system']),
     action: z.string().trim().min(1).max(128),
-    objectType: auditObjectTypeSchema.exclude(['all']),
+    // Tolerant: one event of a type this client does not know yet must not make the
+    // whole journal unreadable (dev/ui-audit-20261104/BACKLOG.md, phase 1A item 2).
+    objectType: z.string().trim().min(1).max(64),
     objectId: z.string().trim().min(1).max(128),
     requestId: z.string().trim().min(1).max(128),
     actor: z

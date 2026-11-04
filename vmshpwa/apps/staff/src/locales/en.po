@@ -2255,6 +2255,10 @@ msgstr "Classes"
 msgid "Занятия — тестирование"
 msgstr "Classes — testing"
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Занятия групп"
+msgstr "Group lessons"
+
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Занятия групп, их условия, подсказки и решения."
 msgstr "Group lessons with their statements, hints and solutions."
@@ -3215,6 +3219,10 @@ msgstr "Course settings"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Настройки курса ещё не загружены"
 msgstr "Course settings have not loaded yet"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Настройки курсов"
+msgstr "Course settings"
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Настройки публикации сохранены."
@@ -4503,6 +4511,7 @@ msgstr "Report copied"
 
 #: apps/staff/src/branding-page.tsx
 #: apps/staff/src/routes/__root.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Оформление"
 msgstr "Branding"
 
@@ -4643,6 +4652,18 @@ msgstr "Teacher batch upload"
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "Пакетное создание аккаунтов"
 msgstr "Batch account creation"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Пакеты аккаунтов"
+msgstr "Account batches"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Пакеты зачислений"
+msgstr "Enrollment batches"
+
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Пакеты сотрудников"
+msgstr "Staff member batches"
 
 #: apps/staff/src/student-account-creator.tsx
 msgid "Паролем останется текущий Telegram-токен школьника. Он не передаётся в браузер."
@@ -6385,6 +6406,10 @@ msgstr "2025–2026 season"
 msgid "Сезон станет активным сразу после создания."
 msgstr "The season will become active immediately after creation."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Сезоны"
+msgstr "Seasons"
+
 #: apps/staff/src/staff-group-banners-page.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
 #: apps/staff/src/staff-local-news-composer.tsx
@@ -6912,6 +6937,7 @@ msgid "Состояние записи"
 msgstr "Record status"
 
 #: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-audit-page.tsx
 msgid "Сотрудники"
 msgstr "Staff members"
 
@@ -7622,6 +7648,10 @@ msgstr "Work accounting"
 msgid "Учёт работы доступен только администратору."
 msgstr "Work accounting is available only to administrators."
 
+#: apps/staff/src/staff-audit-page.tsx
+msgid "Учётные записи входа"
+msgstr "Sign-in accounts"
+
 #: apps/staff/src/login-page.tsx
 msgid "Учитель видит разрешённые группы; admin — административные разделы."
 msgstr "A teacher sees the permitted groups; an admin also sees the administration sections."
@@ -7952,6 +7982,7 @@ msgid "школьник уже зачислен на этот курс"
 msgstr "student is already enrolled in this course"
 
 #: apps/staff/src/pages.tsx
+#: apps/staff/src/staff-audit-page.tsx
 #: apps/staff/src/staff-classrooms-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/staff-statistics-reports.tsx

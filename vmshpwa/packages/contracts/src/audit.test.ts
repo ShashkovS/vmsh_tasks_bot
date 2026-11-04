@@ -26,6 +26,16 @@ describe('auditEventSchema', () => {
     expect(auditEventSchema.safeParse({ ...event, occurredAt }).success).toBe(true)
   })
 
+  it('accepts object types the client does not label yet', () => {
+    // Production had account_batch/student/group_lesson events the enum did not list.
+    for (const objectType of ['account_batch', 'group_lesson', 'future_type']) {
+      expect(
+        auditEventSchema.safeParse({ ...event, objectType, occurredAt: '2026-11-04T08:44:54Z' })
+          .success,
+      ).toBe(true)
+    }
+  })
+
   it('rejects a timestamp without a zone', () => {
     expect(
       auditEventSchema.safeParse({ ...event, occurredAt: '2026-11-03T10:00:00' }).success,

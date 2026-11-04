@@ -60,6 +60,36 @@ const objectLabels: Record<AuditObjectType, string> = {
   get staff_scope() {
     return t`Доступы преподавателей`
   },
+  get account_batch() {
+    return t`Пакеты аккаунтов`
+  },
+  get auth_account() {
+    return t`Учётные записи входа`
+  },
+  get branding() {
+    return t`Оформление`
+  },
+  get course_enrollment_batch() {
+    return t`Пакеты зачислений`
+  },
+  get course_runtime_settings() {
+    return t`Настройки курсов`
+  },
+  get group_lesson() {
+    return t`Занятия групп`
+  },
+  get season() {
+    return t`Сезоны`
+  },
+  get staff_member() {
+    return t`Сотрудники`
+  },
+  get staff_member_batch() {
+    return t`Пакеты сотрудников`
+  },
+  get student() {
+    return t`Школьники`
+  },
 }
 
 const actionLabels: Record<string, string> = {
@@ -427,7 +457,9 @@ export function StaffAuditView({
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5">
-                      <Badge variant="neutral">{objectLabels[event.objectType]}</Badge>
+                      <Badge variant="neutral">
+                        {objectLabels[event.objectType as AuditObjectType] ?? event.objectType}
+                      </Badge>
                       <div className="font-mono text-caption text-muted-foreground">
                         {event.objectId}
                       </div>
