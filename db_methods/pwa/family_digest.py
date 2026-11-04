@@ -43,6 +43,9 @@ def list_group_students(
         "JOIN users AS student ON student.id = enrollment.student_user_id "
         "WHERE enrollment.course_id = ? AND enrollment.active_group_id = ? "
         "AND enrollment.status = 'active' "
+        # Teachers' own test students are not pupils (vmshpwa/dev/ui-audit-20261104/BACKLOG.md 1A.12).
+        "AND NOT EXISTS (SELECT 1 FROM staff_test_students AS test "
+        "WHERE test.student_user_id = enrollment.student_user_id) "
         "ORDER BY student.surname COLLATE NOCASE, student.name COLLATE NOCASE, student.id",
         (course_id, group_id),
     ).fetchall()

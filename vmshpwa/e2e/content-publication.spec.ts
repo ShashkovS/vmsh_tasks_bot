@@ -321,7 +321,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   // Staff /content/uploads→compile→problem-matches→metadata-grid→publications
   // and Student /group-lessons/:id/content/condition, without MSW.
   await loginThroughUi(page, AUTH_PERSONAS.admin, staffUrl)
-  await expect(page.getByRole('heading', { name: 'LaTeX и публикации' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /^Занятие/ })).toBeVisible()
 
   const attempt = `${testInfo.project.name}, запуск ${testInfo.retry + 1}`
   const firstStatement = `Первая опубликованная версия для ${attempt}.`

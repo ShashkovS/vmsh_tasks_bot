@@ -1,7 +1,14 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { currentLocale, dateTimeFormat, formatDateTime } from '@vmsh/i18n'
+import { formatDateTime, formatMomentForViewer } from '@vmsh/i18n'
 import { FigureLayoutEditor, type FigureDraftState } from './figure-layout-editor'
+import {
+  browserNowWallTime,
+  browserWallTimeToIso,
+  toBrowserWallTime,
+  toCourseWallTime,
+} from './zoned-time'
+import { CourseTimeHint, ViewerZoneNote } from './course-time-hint'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, FileCode2, Mic, RefreshCw, Send, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -11,8 +18,10 @@ import {
   PageStatePanel,
   createStaffFamilyDigestClient,
   type StaffFamilyDigestClient,
+  createStaffDashboardClient,
   useAuthenticatedPrincipal,
   useAuthentication,
+  useStaffDashboardQuery,
 } from '@vmsh/app-shell'
 import {
   TelegramMathHtml,
@@ -145,26 +154,6 @@ type LessonWindowDraft = {
   submissionClosesLocalTime: string
   hintScheduledLocalTime: string
   solutionScheduledLocalTime: string
-}
-
-function localInput(value: string | null, timezone: string): string {
-  if (value === null) return ''
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: timezone,
-  }).formatToParts(new Date(value))
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
-}
-
-function nowLocal(timezone: string): string {
-  return localInput(new Date().toISOString(), timezone)
 }
 
 function readWindowDraft(key: string): LessonWindowDraft | null {
@@ -323,12 +312,9 @@ function isRecoverableRevision(revision: StaffContentRevision, now = Date.now())
   return Date.parse(revision.compileLeaseExpiresAt) <= now
 }
 
+/** Viewer's own zone, plus the course time when it differs (BACKLOG.md «Часовые пояса»). */
 function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): string {
-  return dateTimeFormat(currentLocale(), {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: timezone,
-  }).format(new Date(instant))
+  return formatMomentForViewer(instant, { dateStyle: 'medium', timeStyle: 'short' }, timezone)
 }
 
 function revisionLabel(revision: StaffContentRevision, timezone: BusinessTimezone): string {
@@ -902,7 +888,7 @@ function MaterialWorkflowCard({
           : {}),
         ...(mode === 'schedule'
           ? {
-              scheduledLocalTime: parsedLocalTime!.data,
+              scheduledLocalTime: toCourseWallTime(parsedLocalTime!.data ?? '', businessTimezone),
               businessTimezone,
             }
           : {}),
@@ -1415,10 +1401,11 @@ function MaterialWorkflowCard({
                     type="datetime-local"
                     value={state.scheduleAt}
                   />
-                  <p className="text-caption text-muted-foreground">
-                    <Trans>
-                      Время занятия: {businessTimezone}. Сервер проверит переходы летнего времени.
-                    </Trans>
+                  <p className="flex flex-wrap gap-x-2 text-caption text-muted-foreground">
+                    <span>
+                      <ViewerZoneNote courseTimeZone={businessTimezone} />
+                    </span>
+                    <CourseTimeHint courseTimeZone={businessTimezone} wall={state.scheduleAt} />
                   </p>
                 </div>
                 <Button
@@ -1505,7 +1492,7 @@ function MaterialWorkflowCard({
                   {confirmation === 'publish'
                     ? t`Опубликовать ${materialLabels[kind].toLowerCase()} версии ${selectedRevision?.data.revisionNumber ?? '—'} сейчас?`
                     : confirmation === 'schedule'
-                      ? t`Запланировать версию ${selectedRevision?.data.revisionNumber ?? '—'} на ${state.scheduleAt.replace('T', ' ')} (${businessTimezone})?`
+                      ? t`Запланировать версию ${selectedRevision?.data.revisionNumber ?? '—'} на ${formatInBusinessTimezone(browserWallTimeToIso(state.scheduleAt), businessTimezone)}?`
                       : confirmation === 'rollback'
                         ? t`Вернуть опубликованный материал к версии ${rollbackRevision?.data.revisionNumber ?? '—'}?`
                         : t`Скрыть опубликованное ${materialLabels[kind].toLowerCase()} у школьников и родителей?`}
@@ -1558,8 +1545,7 @@ function MaterialWorkflowCard({
                   {formatInBusinessTimezone(
                     state.scheduledPublication.data.scheduledAt!,
                     businessTimezone,
-                  )}{' '}
-                  ({businessTimezone})
+                  )}
                 </p>
                 <Button
                   disabled={state.mutationPending || figureDraft?.saving === true}
@@ -1722,7 +1708,7 @@ function LessonWindowPanelEnabled({
   return (
     <LessonWindowEditor
       client={client}
-      draftKey={`${draftNamespace}:lesson-window:${groupLessonId}`}
+      draftKey={`${draftNamespace}:lesson-window:${groupLessonId}:browser-tz`}
       groupLessonId={groupLessonId}
       onRefetch={() => query.refetch()}
       resource={query.data}
@@ -1747,10 +1733,11 @@ function LessonWindowEditor({
   const [draft, setDraft] = useState<LessonWindowDraft>(
     () =>
       readWindowDraft(draftKey) ?? {
-        opensLocalTime: localInput(window.opensAt, window.businessTimezone),
-        submissionClosesLocalTime: localInput(window.submissionClosesAt, window.businessTimezone),
-        hintScheduledLocalTime: localInput(window.hintScheduledAt, window.businessTimezone),
-        solutionScheduledLocalTime: localInput(window.solutionScheduledAt, window.businessTimezone),
+        // Inputs hold the editor's own browser wall time; saves convert to the course zone.
+        opensLocalTime: toBrowserWallTime(window.opensAt),
+        submissionClosesLocalTime: toBrowserWallTime(window.submissionClosesAt),
+        hintScheduledLocalTime: toBrowserWallTime(window.hintScheduledAt),
+        solutionScheduledLocalTime: toBrowserWallTime(window.solutionScheduledAt),
       },
   )
   const [pending, setPending] = useState<'schedule' | 'cutoff' | null>(null)
@@ -1765,9 +1752,11 @@ function LessonWindowEditor({
     setError(null)
     try {
       await client.updateLessonWindowSchedule(groupLessonId, resource.etag, {
-        opensLocalTime: draft.opensLocalTime || null,
-        hintScheduledLocalTime: draft.hintScheduledLocalTime || null,
-        solutionScheduledLocalTime: draft.solutionScheduledLocalTime || null,
+        opensLocalTime: toCourseWallTime(draft.opensLocalTime, window.businessTimezone) || null,
+        hintScheduledLocalTime:
+          toCourseWallTime(draft.hintScheduledLocalTime, window.businessTimezone) || null,
+        solutionScheduledLocalTime:
+          toCourseWallTime(draft.solutionScheduledLocalTime, window.businessTimezone) || null,
         businessTimezone: window.businessTimezone,
       })
       await onRefetch()
@@ -1784,7 +1773,7 @@ function LessonWindowEditor({
     setError(null)
     try {
       await client.updateSubmissionCutoff(groupLessonId, resource.etag, {
-        submissionClosesLocalTime: value,
+        submissionClosesLocalTime: toCourseWallTime(value, window.businessTimezone),
         businessTimezone: window.businessTimezone,
         confirmChange: true,
       })
@@ -1799,7 +1788,12 @@ function LessonWindowEditor({
 
   function confirmCutoffChange(value = draft.submissionClosesLocalTime) {
     if (!value) return
-    if (!globalThis.confirm(t`Изменить дедлайн сдачи на ${value.replace('T', ' ')}?`)) return
+    if (
+      !globalThis.confirm(
+        t`Изменить дедлайн сдачи на ${formatInBusinessTimezone(browserWallTimeToIso(value), window.businessTimezone)}?`,
+      )
+    )
+      return
     void saveCutoff(value)
   }
 
@@ -1811,9 +1805,8 @@ function LessonWindowEditor({
           <Trans>Фазы занятия</Trans>
         </CardTitle>
         <p className="text-small text-muted-foreground">
-          <Trans>
-            Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений.
-          </Trans>
+          <ViewerZoneNote courseTimeZone={timezone} />{' '}
+          <Trans>Дедлайн меняется отдельно от публикации решений.</Trans>
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -1827,6 +1820,7 @@ function LessonWindowEditor({
               type="datetime-local"
               value={draft.opensLocalTime}
             />
+            <CourseTimeHint courseTimeZone={timezone} wall={draft.opensLocalTime} />
           </Label>
           <Label className="grid gap-1">
             <Trans>Подсказки</Trans>
@@ -1837,6 +1831,7 @@ function LessonWindowEditor({
               type="datetime-local"
               value={draft.hintScheduledLocalTime}
             />
+            <CourseTimeHint courseTimeZone={timezone} wall={draft.hintScheduledLocalTime} />
           </Label>
           <Label className="grid gap-1">
             <Trans>Решения</Trans>
@@ -1847,6 +1842,7 @@ function LessonWindowEditor({
               type="datetime-local"
               value={draft.solutionScheduledLocalTime}
             />
+            <CourseTimeHint courseTimeZone={timezone} wall={draft.solutionScheduledLocalTime} />
           </Label>
         </div>
         <Button disabled={pending !== null} onClick={() => void saveSchedule()} size="sm">
@@ -1866,15 +1862,24 @@ function LessonWindowEditor({
               type="datetime-local"
               value={draft.submissionClosesLocalTime}
             />
+            <CourseTimeHint courseTimeZone={timezone} wall={draft.submissionClosesLocalTime} />
           </Label>
           <Button disabled={pending !== null} onClick={() => confirmCutoffChange()} size="sm">
             <Trans>Изменить дедлайн</Trans>
           </Button>
           <Button
+            className="sm:ml-auto"
             disabled={pending !== null}
-            onClick={() => confirmCutoffChange(nowLocal(timezone))}
+            onClick={() => {
+              if (
+                globalThis.confirm(
+                  t`Закрыть приём прямо сейчас? Школьники этой группы больше не смогут сдавать решения.`,
+                )
+              )
+                void saveCutoff(browserNowWallTime())
+            }}
             size="sm"
-            variant="outline"
+            variant="destructive"
           >
             <Trans>Закрыть приём сейчас</Trans>
           </Button>
@@ -1895,6 +1900,7 @@ export function StaffContentWorkspace({
   draftNamespace,
   familyDigest,
   groupLessonId,
+  heading,
 }: {
   canManageOralWindows?: boolean
   client: ContentApiClient
@@ -1904,11 +1910,13 @@ export function StaffContentWorkspace({
     scope: { audience: 'staff'; accountId: string }
   }
   groupLessonId: string
+  /** Human lesson context; without it the page falls back to a generic title. */
+  heading?: { courseName: string; groupName: string; lessonNumber: number }
 }) {
   const history = useStaffContentHistoryQuery(client, groupLessonId)
   if (history.isPending) {
     return (
-      <PageLayout title={t`LaTeX и публикации`} width="wide">
+      <PageLayout title={t`Занятие`} width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -1921,7 +1929,7 @@ export function StaffContentWorkspace({
           ? 'empty'
           : 'error'
     return (
-      <PageLayout title={t`LaTeX и публикации`} width="wide">
+      <PageLayout title={t`Занятие`} width="wide">
         <PageStatePanel
           {...(state === 'error'
             ? { actionLabel: t`Повторить`, onAction: () => void history.refetch() }
@@ -1969,15 +1977,25 @@ export function StaffContentWorkspace({
         </div>
       }
       description={t`Условие, подсказка и решение имеют отдельные версии, предпросмотр и действия публикации.`}
-      eyebrow={t`Групповое занятие ${groupLessonId}`}
-      title={t`LaTeX и публикации`}
+      eyebrow={
+        heading ? (
+          <a className="hover:underline" href="/staff/lessons">
+            {heading.courseName} · {heading.groupName}
+          </a>
+        ) : (
+          <a className="hover:underline" href="/staff/lessons">
+            <Trans>Уроки</Trans>
+          </a>
+        )
+      }
+      title={heading ? t`Занятие ${heading.lessonNumber}` : t`Занятие`}
       width="wide"
     >
       <Alert className="mb-4" tone="info">
         <FileCode2 aria-hidden="true" />
         <AlertContent>
           <AlertTitle>
-            <Trans>LaTeX — единственный источник</Trans>
+            <Trans>Перед публикацией проверьте предпросмотр</Trans>
           </AlertTitle>
           <AlertDescription>
             <Trans>
@@ -2053,6 +2071,21 @@ export function StaffLessonContentPage({ lessonId }: { lessonId: string }) {
       }),
     [authentication],
   )
+  // Course/group/number for the page heading come from the cached staff dashboard
+  // that the lessons list already loads (BACKLOG.md 1B item 17).
+  const dashboardClient = useMemo(
+    () =>
+      createStaffDashboardClient(authentication.client.runtime, {
+        refreshSession: () => authentication.refresh(),
+      }),
+    [authentication],
+  )
+  const dashboard = useStaffDashboardQuery(
+    dashboardClient,
+    { audience: 'staff', accountId: principal.accountId },
+    'all',
+  )
+  const lesson = dashboard.data?.lessons.find((item) => item.groupLessonId === lessonId)
   const canSendFamilyDigest =
     principal.audience === 'staff' &&
     principal.role === 'admin' &&
@@ -2075,6 +2108,15 @@ export function StaffLessonContentPage({ lessonId }: { lessonId: string }) {
           }
         : {})}
       groupLessonId={lessonId}
+      {...(lesson
+        ? {
+            heading: {
+              courseName: lesson.course.name,
+              groupName: lesson.group.name,
+              lessonNumber: lesson.lessonNumber,
+            },
+          }
+        : {})}
     />
   )
 }

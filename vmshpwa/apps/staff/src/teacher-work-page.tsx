@@ -1,6 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { formatDateTime } from '@vmsh/i18n'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   PageLayout,
@@ -1417,7 +1418,7 @@ export function TeacherWorkPage({
                 : report.data?.operation?.state === 'failed'
                   ? t`Пересчёт не завершён. Прежний отчёт сохранён.`
                   : report.data?.run?.completedAt
-                    ? t`Обновлено: ${report.data.run.completedAt}`
+                    ? t`Обновлено: ${formatDateTime(new Date(report.data.run.completedAt), { dateStyle: 'medium', timeStyle: 'short' })}`
                     : null}
             </p>
           </>

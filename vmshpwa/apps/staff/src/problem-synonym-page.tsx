@@ -448,7 +448,7 @@ function CourseLessonSelector({ onSelect }: { onSelect: (courseLessonId: string)
   return (
     <PageLayout
       description={t`Откройте этот раздел из конкретного занятия или укажите его публичный идентификатор.`}
-      eyebrow="Admin"
+      eyebrow={t`Администрирование`}
       title={t`Синонимы задач`}
       width="content"
     >

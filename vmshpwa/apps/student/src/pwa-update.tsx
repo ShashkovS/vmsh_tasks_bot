@@ -50,7 +50,7 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
 
   return (
     <div
-      className="fixed right-3 bottom-20 z-50 max-w-sm rounded-md border bg-background p-4 shadow-lg md:bottom-3"
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border bg-background px-3 py-2 shadow-lg md:inset-x-auto md:right-3 md:bottom-3 md:max-w-sm md:p-4"
       role="status"
       data-testid="pwa-update-state"
     >
@@ -58,11 +58,11 @@ export function PwaUpdateController({ router }: { router: AnyRouter }) {
         {showUpdateNotice ? t`Доступно обновление.` : t`Приложение готово к работе без сети`}
       </p>
       {error ? (
-        <p role="alert" className="mt-2 text-sm text-destructive">
+        <p role="alert" className="w-full text-sm text-destructive md:mt-2">
           <Trans>Не удалось применить обновление. Попробуйте ещё раз.</Trans>
         </p>
       ) : null}
-      <div className="mt-3 flex gap-2">
+      <div className="ml-auto flex gap-2 md:mt-2 md:ml-0">
         {showUpdateNotice ? (
           <Button
             size="sm"

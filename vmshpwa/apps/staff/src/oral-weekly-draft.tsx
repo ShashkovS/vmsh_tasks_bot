@@ -6,6 +6,10 @@ import { z } from 'zod'
 import type { createStaffOralWindowClient } from '@vmsh/app-shell'
 import { ApiResponseError, oralWindowBatchSchema, type StaffOralWindow } from '@vmsh/contracts'
 import { Button, Card, CardContent, Input, Label } from '@vmsh/ui'
+import { DEFAULT_COURSE_TIME_ZONE } from '@vmsh/i18n'
+
+import { browserWallTimeToIso, toBrowserWallTime } from './zoned-time'
+import { CourseTimeHint, ViewerZoneNote } from './course-time-hint'
 
 const entrySchema = z.object({
   id: z.string(),
@@ -26,9 +30,12 @@ type Entry = z.infer<typeof entrySchema>
 type Draft = z.infer<typeof draftSchema>
 type Client = ReturnType<typeof createStaffOralWindowClient>
 
+/* Oral windows are typed in the teacher's own browser zone, with the course time shown
+ * next to each field (dev/ui-audit-20261104/BACKLOG.md, «Часовые пояса»). */
 function inputTime(date: Date) {
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+  return toBrowserWallTime(date.toISOString())
 }
+const fromInputTime = browserWallTimeToIso
 function copyOralWindow(window: StaffOralWindow, groupLessonIds: string[], days: number): Entry {
   return {
     id: crypto.randomUUID(),
@@ -89,7 +96,7 @@ export function OralWeeklyDraft({
   onSaved: () => void
   onLockedChange?: ((locked: boolean) => void) | undefined
 }) {
-  const storageKey = `vmshpwa:staff:${accountId}:oral-weekly-draft:${groupLessonId}`
+  const storageKey = `vmshpwa:staff:${accountId}:oral-weekly-draft:${groupLessonId}:browser-tz`
   const [draft, setDraft] = useState(() => load(storageKey, groupLessonId, clone))
   useEffect(() => {
     onLockedChange?.(draft.locked)
@@ -129,8 +136,8 @@ export function OralWeeklyDraft({
               window: {
                 schemaVersion: 1,
                 sequenceNumber: 1,
-                opensAt: new Date(e.opensAt).toISOString(),
-                closesAt: new Date(e.closesAt).toISOString(),
+                opensAt: fromInputTime(e.opensAt),
+                closesAt: fromInputTime(e.closesAt),
                 joinLabel: e.joinLabel,
                 joinUrl: e.joinUrl,
                 joinCode: e.joinCode.trim() || null,
@@ -168,8 +175,8 @@ export function OralWeeklyDraft({
             window: {
               schemaVersion: 1,
               sequenceNumber: 1,
-              opensAt: new Date(e.opensAt).toISOString(),
-              closesAt: new Date(e.closesAt).toISOString(),
+              opensAt: fromInputTime(e.opensAt),
+              closesAt: fromInputTime(e.closesAt),
               joinLabel: e.joinLabel,
               joinUrl: e.joinUrl,
               joinCode: e.joinCode.trim() || null,
@@ -204,24 +211,25 @@ export function OralWeeklyDraft({
     )
       return
     const first = draft.entries[0]!
-    const start = new Date(first.opensAt),
-      end = new Date(first.closesAt)
+    // Wall-clock arithmetic on the Moscow strings: parse them as UTC so day math ignores the browser zone.
+    const start = new Date(`${first.opensAt}:00Z`),
+      end = new Date(`${first.closesAt}:00Z`)
     if (!Number.isFinite(+start) || !Number.isFinite(+end)) {
       setError(t`Сначала укажите корректные даты первого окна.`)
       return
     }
     const monday = new Date(start)
-    monday.setDate(start.getDate() - ((start.getDay() + 6) % 7))
+    monday.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7))
     update(
       [0, 1, 2].map((day) => {
         const date = new Date(monday)
-        date.setDate(date.getDate() + day)
+        date.setUTCDate(date.getUTCDate() + day)
         return {
           ...first,
           id: crypto.randomUUID(),
           included: true,
-          opensAt: inputTime(date),
-          closesAt: inputTime(new Date(+date + (+end - +start))),
+          opensAt: date.toISOString().slice(0, 16),
+          closesAt: new Date(+date + (+end - +start)).toISOString().slice(0, 16),
         }
       }),
     )
@@ -248,9 +256,9 @@ export function OralWeeklyDraft({
           </p>
         ) : null}
         <p className="text-caption text-muted-foreground">
+          <ViewerZoneNote courseTimeZone={DEFAULT_COURSE_TIME_ZONE} />{' '}
           <Trans>
-            Время: {Intl.DateTimeFormat().resolvedOptions().timeZone}. Отметьте дни, которые нужно
-            создать. Общие окна изменяются сразу для всех своих групп.
+            Отметьте дни, которые нужно создать. Общие окна изменяются сразу для всех своих групп.
           </Trans>
         </p>
         <fieldset disabled={draft.locked || mutation.isPending} className="space-y-3">
@@ -292,6 +300,10 @@ export function OralWeeklyDraft({
                         type="datetime-local"
                         value={entry[field]}
                         onChange={(e) => change(entry.id, { [field]: e.target.value })}
+                      />
+                      <CourseTimeHint
+                        courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+                        wall={entry[field]}
                       />
                     </div>
                   ))}

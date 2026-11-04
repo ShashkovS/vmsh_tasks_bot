@@ -35,6 +35,10 @@ import {
   Input,
   Label,
 } from '@vmsh/ui'
+import { DEFAULT_COURSE_TIME_ZONE } from '@vmsh/i18n'
+
+import { toCourseWallTime } from './zoned-time'
+import { CourseTimeHint, ViewerZoneNote } from './course-time-hint'
 
 const phaseLabels = {
   get draft() {
@@ -126,7 +130,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   const scope = { audience: 'staff' as const, accountId: principal.accountId }
-  const draftKey = `vmshpwa:staff:${principal.accountId}:new-group-lesson`
+  const draftKey = `vmshpwa:staff:${principal.accountId}:new-group-lesson:browser-tz`
   const [draft, setDraft] = useState<LessonDraft>(() => readDraft(draftKey))
   const client = useMemo(
     () =>
@@ -161,11 +165,19 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               lessonNumber: Number(draft.lessonNumber),
               title: draft.title.trim() || null,
               cycleAnchorDate: draft.cycleAnchorDate,
-              businessTimezone: 'Europe/Moscow',
-              opensLocalTime: draft.opensLocalTime || null,
-              submissionClosesLocalTime: draft.submissionClosesLocalTime,
-              hintScheduledLocalTime: draft.hintScheduledLocalTime || null,
-              solutionScheduledLocalTime: draft.solutionScheduledLocalTime || null,
+              // The form is filled in the browser zone; the API stores course wall time.
+              businessTimezone: DEFAULT_COURSE_TIME_ZONE,
+              opensLocalTime:
+                toCourseWallTime(draft.opensLocalTime, DEFAULT_COURSE_TIME_ZONE) || null,
+              submissionClosesLocalTime: toCourseWallTime(
+                draft.submissionClosesLocalTime,
+                DEFAULT_COURSE_TIME_ZONE,
+              ),
+              hintScheduledLocalTime:
+                toCourseWallTime(draft.hintScheduledLocalTime, DEFAULT_COURSE_TIME_ZONE) || null,
+              solutionScheduledLocalTime:
+                toCourseWallTime(draft.solutionScheduledLocalTime, DEFAULT_COURSE_TIME_ZONE) ||
+                null,
             }),
           )
         } catch (error) {
@@ -282,7 +294,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             />
           </Label>
           <Label className="grid gap-1">
-            <Trans>Открыть приём · Москва (необязательно)</Trans>
+            <Trans>Открыть приём (необязательно)</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, opensLocalTime: event.target.value }))
@@ -290,9 +302,10 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               type="datetime-local"
               value={draft.opensLocalTime}
             />
+            <CourseTimeHint courseTimeZone={DEFAULT_COURSE_TIME_ZONE} wall={draft.opensLocalTime} />
           </Label>
           <Label className="grid gap-1">
-            <Trans>Закрыть приём · Москва</Trans>
+            <Trans>Закрыть приём</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, submissionClosesLocalTime: event.target.value }))
@@ -301,9 +314,13 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               type="datetime-local"
               value={draft.submissionClosesLocalTime}
             />
+            <CourseTimeHint
+              courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+              wall={draft.submissionClosesLocalTime}
+            />
           </Label>
           <Label className="grid gap-1">
-            <Trans>Подсказки · Москва (необязательно)</Trans>
+            <Trans>Подсказки (необязательно)</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, hintScheduledLocalTime: event.target.value }))
@@ -311,9 +328,13 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               type="datetime-local"
               value={draft.hintScheduledLocalTime}
             />
+            <CourseTimeHint
+              courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+              wall={draft.hintScheduledLocalTime}
+            />
           </Label>
           <Label className="grid gap-1">
-            <Trans>Решения · Москва (необязательно)</Trans>
+            <Trans>Решения (необязательно)</Trans>
             <Input
               onChange={(event) =>
                 setDraft((value) => ({ ...value, solutionScheduledLocalTime: event.target.value }))
@@ -321,8 +342,13 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               type="datetime-local"
               value={draft.solutionScheduledLocalTime}
             />
+            <CourseTimeHint
+              courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+              wall={draft.solutionScheduledLocalTime}
+            />
           </Label>
           <p className="self-end text-caption text-muted-foreground">
+            <ViewerZoneNote courseTimeZone={DEFAULT_COURSE_TIME_ZONE} />{' '}
             <Trans>
               Дедлайн и публикация решений независимы. Расписание можно менять отдельно.
             </Trans>
@@ -408,8 +434,7 @@ export function StaffLessonsPage() {
           </Button>
         ) : undefined
       }
-      description={t`Здесь отображаются только занятия и публикации, сохранённые в базе данных.`}
-      eyebrow={t`LaTeX — единственный источник`}
+      description={t`Занятия групп, их условия, подсказки и решения.`}
       title={t`Уроки и публикации`}
       width="wide"
     >

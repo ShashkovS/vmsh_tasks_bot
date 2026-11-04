@@ -576,7 +576,7 @@ export function StaffAccessPage({
   return (
     <PageLayout
       description={t`Выберите, какие курсы целиком или отдельные группы доступны преподавателю.`}
-      eyebrow="Admin"
+      eyebrow={t`Администрирование`}
       title={t`Преподаватели и доступы`}
       width="wide"
     >

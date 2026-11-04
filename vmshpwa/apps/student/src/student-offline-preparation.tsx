@@ -115,7 +115,10 @@ function Preparation({ ownerId }: { ownerId: string }) {
     },
   })
   return (
-    <div role="status" className="mb-4 text-small text-muted-foreground">
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground"
+    >
       {query.isFetching && navigator.onLine && verified
         ? t`Сохраняем задачи для просмотра без интернета`
         : query.isError

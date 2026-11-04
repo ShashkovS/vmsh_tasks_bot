@@ -597,8 +597,8 @@ export function ProblemReviewWorkflow({
       confirmedOverwrite &&
       !globalThis.confirm(
         useTableTypes
-          ? t`Перегенерировать metadata с типами из таблицы? Типы задач сохранятся, остальные поля черновика будут заменены. Результат нужно проверить и сохранить вручную.`
-          : t`Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.`,
+          ? t`Перегенерировать метаданные с типами из таблицы? Типы задач сохранятся, остальные поля черновика будут заменены. Результат нужно проверить и сохранить вручную.`
+          : t`Полностью перегенерировать метаданные? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач.`,
       )
     ) {
       return
@@ -736,8 +736,8 @@ export function ProblemReviewWorkflow({
               variant="outline"
             >
               {metadataGenerationStartedAt === undefined
-                ? t`Сгенерировать metadata`
-                : t`Генерируем metadata…`}
+                ? t`Сгенерировать метаданные`
+                : t`Генерируем метаданные…`}
             </Button>
             <Button
               disabled={pending}
@@ -770,7 +770,7 @@ export function ProblemReviewWorkflow({
                       : '.'}
                   </p>
                   <Progress
-                    aria-label={t`Генерация metadata`}
+                    aria-label={t`Генерация метаданных`}
                     value={Math.min(
                       95,
                       (metadataGenerationElapsedSeconds / metadataGenerationExpectedSeconds) * 100,
@@ -785,7 +785,7 @@ export function ProblemReviewWorkflow({
           <Alert role="alert" tone="danger">
             <AlertContent>
               <AlertTitle>
-                <Trans>Не удалось сгенерировать metadata</Trans>
+                <Trans>Не удалось сгенерировать метаданные</Trans>
               </AlertTitle>
               <AlertDescription>{message}</AlertDescription>
             </AlertContent>
@@ -795,7 +795,7 @@ export function ProblemReviewWorkflow({
           <Alert tone="success">
             <AlertContent>
               <AlertTitle>
-                <Trans>Черновик metadata обновлён</Trans>
+                <Trans>Черновик метаданных обновлён</Trans>
               </AlertTitle>
               <AlertDescription>
                 <Trans>
@@ -810,7 +810,7 @@ export function ProblemReviewWorkflow({
           <Alert tone="warning">
             <AlertContent>
               <AlertTitle>
-                <Trans>Проверьте сгенерированные metadata</Trans>
+                <Trans>Проверьте сгенерированные метаданные</Trans>
               </AlertTitle>
               <AlertDescription>{generationWarnings.join(' ')}</AlertDescription>
             </AlertContent>

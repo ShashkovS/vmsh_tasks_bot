@@ -35,9 +35,10 @@ def directory(c):
       (SELECT group_concat(DISTINCT g.public_name) FROM course_enrollments e
         JOIN groups g ON g.group_id=e.active_group_id AND g.course_id=e.course_id
         WHERE e.student_user_id=u.id) groups
-      FROM users u WHERE u.type IN (1,-2) OR EXISTS(SELECT 1 FROM submission_threads t WHERE t.student_user_id=u.id) OR EXISTS(SELECT 1 FROM test_attempts a WHERE a.student_user_id=u.id) OR EXISTS(SELECT 1 FROM results r WHERE r.student_id=u.id)
+      FROM users u WHERE NOT EXISTS(SELECT 1 FROM staff_test_students st WHERE st.student_user_id=u.id)
+        AND (u.type IN (1,-2) OR EXISTS(SELECT 1 FROM submission_threads t WHERE t.student_user_id=u.id) OR EXISTS(SELECT 1 FROM test_attempts a WHERE a.student_user_id=u.id) OR EXISTS(SELECT 1 FROM results r WHERE r.student_id=u.id)
         OR EXISTS(SELECT 1 FROM written_tasks_discussions d WHERE d.student_id=u.id AND d.problem_id>0) OR EXISTS(
-        SELECT 1 FROM course_enrollments ce WHERE ce.student_user_id=u.id)
+        SELECT 1 FROM course_enrollments ce WHERE ce.student_user_id=u.id))
       ORDER BY u.surname COLLATE NOCASE,u.name COLLATE NOCASE,u.id""",
     )
 

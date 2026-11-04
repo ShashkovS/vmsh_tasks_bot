@@ -4,9 +4,9 @@ import {
   EMPTY_LOCAL_NEWS_DRAFT,
   clearLocalNewsDraft,
   loadLocalNewsDraft,
-  moscowDateTime,
+  localDateTimeToIso,
   saveLocalNewsDraft,
-  toMoscowLocalDateTime,
+  isoToLocalDateTime,
 } from './local-news-draft'
 
 function memoryStorage(): Storage {
@@ -46,10 +46,12 @@ describe('local news draft', () => {
     const storage = memoryStorage()
     storage.setItem('test:bad-local-news-draft', '{bad')
     expect(loadLocalNewsDraft(storage, 'test:bad-local-news-draft')).toEqual(EMPTY_LOCAL_NEWS_DRAFT)
-    expect(moscowDateTime('2026-08-04T17:00')).toBe('2026-08-04T14:00:00.000Z')
-    expect(moscowDateTime('tomorrow')).toBeNull()
-    expect(toMoscowLocalDateTime('2026-08-04T14:00:00Z')).toBe('2026-08-04T17:00')
-    expect(toMoscowLocalDateTime('tomorrow')).toBeNull()
+    expect(localDateTimeToIso('2026-08-04T17:00', 'Europe/Moscow')).toBe('2026-08-04T14:00:00.000Z')
+    expect(localDateTimeToIso('2026-08-04T17:00', 'Asia/Nicosia')).toBe('2026-08-04T14:00:00.000Z')
+    expect(localDateTimeToIso('2026-11-04T17:00', 'Asia/Nicosia')).toBe('2026-11-04T15:00:00.000Z')
+    expect(localDateTimeToIso('tomorrow')).toBeNull()
+    expect(isoToLocalDateTime('2026-08-04T14:00:00Z', 'Europe/Moscow')).toBe('2026-08-04T17:00')
+    expect(isoToLocalDateTime('tomorrow')).toBeNull()
   })
 
   it('keeps the text and owner of a draft saved by the previous Staff client', () => {

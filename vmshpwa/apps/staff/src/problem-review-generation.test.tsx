@@ -127,7 +127,7 @@ it('uses live unsaved subpart types even without localStorage, including edits a
   vi.spyOn(globalThis, 'confirm').mockReturnValue(true)
   await setOralType(2)
   fireEvent.click(screen.getByRole('button', { name: 'Сгенерировать с типами из таблицы' }))
-  await screen.findByText('Черновик metadata обновлён')
+  await screen.findByText('Черновик метаданных обновлён')
   expect(generate).toHaveBeenLastCalledWith(
     expect.objectContaining({
       problemTypes: [
@@ -163,8 +163,8 @@ it('keeps the edited grid when regeneration is cancelled', async () => {
 
 it('keeps automatic generation available without explicit types', async () => {
   const { generate } = mount()
-  fireEvent.click(await screen.findByRole('button', { name: 'Сгенерировать metadata' }))
-  await screen.findByText('Черновик metadata обновлён')
+  fireEvent.click(await screen.findByRole('button', { name: 'Сгенерировать метаданные' }))
+  await screen.findByText('Черновик метаданных обновлён')
   expect(generate).toHaveBeenCalledWith({
     groupLessonId: grid.groupLessonId,
     revisionId: grid.revisionId,
@@ -213,7 +213,7 @@ it('restores unsaved types after reload even when server metadata is already rev
   )
   expect(localStorage.getItem(key)).not.toBeNull()
   fireEvent.click(button)
-  await screen.findByText('Черновик metadata обновлён')
+  await screen.findByText('Черновик метаданных обновлён')
   expect(generate).toHaveBeenCalledWith(
     expect.objectContaining({
       problemTypes: [

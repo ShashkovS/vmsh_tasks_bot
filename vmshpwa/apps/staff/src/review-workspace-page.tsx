@@ -1,6 +1,6 @@
 import { PasteEvidenceBadge } from '@vmsh/product'
 import { t } from '@lingui/core/macro'
-import { Trans } from '@lingui/react/macro'
+import { Plural, Trans } from '@lingui/react/macro'
 import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useNavigate } from '@tanstack/react-router'
 import { ReviewTransfer } from './review-transfer'
@@ -395,7 +395,13 @@ export function LoadedReviewWorkspace({
               <Card>
                 <CardHeader className="flex-row items-center justify-between">
                   <CardTitle>
-                    <Trans>{messages.length} сообщений</Trans>
+                    <Plural
+                      value={messages.length}
+                      one="# сообщение"
+                      few="# сообщения"
+                      many="# сообщений"
+                      other="# сообщения"
+                    />
                   </CardTitle>
                   <Badge variant="success">
                     <Trans>Взята вами</Trans>

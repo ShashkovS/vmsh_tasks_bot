@@ -240,9 +240,18 @@ export function MetadataGridTable({
                     className={cn(
                       'relative h-11 border-r border-b border-border bg-surface px-2 py-1 align-top outline-none',
                       colIndex === 0 && 'sticky left-0 z-10 bg-surface-raised',
-                      selected && 'bg-primary/10',
+                      // The sticky column must stay opaque while other columns scroll under it:
+                      // tint it with a gradient layer over the solid background instead of a
+                      // translucent background colour (dev/ui-audit-20261104/BACKLOG.md, 1A item 11).
+                      selected &&
+                        (colIndex === 0
+                          ? 'bg-linear-to-r from-primary/10 to-primary/10'
+                          : 'bg-primary/10'),
                       active && 'ring-2 ring-inset ring-ring',
-                      error && 'bg-destructive/10',
+                      error &&
+                        (colIndex === 0
+                          ? 'bg-linear-to-r from-destructive/10 to-destructive/10'
+                          : 'bg-destructive/10'),
                       disabled && 'cursor-not-allowed opacity-60',
                     )}
                     data-grid-cell={`${rowIndex}:${colIndex}`}

@@ -1,3 +1,5 @@
+import { browserTimeZone, instantToWallTime, wallTimeToInstant } from '@vmsh/i18n'
+
 export interface LocalNewsDraft {
   courseId: string
   groupId: string
@@ -104,17 +106,21 @@ export function clearLocalNewsDraft(storage: Storage, key: string): void {
   }
 }
 
-export function moscowDateTime(value: string): string | null {
+// Staff type publication times in their own browser zone
+// (dev/ui-audit-20261104/BACKLOG.md, «Часовые пояса»).
+export function localDateTimeToIso(
+  value: string,
+  timeZone: string = browserTimeZone(),
+): string | null {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null
-  // Product schedules are expressed in Moscow wall time. Moscow has no DST,
-  // so an explicit +03:00 avoids silently applying the Staff device timezone.
-  const date = new Date(`${value}:00+03:00`)
-  return Number.isNaN(date.valueOf()) ? null : date.toISOString()
+  return wallTimeToInstant(value, timeZone)?.toISOString() ?? null
 }
 
-export function toMoscowLocalDateTime(value: string): string | null {
+export function isoToLocalDateTime(
+  value: string,
+  timeZone: string = browserTimeZone(),
+): string | null {
   const date = new Date(value)
   if (Number.isNaN(date.valueOf())) return null
-  // Europe/Moscow is fixed at UTC+03:00 for every supported product season.
-  return new Date(date.valueOf() + 3 * 60 * 60 * 1000).toISOString().slice(0, 16)
+  return instantToWallTime(date, timeZone)
 }

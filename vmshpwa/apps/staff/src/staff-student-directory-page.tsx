@@ -501,10 +501,12 @@ export function StudentDirectoryView({
                 ) : null}
               </CardContent>
               {onDeleteStudent ? (
-                <CardContent className="border-t border-border pt-4">
+                // Rare and irreversible: small and out of the reading path (BACKLOG.md 1B.22).
+                <CardContent className="flex justify-end border-t border-border pt-3">
                   <Button
                     disabled={deleteSaving}
                     onClick={() => setDeleteOpen(true)}
+                    size="sm"
                     type="button"
                     variant="destructive"
                   >

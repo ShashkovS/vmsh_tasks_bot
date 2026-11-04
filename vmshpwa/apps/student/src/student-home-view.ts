@@ -1,5 +1,5 @@
 import { t } from '@lingui/core/macro'
-import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
+import { currentLocale, dateTimeFormat, formatMomentForViewer } from '@vmsh/i18n'
 import type { CourseEnrollment, StudentHomeCourse } from '@vmsh/contracts'
 import type { CourseEnrollmentView } from '@vmsh/product'
 
@@ -41,14 +41,13 @@ export function formatCalendarDate(value: string): string {
   }).format(new Date(`${value}T12:00:00Z`))
 }
 
+/** Viewer's own zone plus the course time when they differ (BACKLOG.md «Часовые пояса»). */
 function formatDeadline(value: string, timezone: string): string {
-  return dateTimeFormat(currentLocale(), {
-    day: 'numeric',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: timezone,
-  }).format(new Date(value))
+  return formatMomentForViewer(
+    value,
+    { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' },
+    timezone,
+  )
 }
 
 export function studentPhaseLabel(course: StudentHomeCourse): string {

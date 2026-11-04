@@ -334,3 +334,36 @@ async def test_testing_catalog_group_scope_and_owner_deactivation(content_http):
         "/student/api/v1/auth/me", cookies=cookie, headers=_headers()
     )
     assert denied.status == 401
+
+
+@pytest.mark.asyncio
+async def test_staff_test_student_is_hidden_from_pupil_lists(content_http):
+    """Teacher test students stay out of the archive search and family digest
+    (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1A item 12)."""
+    from db_methods.pwa import family_digest, student_results
+
+    f = content_http
+    await enter(f)
+    test_student = f.factory.run_read(
+        lambda c: c.execute(
+            "SELECT t.student_user_id, e.course_id, e.active_group_id "
+            "FROM staff_test_students t JOIN course_enrollments e "
+            "ON e.student_user_id=t.student_user_id LIMIT 1"
+        ).fetchone()
+    )
+    assert test_student is not None
+    directory_ids = f.factory.run_read(
+        lambda c: {row["id"] for row in student_results.directory(c)}
+    )
+    assert test_student["student_user_id"] not in directory_ids
+    group_ids = f.factory.run_read(
+        lambda c: {
+            row["student_user_id"]
+            for row in family_digest.list_group_students(
+                c,
+                course_id=test_student["course_id"],
+                group_id=test_student["active_group_id"],
+            )
+        }
+    )
+    assert test_student["student_user_id"] not in group_ids

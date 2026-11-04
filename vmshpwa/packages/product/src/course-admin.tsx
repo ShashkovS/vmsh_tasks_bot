@@ -70,7 +70,7 @@ export function CourseGroupCatalog({
             <Trans>Курсы и группы</Trans>
           </h2>
           <p className="text-small text-muted-foreground">
-            <Trans>Сезон 2025–2026 · названия групп уникальны только внутри курса.</Trans>
+            <Trans>Названия групп уникальны только внутри курса.</Trans>
           </p>
         </div>
         <Button onClick={onAddCourse} size="sm">

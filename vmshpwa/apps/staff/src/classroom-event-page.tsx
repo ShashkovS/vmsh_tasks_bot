@@ -19,6 +19,7 @@ import {
   type InPersonEventStatus,
   type SaveInPersonEventRequest,
 } from '@vmsh/contracts'
+import { DEFAULT_COURSE_TIME_ZONE, formatMomentForViewer } from '@vmsh/i18n'
 import {
   Alert,
   AlertContent,
@@ -35,7 +36,8 @@ import {
   Label,
 } from '@vmsh/ui'
 
-const MOSCOW_OFFSET_MS = 3 * 60 * 60 * 1000
+import { browserWallTimeToIso, toBrowserWallTime } from './zoned-time'
+import { CourseTimeHint } from './course-time-hint'
 
 interface EventDraft {
   name: string
@@ -45,13 +47,9 @@ interface EventDraft {
   groupLessonPublicIds: string[]
 }
 
-function toMoscowLocal(iso: string): string {
-  return new Date(new Date(iso).getTime() + MOSCOW_OFFSET_MS).toISOString().slice(0, 16)
-}
-
-function toIso(local: string): string {
-  return new Date(`${local}:00+03:00`).toISOString()
-}
+// Event times are typed in the editor's own browser zone (BACKLOG.md «Часовые пояса»).
+const toMoscowLocal = toBrowserWallTime
+const toIso = browserWallTimeToIso
 
 function initialDraft(event: InPersonEvent | undefined): EventDraft {
   if (event) {
@@ -189,7 +187,7 @@ function EventEditor({
   pending: boolean
   onSave: (request: SaveInPersonEventRequest) => void
 }) {
-  const storageKey = `vmsh:staff:in-person-event:${event?.publicId ?? 'new'}`
+  const storageKey = `vmsh:staff:in-person-event:${event?.publicId ?? 'new'}:browser-tz`
   const [draft, setDraft] = useState(() => readDraft(storageKey, initialDraft(event)))
   const [storageFailed, setStorageFailed] = useState(false)
 
@@ -228,7 +226,7 @@ function EventEditor({
           />
         </Label>
         <Label className="grid gap-1">
-          <Trans>Начало · Москва</Trans>
+          <Trans>Начало</Trans>
           <Input
             onChange={(changeEvent) =>
               updateDraft({ ...draft, startsLocal: changeEvent.target.value })
@@ -237,9 +235,10 @@ function EventEditor({
             type="datetime-local"
             value={draft.startsLocal}
           />
+          <CourseTimeHint courseTimeZone={DEFAULT_COURSE_TIME_ZONE} wall={draft.startsLocal} />
         </Label>
         <Label className="grid gap-1">
-          <Trans>Окончание · Москва</Trans>
+          <Trans>Окончание</Trans>
           <Input
             onChange={(changeEvent) =>
               updateDraft({ ...draft, endsLocal: changeEvent.target.value })
@@ -248,6 +247,7 @@ function EventEditor({
             type="datetime-local"
             value={draft.endsLocal}
           />
+          <CourseTimeHint courseTimeZone={DEFAULT_COURSE_TIME_ZONE} wall={draft.endsLocal} />
         </Label>
       </div>
       <Label className="grid max-w-xs gap-1">
@@ -470,7 +470,11 @@ export function StaffClassroomEventManager({
             >
               {catalog.data.events.map((event) => (
                 <option key={event.publicId} value={event.publicId}>
-                  {event.name} · {toMoscowLocal(event.startsAt).replace('T', ' ')}
+                  {event.name} ·{' '}
+                  {formatMomentForViewer(event.startsAt, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })}
                 </option>
               ))}
             </select>

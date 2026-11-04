@@ -549,7 +549,7 @@ export function ProblemImportPage() {
         </Link>
       }
       description={t`Проверка XLSX из текущего процесса перед управляемым отказом от Google-листов.`}
-      eyebrow="Admin"
+      eyebrow={t`Администрирование`}
       title={t`Настройки задач`}
       width="wide"
     >

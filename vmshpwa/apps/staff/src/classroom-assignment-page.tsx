@@ -1,6 +1,6 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { formatDate, formatDateTime } from '@vmsh/i18n'
+import { formatDate, formatMomentForViewer } from '@vmsh/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -401,8 +401,9 @@ function AssignmentEditor({
           {
             id: 'not-calculated',
             title: t`План ещё не рассчитан`,
-            description: t`Сначала создайте предпросмотр распределения школьников.`,
+            description: t`Нажмите «Пересчитать», чтобы распределить школьников по аудиториям.`,
             blocking: true,
+            tone: 'info' as const,
           },
         ]
       : []),
@@ -520,7 +521,7 @@ function AssignmentEditor({
       <ClassroomStudentPlanner
         groups={groups}
         incidents={incidents}
-        lessonLabel={`${plan.event.name} · ${formatDateTime(new Date(plan.event.startsAt), { dateStyle: 'medium', timeStyle: 'short' })}`}
+        lessonLabel={`${plan.event.name} · ${formatMomentForViewer(plan.event.startsAt, { dateStyle: 'medium', timeStyle: 'short' })}`}
         onConfirm={() => mutation.mutate('confirm')}
         onMove={move}
         onRecalculate={() => mutation.mutate('recalculate')}

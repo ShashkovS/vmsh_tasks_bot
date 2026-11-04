@@ -529,11 +529,16 @@ const problemStatusView = {
   },
 } as const
 
+/* A teacher's verdict is the most important fact on a problem card, so a verdict badge
+ * is larger and bolder than progress states and keeps the familiar bot symbol apart from
+ * the words (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1B item 15). */
 export function ProblemStatusBadge({ problem }: { problem: StudentProblemSummary }) {
   const view = problemStatusView[problem.status]
+  if (!problem.verdict) return <Badge variant={view.variant}>{view.label}</Badge>
   return (
-    <Badge variant={view.variant}>
-      {problem.verdict ? `${problem.verdict.symbol} ` : ''}
+    <Badge className="h-6 gap-1.5 px-2.5 text-small font-semibold" variant={view.variant}>
+      <span className="font-num text-[0.95em] leading-none">{problem.verdict.symbol}</span>
+      <span aria-hidden="true" className="h-3.5 w-px bg-current opacity-30" />
       {view.label}
     </Badge>
   )

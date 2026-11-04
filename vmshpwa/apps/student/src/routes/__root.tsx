@@ -14,6 +14,7 @@ import {
   isAuthenticationLoginPath,
   ProductPageView,
   PushOnboarding,
+  ShellNoticeArea,
   useAuthentication,
   useBrowserOnline,
 } from '@vmsh/app-shell'
@@ -109,22 +110,24 @@ function StudentProtectedShell({
         mobileNavigation
       >
         <ProductPageView audience="student" pathname={location.pathname} />
-        {principal?.audience === 'student' && principal.isStaffTesting ? (
-          <div
-            role="status"
-            className="mb-4 rounded-lg border border-border bg-muted p-3 text-small"
-          >
-            <Trans>
-              Тестирование учителем. Отправки не входят в общую статистику.{' '}
-              <a href="/staff/" className="underline">
-                Вернуться в Staff
-              </a>
-            </Trans>
-          </div>
-        ) : null}
-        <StudentOfflineSessionNotice />
-        <StudentOfflinePreparation />
-        {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
+        <ShellNoticeArea>
+          {principal?.audience === 'student' && principal.isStaffTesting ? (
+            <div
+              role="status"
+              className="mb-4 rounded-lg border border-border bg-muted p-3 text-small"
+            >
+              <Trans>
+                Тестирование учителем. Отправки не входят в общую статистику.{' '}
+                <a href="/staff/" className="underline">
+                  Вернуться в Staff
+                </a>
+              </Trans>
+            </div>
+          ) : null}
+          <StudentOfflineSessionNotice />
+          <StudentOfflinePreparation />
+          {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
+        </ShellNoticeArea>
         <Outlet />
       </AppShell>
     </AuthenticationRedirectBoundary>

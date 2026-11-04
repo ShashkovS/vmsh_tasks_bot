@@ -6,25 +6,14 @@ import { lazy, Suspense, useState } from 'react'
 import { Button, Input, Label } from '@vmsh/ui'
 
 import type { LocalNewsDraft } from './local-news-draft'
+import { DEFAULT_COURSE_TIME_ZONE } from '@vmsh/i18n'
+
+import { browserNowWallTime } from './zoned-time'
+import { CourseTimeHint, ViewerZoneNote } from './course-time-hint'
 
 const RichMarkdownEditor = lazy(() =>
   import('./rich-markdown-editor').then((module) => ({ default: module.RichMarkdownEditor })),
 )
-
-function moscowNowInput(): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: 'Europe/Moscow',
-  }).formatToParts(new Date())
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((value) => value.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
-}
 
 export function StaffLocalNewsComposer({
   courses,
@@ -179,13 +168,11 @@ export function StaffLocalNewsComposer({
       <div className="grid gap-1.5">
         <div className="flex items-center justify-between gap-2">
           <Label htmlFor="local-news-published-at">
-            {publishedAtDisabled
-              ? t`Опубликовано по московскому времени`
-              : t`Опубликовать по московскому времени`}
+            {publishedAtDisabled ? t`Опубликовано` : t`Опубликовать`}
           </Label>
           {!publishedAtDisabled ? (
             <Button
-              onClick={() => onChange({ ...draft, publishedLocal: moscowNowInput() })}
+              onClick={() => onChange({ ...draft, publishedLocal: browserNowWallTime() })}
               size="sm"
               type="button"
               variant="outline"
@@ -195,11 +182,7 @@ export function StaffLocalNewsComposer({
           ) : null}
         </div>
         <Input
-          aria-label={
-            publishedAtDisabled
-              ? t`Опубликовано по московскому времени`
-              : t`Опубликовать по московскому времени`
-          }
+          aria-label={publishedAtDisabled ? t`Опубликовано` : t`Опубликовать`}
           disabled={publishedAtDisabled}
           id="local-news-published-at"
           onChange={(event) => onChange({ ...draft, publishedLocal: event.target.value })}
@@ -207,6 +190,12 @@ export function StaffLocalNewsComposer({
           type="datetime-local"
           value={draft.publishedLocal}
         />
+        <p className="flex flex-wrap gap-x-2 text-caption text-muted-foreground">
+          <span>
+            <ViewerZoneNote courseTimeZone={DEFAULT_COURSE_TIME_ZONE} />
+          </span>
+          <CourseTimeHint courseTimeZone={DEFAULT_COURSE_TIME_ZONE} wall={draft.publishedLocal} />
+        </p>
       </div>
       <p className="text-caption text-muted-foreground">
         <Trans>

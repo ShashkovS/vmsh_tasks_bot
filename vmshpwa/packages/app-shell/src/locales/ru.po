@@ -36,10 +36,6 @@ msgstr "HTTP {0}, {1}; запрос {2}"
 msgid "Активные сессии"
 msgstr "Активные сессии"
 
-#: packages/app-shell/src/page-layout.tsx
-msgid "Ваши локальные изменения сохранены. Попробуйте ещё раз."
-msgstr "Ваши локальные изменения сохранены. Попробуйте ещё раз."
-
 #: packages/app-shell/src/push-onboarding.tsx
 msgid "Включаем…"
 msgstr "Включаем…"
@@ -412,6 +408,10 @@ msgstr "Пробуем подключиться автоматически. Мо
 msgid "Проверьте соединение и повторите попытку."
 msgstr "Проверьте соединение и повторите попытку."
 
+#: packages/app-shell/src/page-layout.tsx
+msgid "Проверьте соединение и попробуйте ещё раз."
+msgstr "Проверьте соединение и попробуйте ещё раз."
+
 #: packages/app-shell/src/auth-boundary.tsx
 msgid "Проверяем вход"
 msgstr "Проверяем вход"
@@ -504,10 +504,6 @@ msgstr "Сессия истекла. Войдите снова, затем по�
 #: packages/app-shell/src/session-management.tsx
 msgid "Сессия не изменена"
 msgstr "Сессия не изменена"
-
-#: packages/app-shell/src/app-shell.tsx
-msgid "синхронизировано"
-msgstr "синхронизировано"
 
 #: packages/app-shell/src/observability.ts
 msgid "Слишком много запросов. Подождите немного и повторите отправку."

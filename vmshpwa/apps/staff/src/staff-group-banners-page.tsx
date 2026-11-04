@@ -1,6 +1,5 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
 
@@ -37,6 +36,10 @@ import {
   Input,
   Label,
 } from '@vmsh/ui'
+import { DEFAULT_COURSE_TIME_ZONE, formatMomentForViewer } from '@vmsh/i18n'
+
+import { browserWallTimeToIso, toBrowserWallTime } from './zoned-time'
+import { CourseTimeHint } from './course-time-hint'
 
 const RichMarkdownEditor = lazy(() =>
   import('./rich-markdown-editor').then((module) => ({ default: module.RichMarkdownEditor })),
@@ -69,7 +72,8 @@ const emptyDraft: Draft = {
 function readDraft(accountId: string): Draft {
   try {
     const stored: unknown = JSON.parse(
-      globalThis.localStorage.getItem(`vmshpwa:staff:${accountId}:group-banner-draft`) ?? 'null',
+      globalThis.localStorage.getItem(`vmshpwa:staff:${accountId}:group-banner-draft:browser-tz`) ??
+        'null',
     )
     if (!stored || typeof stored !== 'object') return emptyDraft
     const item = stored as Record<string, unknown>
@@ -95,23 +99,13 @@ function readDraft(accountId: string): Draft {
   }
 }
 
+// Banner windows are typed in the editor's browser zone (BACKLOG.md «Часовые пояса»).
 function moscowIso(value: string): string {
-  return new Date(`${value}:00+03:00`).toISOString()
+  return browserWallTimeToIso(value)
 }
 
 function moscowInput(value: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: 'Europe/Moscow',
-  }).formatToParts(new Date(value))
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+  return toBrowserWallTime(value)
 }
 
 function errorText(error: Error): string {
@@ -156,7 +150,7 @@ export function StaffGroupBannersPage() {
   useEffect(() => {
     try {
       globalThis.localStorage.setItem(
-        `vmshpwa:staff:${principal.accountId}:group-banner-draft`,
+        `vmshpwa:staff:${principal.accountId}:group-banner-draft:browser-tz`,
         JSON.stringify(draft),
       )
     } catch {
@@ -230,7 +224,7 @@ export function StaffGroupBannersPage() {
   return (
     <PageLayout
       description={t`Короткие сообщения для курса или группы: появятся на «Сейчас» и придут уведомлением на устройства с включёнными push.`}
-      eyebrow="Admin only"
+      eyebrow={t`Только для администраторов`}
       title={t`Рассылки`}
       width="wide"
     >
@@ -364,7 +358,7 @@ export function StaffGroupBannersPage() {
                   <div className="grid gap-1">
                     <div className="flex items-center justify-between gap-2">
                       <Label>
-                        <Trans>Начало показа · Москва</Trans>
+                        <Trans>Начало показа</Trans>
                       </Label>
                       <Button
                         onClick={() =>
@@ -388,9 +382,13 @@ export function StaffGroupBannersPage() {
                       type="datetime-local"
                       value={draft.startsAt}
                     />
+                    <CourseTimeHint
+                      courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+                      wall={draft.startsAt}
+                    />
                   </div>
                   <Label className="grid gap-1">
-                    <Trans>Конец показа · Москва</Trans>
+                    <Trans>Конец показа</Trans>
                     <Input
                       onChange={(event) =>
                         setDraft((value) => ({ ...value, endsAt: event.target.value }))
@@ -399,6 +397,7 @@ export function StaffGroupBannersPage() {
                       type="datetime-local"
                       value={draft.endsAt}
                     />
+                    <CourseTimeHint courseTimeZone={DEFAULT_COURSE_TIME_ZONE} wall={draft.endsAt} />
                   </Label>
                 </div>
                 <Label className="flex items-center gap-2">
@@ -476,17 +475,12 @@ export function StaffGroupBannersPage() {
                       : t`Только онлайн`}
                 </p>
                 <p className="font-num text-caption text-muted-foreground">
-                  {dateTimeFormat(currentLocale(), {
+                  {formatMomentForViewer(banner.startsAt, {
                     dateStyle: 'short',
                     timeStyle: 'short',
-                    timeZone: 'Europe/Moscow',
-                  }).format(new Date(banner.startsAt))}{' '}
+                  })}{' '}
                   —{' '}
-                  {dateTimeFormat(currentLocale(), {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                    timeZone: 'Europe/Moscow',
-                  }).format(new Date(banner.endsAt))}
+                  {formatMomentForViewer(banner.endsAt, { dateStyle: 'short', timeStyle: 'short' })}
                 </p>
                 {banner.status === 'active' ? (
                   <div className="flex gap-2">

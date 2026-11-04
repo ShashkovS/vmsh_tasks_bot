@@ -1,7 +1,9 @@
 import { Trans } from '@lingui/react/macro'
-import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
+import { browserTimeZone, currentLocale, dateTimeFormat } from '@vmsh/i18n'
 import { t } from '@lingui/core/macro'
 import { useMemo, useRef, useState } from 'react'
+
+import { CourseTimeHint } from './course-time-hint'
 
 import {
   createLessonBlockClient,
@@ -26,7 +28,7 @@ function formatPublishedAt(value: string | null): string {
 
 function scheduleInstant(value: string, timezone: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/u.exec(value)
-  if (!match) throw new Error(t`Укажите время публикации в часовом поясе занятия.`)
+  if (!match) throw new Error(t`Укажите дату и время публикации.`)
 
   const wanted = `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}`
   const formatter = new Intl.DateTimeFormat('sv-SE', {
@@ -59,10 +61,10 @@ function scheduleInstant(value: string, timezone: string): string {
     }
   }
   if (candidates.length === 0) {
-    throw new Error(t`Такого времени нет в часовом поясе занятия. Выберите другое время.`)
+    throw new Error(t`Такого времени нет в вашем часовом поясе. Выберите другое время.`)
   }
   if (candidates.length !== 1) {
-    throw new Error(t`Это время неоднозначно в часовом поясе занятия. Выберите другое время.`)
+    throw new Error(t`Это время неоднозначно в вашем часовом поясе. Выберите другое время.`)
   }
   return new Date(candidates[0] ?? base).toISOString()
 }
@@ -139,7 +141,7 @@ export function StaffLessonBlockEditor({
       await client.publish(groupLessonId, position, etag, {
         revisionId,
         mode,
-        scheduledAt: mode === 'scheduled' ? scheduleInstant(scheduledAt, businessTimezone) : null,
+        scheduledAt: mode === 'scheduled' ? scheduleInstant(scheduledAt, browserTimeZone()) : null,
       })
       setMessage(t`Настройки публикации сохранены.`)
       await refetch()
@@ -288,12 +290,13 @@ export function StaffLessonBlockEditor({
             </Label>
             {mode === 'scheduled' ? (
               <Label className="flex-col items-start leading-normal">
-                <Trans>Время ({businessTimezone})</Trans>
+                <Trans>Время публикации</Trans>
                 <Input
                   onChange={(event) => setScheduledAt(event.target.value)}
                   type="datetime-local"
                   value={scheduledAt}
                 />
+                <CourseTimeHint courseTimeZone={businessTimezone} wall={scheduledAt} />
               </Label>
             ) : null}
           </div>

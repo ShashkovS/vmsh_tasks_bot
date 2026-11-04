@@ -195,7 +195,7 @@ export function LessonStatistics({
       {data.run && (
         <p className="text-caption text-muted-foreground">
           <Trans>Сложности и сила рассчитаны: </Trans>
-          {formatDateTime(new Date(data.run.completedAt), { timeZone: 'Europe/Moscow' })}
+          {formatDateTime(new Date(data.run.completedAt))}
           <Trans> МСК</Trans>
         </p>
       )}

@@ -27,6 +27,19 @@ export interface PageLayoutProps {
   className?: string
 }
 
+/**
+ * Shell-level notices (offline copy, push onboarding, staff testing) sit in the same column
+ * as the page content instead of spanning the whole main area at x=0
+ * (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1B item 13).
+ */
+export function ShellNoticeArea({ children }: { children: ReactNode }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-3 px-4 pt-4 empty:hidden sm:px-6 [&>*]:m-0">
+      {children}
+    </div>
+  )
+}
+
 const widthClass = {
   reading: 'max-w-3xl',
   content: 'max-w-5xl',
@@ -44,8 +57,10 @@ export function PageLayout({
 }: PageLayoutProps) {
   return (
     <div className={cn('mx-auto w-full px-4 py-5 sm:px-6 sm:py-7', widthClass[width], className)}>
-      <div className="mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-1">
+      {/* Actions wrap under the title instead of squeezing it into a narrow column
+          (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1B item 17). */}
+      <div className="mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-1 sm:min-w-72 sm:flex-1">
           {eyebrow ? (
             <div className="text-caption font-medium tracking-wide text-muted-foreground">
               {eyebrow}
@@ -138,10 +153,7 @@ export function PageStatePanel({
   const Icon = state === 'offline' && online ? CircleAlert : stateIcon[state]
   const defaults = {
     empty: [t`Здесь пока ничего нет`, t`Новые материалы появятся здесь автоматически.`],
-    error: [
-      t`Не удалось загрузить данные`,
-      t`Ваши локальные изменения сохранены. Попробуйте ещё раз.`,
-    ],
+    error: [t`Не удалось загрузить данные`, t`Проверьте соединение и попробуйте ещё раз.`],
     offline: [
       serviceAvailabilityTitle(availability, online),
       t`Доступно всё, что уже сохранено на этом устройстве.`,

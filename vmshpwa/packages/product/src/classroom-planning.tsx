@@ -1,11 +1,12 @@
 import { t } from '@lingui/core/macro'
-import { Trans } from '@lingui/react/macro'
+import { Plural, Trans } from '@lingui/react/macro'
 import {
   Archive,
   Building2,
   Check,
   CircleAlert,
   History,
+  Info,
   Pencil,
   Plus,
   RefreshCw,
@@ -620,6 +621,8 @@ export interface ClassroomPlanIncident {
   title: string
   description: string
   blocking: boolean
+  /** An expected next step (e.g. a plan not calculated yet) is info, not an error. */
+  tone?: 'info' | 'warning' | 'danger'
 }
 
 export interface ClassroomStudentPlannerProps {
@@ -928,10 +931,14 @@ export function ClassroomStudentPlanner({
       {incidents.map((incident) => (
         <Alert
           key={incident.id}
-          role={incident.blocking ? 'alert' : 'status'}
-          tone={incident.blocking ? 'danger' : 'warning'}
+          role={incident.blocking && incident.tone !== 'info' ? 'alert' : 'status'}
+          tone={incident.tone ?? (incident.blocking ? 'danger' : 'warning')}
         >
-          <TriangleAlert aria-hidden="true" />
+          {incident.tone === 'info' ? (
+            <Info aria-hidden="true" />
+          ) : (
+            <TriangleAlert aria-hidden="true" />
+          )}
           <AlertContent>
             <AlertTitle>{incident.title}</AlertTitle>
             <AlertDescription>{incident.description}</AlertDescription>
@@ -1040,6 +1047,8 @@ export function ClassroomStudentPlanner({
         {groups.map((group) => {
           const groupRooms = rooms.filter((room) => room.groupId === group.id)
           const groupStudents = students.filter((student) => student.groupId === group.id)
+          // Authoritative count: an uncalculated plan has no rows yet but the group is not empty.
+          const inPersonCount = group.inPersonCount ?? groupStudents.length
           return (
             <section
               aria-labelledby={`classroom-group-${group.id}`}
@@ -1069,8 +1078,14 @@ export function ClassroomStudentPlanner({
                     {group.name}
                   </h3>
                   <p className="text-caption text-muted-foreground">
-                    <Trans>{groupRooms.length} аудиторий ·</Trans>{' '}
-                    {group.inPersonCount ?? groupStudents.length}
+                    <Plural
+                      value={groupRooms.length}
+                      one="# аудитория"
+                      few="# аудитории"
+                      many="# аудиторий"
+                      other="# аудитории"
+                    />{' '}
+                    · {inPersonCount}
                     <Trans> очно · </Trans>
                     {group.assignedCount ??
                       groupStudents.length -
@@ -1078,9 +1093,13 @@ export function ClassroomStudentPlanner({
                     <Trans> распределено</Trans>
                   </p>
                 </div>
-                {groupStudents.length === 0 ? (
+                {inPersonCount === 0 ? (
                   <Badge variant="neutral">
-                    <Trans>Группа пуста</Trans>
+                    <Trans>Нет очных школьников</Trans>
+                  </Badge>
+                ) : groupStudents.length === 0 ? (
+                  <Badge variant="warning">
+                    <Trans>Ещё не распределены</Trans>
                   </Badge>
                 ) : null}
               </header>
@@ -1125,14 +1144,14 @@ export function ClassroomStudentPlanner({
                   })}
                 </div>
               ) : (
-                <Alert role="alert" tone={groupStudents.length > 0 ? 'danger' : 'neutral'}>
+                <Alert role="alert" tone={inPersonCount > 0 ? 'danger' : 'neutral'}>
                   <Building2 aria-hidden="true" />
                   <AlertContent>
                     <AlertTitle>
                       <Trans>У группы нет аудитории</Trans>
                     </AlertTitle>
                     <AlertDescription>
-                      {groupStudents.length > 0
+                      {inPersonCount > 0
                         ? t`Назначьте группе хотя бы одну активную аудиторию.`
                         : t`Это допустимо, пока в группе нет очных школьников.`}
                     </AlertDescription>

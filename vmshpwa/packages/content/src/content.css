@@ -44,6 +44,13 @@
   text-wrap: pretty;
 }
 
+/* Hyphenation belongs to the typeset statement only. Answer forms, chat bubbles and
+ * buttons rendered inside a sheet (marked font-sans) must not split words such as
+ * «вер-тикаль» in a textarea (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, 1B item 14). */
+.vmsh-math-content :is(.font-sans, textarea, input, button, select) {
+  hyphens: manual;
+}
+
 .vmsh-document-title,
 .vmsh-math-content h1,
 .vmsh-math-content h2,

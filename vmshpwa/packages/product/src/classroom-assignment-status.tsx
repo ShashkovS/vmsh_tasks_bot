@@ -3,7 +3,14 @@ import { Trans } from '@lingui/react/macro'
 import { Bell, Building2, CalendarClock, RefreshCw, UsersRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
+import {
+  browserTimeZone,
+  currentLocale,
+  dateTimeFormat,
+  DEFAULT_COURSE_TIME_ZONE,
+  timeZoneShortName,
+  zonesDifferAt,
+} from '@vmsh/i18n'
 import { Alert, AlertContent, AlertDescription, AlertTitle, Badge, Button, cn } from '@vmsh/ui'
 
 export type ClassroomAssignmentPublicStatus = 'not_applicable' | 'reassigning' | 'assigned'
@@ -29,18 +36,21 @@ function formatClassroomEventSchedule(startsAt?: string, endsAt?: string): strin
   const start = new Date(startsAt)
   const end = new Date(endsAt)
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+  // Shown in the viewer's zone; the course time follows when it differs
+  // (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, «Часовые пояса»).
+  const viewer = browserTimeZone()
   const date = dateTimeFormat(currentLocale(), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    timeZone: 'Europe/Moscow',
+    timeZone: viewer,
   }).format(start)
-  const time = dateTimeFormat(currentLocale(), {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Moscow',
-  })
-  return `${date} · ${time.format(start)}–${time.format(end)}`
+  const time = (timeZone: string) =>
+    dateTimeFormat(currentLocale(), { hour: '2-digit', minute: '2-digit', timeZone })
+  const own = `${date} · ${time(viewer).format(start)}–${time(viewer).format(end)}`
+  if (!zonesDifferAt(start, viewer, DEFAULT_COURSE_TIME_ZONE)) return own
+  const course = time(DEFAULT_COURSE_TIME_ZONE)
+  return `${own} (${course.format(start)}–${course.format(end)} ${timeZoneShortName(DEFAULT_COURSE_TIME_ZONE, start)})`
 }
 
 /** Public Student/Family classroom projection; Staff planning stays in classroom-planning.tsx. */

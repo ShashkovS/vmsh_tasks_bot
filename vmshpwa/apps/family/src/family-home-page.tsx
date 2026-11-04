@@ -28,7 +28,6 @@ function formatMoment(value: string | null): string | undefined {
     month: 'long',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'Europe/Moscow',
   }).format(new Date(value))
 }
 

@@ -112,6 +112,11 @@ msgstr "· strength "
 msgid "» совпадает с «{0}» без учёта регистра и формы Unicode."
 msgstr "” matches “{0}” ignoring case and Unicode normalization."
 
+#. placeholder {0}: groupRooms.length
+#: packages/product/src/classroom-planning.tsx
+msgid "{0, plural, one {# аудитория} few {# аудитории} many {# аудиторий} other {# аудитории}}"
+msgstr "{0, plural, one {# room} other {# rooms}}"
+
 #. placeholder {0}: submissions.length
 #: packages/product/src/synonym-context.tsx
 msgid "{0, plural, one {# посылка объединена} few {# посылки объединены} many {# посылок объединены} other {# посылки объединены}}"
@@ -146,11 +151,6 @@ msgstr "{0} · class {lessonNumber}"
 #: packages/product/src/course-context.tsx
 msgid "{0} · занятие {lessonNumber} · {lessonDate}"
 msgstr "{0} · lesson {lessonNumber} · {lessonDate}"
-
-#. placeholder {0}: groupRooms.length
-#: packages/product/src/classroom-planning.tsx
-msgid "{0} аудиторий ·"
-msgstr "{0} rooms ·"
 
 #. placeholder {0}: groupLesson.inPersonCount
 #: packages/product/src/in-person-event.tsx
@@ -974,10 +974,6 @@ msgstr "Group for room {0}"
 msgid "Группа курса «{0}»"
 msgstr "Group for course “{0}”"
 
-#: packages/product/src/classroom-planning.tsx
-msgid "Группа пуста"
-msgstr "The group is empty"
-
 #: packages/product/src/in-person-event.tsx
 msgid "группа участвует"
 msgstr "group participates"
@@ -1081,6 +1077,10 @@ msgstr "There is a hidden room"
 
 #: packages/product/src/classroom-planning.tsx
 msgid "Ещё не назначена"
+msgstr "Not assigned yet"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Ещё не распределены"
 msgstr "Not assigned yet"
 
 #: packages/product/src/question-attention.tsx
@@ -1520,6 +1520,10 @@ msgstr "Title not extracted"
 msgid "Название уточняется"
 msgstr "Name to be confirmed"
 
+#: packages/product/src/course-admin.tsx
+msgid "Названия групп уникальны только внутри курса."
+msgstr "Group names are unique only within a course."
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Назначена"
 msgstr "Assigned"
@@ -1758,6 +1762,10 @@ msgstr "no rooms"
 #: packages/product/src/verdict-mark.tsx
 msgid "Нет ответа"
 msgstr "No response"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Нет очных школьников"
+msgstr "No in-person students"
 
 #: packages/product/src/connection-banner.tsx
 #: packages/product/src/submission-composer.tsx
@@ -2896,10 +2904,6 @@ msgstr "Take photo"
 #: packages/product/src/question-photos.tsx
 msgid "Сделать фотографию"
 msgstr "Take a photo"
-
-#: packages/product/src/course-admin.tsx
-msgid "Сезон 2025–2026 · названия групп уникальны только внутри курса."
-msgstr "2025–2026 season · group names are unique only within a course."
 
 #: packages/product/src/staff-publishing.tsx
 msgid "Сейчас"

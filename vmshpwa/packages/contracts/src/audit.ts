@@ -24,7 +24,7 @@ export type AuditDiff = z.infer<typeof auditDiffSchema>
 export const auditEventSchema = z
   .object({
     eventId: publicIdSchema,
-    occurredAt: z.iso.datetime(),
+    occurredAt: z.iso.datetime({ offset: true }),
     audience: z.enum(['student', 'family', 'staff', 'system']),
     action: z.string().trim().min(1).max(128),
     objectType: auditObjectTypeSchema.exclude(['all']),

@@ -1,8 +1,8 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
-import { Menu, Wifi } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Menu } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import {
   Button,
@@ -46,6 +46,17 @@ export function AppShell({
 }: AppShellProps) {
   const brand = useBrandIdentity()
   const [menuOpen, setMenuOpen] = useState(false)
+  // The fixed bottom navigation must not hide whatever the browser scrolls into view
+  // (e.g. a focused answer field and its send button), dev/ui-audit-20261104/BACKLOG.md 1B.16.
+  useEffect(() => {
+    if (!mobileNavigation) return
+    const root = document.documentElement
+    const previous = root.style.scrollPaddingBottom
+    root.style.scrollPaddingBottom = 'calc(5.5rem + env(safe-area-inset-bottom))'
+    return () => {
+      root.style.scrollPaddingBottom = previous
+    }
+  }, [mobileNavigation])
 
   return (
     <div className="min-h-svh bg-background text-foreground" data-product={product}>
@@ -74,11 +85,6 @@ export function AppShell({
             ) : null}
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            {!compactHeader ? (
-              <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
-                <Wifi className="size-3.5" aria-hidden="true" /> <Trans>синхронизировано</Trans>
-              </span>
-            ) : null}
             <ThemeToggle />
             {headerActions}
             {!mobileNavigation ? (
@@ -98,7 +104,7 @@ export function AppShell({
 
       <div className="mx-auto flex max-w-[1600px]">
         <aside
-          className={`sticky hidden w-56 shrink-0 border-r p-3 md:block ${
+          className={`sticky hidden w-56 shrink-0 overflow-y-auto overscroll-contain border-r p-3 md:block ${
             compactHeader ? 'top-10 h-[calc(100svh-2.5rem)]' : 'top-14 h-[calc(100svh-3.5rem)]'
           }`}
         >

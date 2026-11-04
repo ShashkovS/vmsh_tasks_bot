@@ -1,4 +1,4 @@
-import { t } from '@lingui/core/macro'
+import { plural, t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { BookOpenCheck, CircleAlert, ClipboardCheck, MessagesSquare } from 'lucide-react'
 import { useMemo } from 'react'
@@ -133,7 +133,12 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
             warning={summary.questions.olderThanOneHour > 0}
           />
           <SummaryCard
-            detail={t`${summary.publications.conditionsPublished} условий опубликовано`}
+            detail={plural(summary.publications.conditionsPublished, {
+              one: '# условие опубликовано',
+              few: '# условия опубликовано',
+              many: '# условий опубликовано',
+              other: '# условия опубликовано',
+            })}
             href="/staff/lessons"
             icon={BookOpenCheck}
             label={t`Текущие листки`}

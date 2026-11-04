@@ -797,7 +797,7 @@ export function AccountProvisioningView({
   return (
     <PageLayout
       description={t`Сначала создайте школьников, затем аккаунты родителей. Зачисление на курс выполняется отдельным действием.`}
-      eyebrow="Admin"
+      eyebrow={t`Администрирование`}
       title={t`Пакетное создание аккаунтов`}
       width="wide"
     >

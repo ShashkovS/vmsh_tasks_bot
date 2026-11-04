@@ -106,7 +106,15 @@ export function ProductAnalyticsPage() {
               value={audience || 'all'}
             >
               <SelectTrigger aria-labelledby="analytics-audience-label">
-                <SelectValue placeholder={t`Все`} />
+                <SelectValue>
+                  {audience === 'student'
+                    ? t`Школьник`
+                    : audience === 'family'
+                      ? t`Родитель`
+                      : audience === 'staff'
+                        ? t`Учитель/админ`
+                        : t`Все`}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
@@ -118,7 +126,9 @@ export function ProductAnalyticsPage() {
                 <SelectItem value="family">
                   <Trans>Родитель</Trans>
                 </SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
+                <SelectItem value="staff">
+                  <Trans>Учитель/админ</Trans>
+                </SelectItem>
               </SelectContent>
             </UiSelect>
           </div>

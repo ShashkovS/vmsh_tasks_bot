@@ -1,6 +1,6 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { formatDate, formatDateTime, formatTime } from '@vmsh/i18n'
+import { formatDate, formatDateTime, formatMomentForViewer, formatTime } from '@vmsh/i18n'
 import {
   useCallback,
   useEffect,
@@ -652,7 +652,7 @@ export function LiveMarkingPage({
     <>
       <select
         aria-label={t`Очное событие`}
-        className="h-11 max-w-44 rounded-md border bg-background px-2 text-sm"
+        className="h-11 max-w-64 rounded-md border bg-background px-2 text-sm"
         value={event?.eventId ?? ''}
         onChange={(e) =>
           navigate({ ...search, event: e.target.value, room: undefined, lesson: undefined })
@@ -660,7 +660,13 @@ export function LiveMarkingPage({
       >
         {catalog.data?.events.map((e) => (
           <option key={e.eventId} value={e.eventId}>
-            {e.name}
+            {e.name} ·{' '}
+            {formatMomentForViewer(e.startsAt, {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </option>
         ))}
       </select>

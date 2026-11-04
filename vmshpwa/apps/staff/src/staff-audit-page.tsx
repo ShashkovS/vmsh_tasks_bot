@@ -276,7 +276,6 @@ function dateTime(value: string): string {
   return dateTimeFormat(currentLocale(), {
     dateStyle: 'short',
     timeStyle: 'medium',
-    timeZone: 'Europe/Moscow',
   }).format(new Date(value))
 }
 

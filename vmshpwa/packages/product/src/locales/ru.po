@@ -112,6 +112,11 @@ msgstr "· сила "
 msgid "» совпадает с «{0}» без учёта регистра и формы Unicode."
 msgstr "» совпадает с «{0}» без учёта регистра и формы Unicode."
 
+#. placeholder {0}: groupRooms.length
+#: packages/product/src/classroom-planning.tsx
+msgid "{0, plural, one {# аудитория} few {# аудитории} many {# аудиторий} other {# аудитории}}"
+msgstr "{0, plural, one {# аудитория} few {# аудитории} many {# аудиторий} other {# аудитории}}"
+
 #. placeholder {0}: submissions.length
 #: packages/product/src/synonym-context.tsx
 msgid "{0, plural, one {# посылка объединена} few {# посылки объединены} many {# посылок объединены} other {# посылки объединены}}"
@@ -146,11 +151,6 @@ msgstr "{0} · занятие {lessonNumber}"
 #: packages/product/src/course-context.tsx
 msgid "{0} · занятие {lessonNumber} · {lessonDate}"
 msgstr "{0} · занятие {lessonNumber} · {lessonDate}"
-
-#. placeholder {0}: groupRooms.length
-#: packages/product/src/classroom-planning.tsx
-msgid "{0} аудиторий ·"
-msgstr "{0} аудиторий ·"
 
 #. placeholder {0}: groupLesson.inPersonCount
 #: packages/product/src/in-person-event.tsx
@@ -974,10 +974,6 @@ msgstr "Группа для аудитории {0}"
 msgid "Группа курса «{0}»"
 msgstr "Группа курса «{0}»"
 
-#: packages/product/src/classroom-planning.tsx
-msgid "Группа пуста"
-msgstr "Группа пуста"
-
 #: packages/product/src/in-person-event.tsx
 msgid "группа участвует"
 msgstr "группа участвует"
@@ -1082,6 +1078,10 @@ msgstr "Есть скрытая аудитория"
 #: packages/product/src/classroom-planning.tsx
 msgid "Ещё не назначена"
 msgstr "Ещё не назначена"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Ещё не распределены"
+msgstr "Ещё не распределены"
 
 #: packages/product/src/question-attention.tsx
 msgid "Ждём ответа преподавателя"
@@ -1520,6 +1520,10 @@ msgstr "Название не извлечено"
 msgid "Название уточняется"
 msgstr "Название уточняется"
 
+#: packages/product/src/course-admin.tsx
+msgid "Названия групп уникальны только внутри курса."
+msgstr "Названия групп уникальны только внутри курса."
+
 #: packages/product/src/classroom-assignment-status.tsx
 msgid "Назначена"
 msgstr "Назначена"
@@ -1758,6 +1762,10 @@ msgstr "нет комнат"
 #: packages/product/src/verdict-mark.tsx
 msgid "Нет ответа"
 msgstr "Нет ответа"
+
+#: packages/product/src/classroom-planning.tsx
+msgid "Нет очных школьников"
+msgstr "Нет очных школьников"
 
 #: packages/product/src/connection-banner.tsx
 #: packages/product/src/submission-composer.tsx
@@ -2896,10 +2904,6 @@ msgstr "Сделать фото"
 #: packages/product/src/question-photos.tsx
 msgid "Сделать фотографию"
 msgstr "Сделать фотографию"
-
-#: packages/product/src/course-admin.tsx
-msgid "Сезон 2025–2026 · названия групп уникальны только внутри курса."
-msgstr "Сезон 2025–2026 · названия групп уникальны только внутри курса."
 
 #: packages/product/src/staff-publishing.tsx
 msgid "Сейчас"

@@ -55,7 +55,6 @@ function formatRunDate(value: string): string {
   return dateTimeFormat(currentLocale(), {
     dateStyle: 'long',
     timeStyle: 'short',
-    timeZone: 'Europe/Moscow',
   }).format(new Date(value))
 }
 

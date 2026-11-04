@@ -43,7 +43,6 @@ function formatMoment(value: string | null): string | undefined {
     month: 'long',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'Europe/Moscow',
   }).format(new Date(value))
 }
 
@@ -145,8 +144,7 @@ export function StudentHomePage() {
 
   if (query.isPending) {
     return (
-      <PageLayout title={t`Сейчас`}>
-        <OrganizerLink create />
+      <PageLayout actions={<OrganizerLink create />} title={t`Сейчас`}>
         <PageStatePanel state="loading" />
       </PageLayout>
     )
@@ -159,8 +157,7 @@ export function StudentHomePage() {
           ? 'forbidden'
           : 'error'
     return (
-      <PageLayout title={t`Сейчас`}>
-        <OrganizerLink create />
+      <PageLayout actions={<OrganizerLink create />} title={t`Сейчас`}>
         <PageStatePanel
           {...(state === 'error' || state === 'offline'
             ? { actionLabel: t`Повторить`, onAction: () => void query.refetch() }
@@ -172,10 +169,9 @@ export function StudentHomePage() {
   }
 
   return (
-    <PageLayout eyebrow={t`Ваши курсы`} title={t`Сейчас`}>
-      <OrganizerLink create />
+    <PageLayout actions={<OrganizerLink create />} eyebrow={t`Ваши курсы`} title={t`Сейчас`}>
       {bannerQuery.data ? (
-        <div className="space-y-2" aria-label={t`Объявления`}>
+        <div className="mb-5 space-y-2 empty:hidden" aria-label={t`Объявления`}>
           {bannerQuery.data.items
             .filter((banner) => !bannerDismissals.dismissed.has(bannerDismissalId(banner)))
             .map((banner) => (

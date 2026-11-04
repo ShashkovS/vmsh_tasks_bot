@@ -13,6 +13,7 @@ import {
   isAuthenticationLoginPath,
   ProductPageView,
   PushOnboarding,
+  ShellNoticeArea,
 } from '@vmsh/app-shell'
 
 const navigation = [
@@ -92,7 +93,9 @@ function FamilyProtectedShell({
         mobileNavigation
       >
         <ProductPageView audience="family" pathname={location.pathname} />
-        {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
+        <ShellNoticeArea>
+          {!location.pathname.endsWith('/profile/notifications') ? <PushOnboarding /> : null}
+        </ShellNoticeArea>
         <Outlet />
       </AppShell>
     </AuthenticationRedirectBoundary>

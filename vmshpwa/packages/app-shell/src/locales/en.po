@@ -36,10 +36,6 @@ msgstr "HTTP {0}, {1}; request {2}"
 msgid "Активные сессии"
 msgstr "Active sessions"
 
-#: packages/app-shell/src/page-layout.tsx
-msgid "Ваши локальные изменения сохранены. Попробуйте ещё раз."
-msgstr "Your local changes are saved. Please try again."
-
 #: packages/app-shell/src/push-onboarding.tsx
 msgid "Включаем…"
 msgstr "Turning on…"
@@ -412,6 +408,10 @@ msgstr "Trying to reconnect automatically. You can keep working on your draft."
 msgid "Проверьте соединение и повторите попытку."
 msgstr "Check the connection and try again."
 
+#: packages/app-shell/src/page-layout.tsx
+msgid "Проверьте соединение и попробуйте ещё раз."
+msgstr "Check your connection and try again."
+
 #: packages/app-shell/src/auth-boundary.tsx
 msgid "Проверяем вход"
 msgstr "Checking sign-in"
@@ -504,10 +504,6 @@ msgstr "The session has expired. Sign in again, then send again."
 #: packages/app-shell/src/session-management.tsx
 msgid "Сессия не изменена"
 msgstr "Session unchanged"
-
-#: packages/app-shell/src/app-shell.tsx
-msgid "синхронизировано"
-msgstr "synced"
 
 #: packages/app-shell/src/observability.ts
 msgid "Слишком много запросов. Подождите немного и повторите отправку."

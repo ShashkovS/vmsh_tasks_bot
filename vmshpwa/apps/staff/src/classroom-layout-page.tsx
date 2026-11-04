@@ -1,6 +1,6 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { formatDateTime } from '@vmsh/i18n'
+import { formatMomentForViewer } from '@vmsh/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -207,7 +207,7 @@ function LayoutEditor({
       ) : null}
       <ClassroomGroupLayout
         groups={groups}
-        lessonLabel={`${layout.event.name} · ${formatDateTime(new Date(layout.event.startsAt), { dateStyle: 'medium', timeStyle: 'short' })}`}
+        lessonLabel={`${layout.event.name} · ${formatMomentForViewer(layout.event.startsAt, { dateStyle: 'medium', timeStyle: 'short' })}`}
         onConfirm={() => mutation.mutate('confirm')}
         onMaterialize={() => mutation.mutate('materialize')}
         onRoomGroupChange={(roomId, groupId) => saveLocal({ ...mappings, [roomId]: groupId })}

@@ -71,9 +71,12 @@ export function StudentProgress({
       ) : null}
 
       {achievements.length > 0 ? (
-        <ul className="space-y-1">
+        <ul className="flex flex-wrap gap-2">
           {achievements.map((achievement, index) => (
-            <li className="inline-flex items-center gap-1.5 text-small text-foreground" key={index}>
+            <li
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-subtle px-2.5 py-1 text-small text-foreground"
+              key={index}
+            >
               <Sparkles aria-hidden="true" className="size-4 text-chart-3" />
               {achievement}
             </li>

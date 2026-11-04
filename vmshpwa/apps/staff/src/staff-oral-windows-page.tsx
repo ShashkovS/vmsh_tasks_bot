@@ -1,6 +1,6 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { currentLocale, dateTimeFormat } from '@vmsh/i18n'
+import { DEFAULT_COURSE_TIME_ZONE, formatMomentForViewer } from '@vmsh/i18n'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { OralWeeklyDraft } from './oral-weekly-draft'
@@ -29,6 +29,8 @@ import {
   Input,
   Label,
 } from '@vmsh/ui'
+import { browserWallTimeToIso, toBrowserWallTime } from './zoned-time'
+import { CourseTimeHint } from './course-time-hint'
 
 interface OralWindowDraft {
   sequenceNumber: string
@@ -39,10 +41,13 @@ interface OralWindowDraft {
   joinCode: string
 }
 
+// Browser wall time, matching oral-weekly-draft.tsx and the other Staff editors
+// (dev/ui-audit-20261104/BACKLOG.md, «Часовые пояса»).
 function localInputTime(date: Date): string {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
-  return local.toISOString().slice(0, 16)
+  return toBrowserWallTime(date.toISOString())
 }
+
+const fromLocalInputTime = browserWallTimeToIso
 
 function newDraft(): OralWindowDraft {
   const opensAt = new Date()
@@ -96,8 +101,8 @@ function requestFromDraft(draft: OralWindowDraft): SaveOralWindowRequest {
   return {
     schemaVersion: 1,
     sequenceNumber: Number(draft.sequenceNumber),
-    opensAt: new Date(draft.opensAt).toISOString(),
-    closesAt: new Date(draft.closesAt).toISOString(),
+    opensAt: fromLocalInputTime(draft.opensAt),
+    closesAt: fromLocalInputTime(draft.closesAt),
     joinLabel: draft.joinLabel,
     joinUrl: draft.joinUrl,
     joinCode: draft.joinCode.trim() || null,
@@ -117,10 +122,7 @@ function draftFromWindow(window: StaffOralWindow): OralWindowDraft {
 }
 
 function dateLabel(value: string): string {
-  return dateTimeFormat(currentLocale(), {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
+  return formatMomentForViewer(value, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string }) {
@@ -128,7 +130,7 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'staff') throw new Error('Oral windows require Staff auth')
   const allowed = principal.role === 'admin' && principal.capabilities.includes('oral.manage')
-  const storageKey = `vmshpwa:staff:${principal.accountId}:oral-window-draft:${groupLessonId}`
+  const storageKey = `vmshpwa:staff:${principal.accountId}:oral-window-draft:${groupLessonId}:browser-tz`
   const [draft, setDraft] = useState<OralWindowDraft>(() => readDraft(storageKey))
   const [editing, setEditing] = useState<{ windowId: string; version: number } | null>(null)
   const [clone, setClone] = useState<{ key: string; window: StaffOralWindow } | null>(null)
@@ -290,6 +292,10 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                       type="datetime-local"
                       value={draft.opensAt}
                     />
+                    <CourseTimeHint
+                      courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+                      wall={draft.opensAt}
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="oral-closes">
@@ -302,6 +308,10 @@ export function StaffOralWindowsPage({ groupLessonId }: { groupLessonId: string 
                       }
                       type="datetime-local"
                       value={draft.closesAt}
+                    />
+                    <CourseTimeHint
+                      courseTimeZone={DEFAULT_COURSE_TIME_ZONE}
+                      wall={draft.closesAt}
                     />
                   </div>
                 </div>

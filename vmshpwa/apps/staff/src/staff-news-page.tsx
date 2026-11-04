@@ -46,9 +46,9 @@ import {
   EMPTY_LOCAL_NEWS_DRAFT,
   clearLocalNewsDraft,
   loadLocalNewsDraft,
-  moscowDateTime,
+  localDateTimeToIso,
   saveLocalNewsDraft,
-  toMoscowLocalDateTime,
+  isoToLocalDateTime,
 } from './local-news-draft'
 import { StaffLocalNewsComposer } from './staff-local-news-composer'
 
@@ -112,7 +112,7 @@ export function StaffNewsPage({
   const [sourceReason, setSourceReason] = useState('')
   const [editingItem, setEditingItem] = useState<StaffNewsItem | null>(null)
   const [editDraft, setEditDraft] = useState(EMPTY_LOCAL_NEWS_DRAFT)
-  const draftKey = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-draft:v1`
+  const draftKey = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-draft:v2`
   const [localDraft, setLocalDraft] = useState(() =>
     loadLocalNewsDraft(globalThis.localStorage, draftKey),
   )
@@ -201,7 +201,7 @@ export function StaffNewsPage({
             audience: item.audience,
             attendanceMode: item.attendanceMode,
             text: item.markdown ?? item.editableText ?? '',
-            publishedLocal: toMoscowLocalDateTime(item.publishedAt) ?? '',
+            publishedLocal: isoToLocalDateTime(item.publishedAt) ?? '',
           }
           const saved = loadLocalNewsDraft(globalThis.localStorage, key, initial)
           const hasSavedDraft =
@@ -318,7 +318,7 @@ export function StaffNewsPage({
                   onImageUpload={(image) => richMediaClient.uploadImage(image)}
                   onFileUpload={(file) => richMediaClient.uploadFile(file)}
                   onSubmit={(document, courseId) => {
-                    const publishedAt = moscowDateTime(localDraft.publishedLocal)
+                    const publishedAt = localDateTimeToIso(localDraft.publishedLocal)
                     if (publishedAt === null) return
                     mutation.mutate({
                       kind: 'local',
@@ -377,7 +377,7 @@ export function StaffNewsPage({
                 onFileUpload={(file) => richMediaClient.uploadFile(file)}
                 onSubmit={(document, courseId) => {
                   if (editingItem.isScheduled) {
-                    const publishedAt = moscowDateTime(editDraft.publishedLocal)
+                    const publishedAt = localDateTimeToIso(editDraft.publishedLocal)
                     if (publishedAt === null) return
                     mutation.mutate({
                       kind: 'edit-local',
