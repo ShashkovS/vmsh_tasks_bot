@@ -136,6 +136,16 @@ msgstr "· messages: {0}"
 msgid "· Тест учителя"
 msgstr "· Teacher test"
 
+#. placeholder {0}: messages.length
+#: apps/staff/src/review-workspace-page.tsx
+msgid "{0, plural, one {# сообщение} few {# сообщения} many {# сообщений} other {# сообщения}}"
+msgstr "{0, plural, one {# message} other {# messages}}"
+
+#. placeholder {0}: summary.publications.conditionsPublished
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "{0, plural, one {# условие опубликовано} few {# условия опубликовано} many {# условий опубликовано} other {# условия опубликовано}}"
+msgstr "{0, plural, one {# statement published} other {# statements published}}"
+
 #. placeholder {0}: r.name
 #. placeholder {1}: r.groupName
 #. placeholder {2}: r.studentCount
@@ -287,20 +297,10 @@ msgstr "{0} grades · "
 msgid "{0} рассылок требуют внимания"
 msgstr "{0} deliveries need attention"
 
-#. placeholder {0}: messages.length
-#: apps/staff/src/review-workspace-page.tsx
-msgid "{0} сообщений"
-msgstr "{0} messages"
-
 #. placeholder {0}: summary.review.claimedByOthers
 #: apps/staff/src/staff-dashboard-page.tsx
 msgid "{0} у коллег"
 msgstr "{0} claimed by colleagues"
-
-#. placeholder {0}: summary.publications.conditionsPublished
-#: apps/staff/src/staff-dashboard-page.tsx
-msgid "{0} условий опубликовано"
-msgstr "{0} statements published"
 
 #. placeholder {0}: student.displayName
 #. placeholder {1}: p.label
@@ -531,15 +531,9 @@ msgstr "HTTPS link"
 msgid "ID пользователя"
 msgstr "User ID"
 
-#: apps/staff/src/content-page.tsx
 #: apps/staff/src/pages.tsx
-#: apps/staff/src/staff-lessons-page.tsx
 msgid "LaTeX — единственный источник"
 msgstr "LaTeX is the only source"
-
-#: apps/staff/src/content-page.tsx
-msgid "LaTeX и публикации"
-msgstr "LaTeX and publications"
 
 #: apps/staff/src/bulk-content-upload-model.ts
 msgid "LaTeX-компилятор не смог безопасно собрать рисунок."
@@ -640,6 +634,13 @@ msgstr "Administrators can see all courses and groups"
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Администратор ещё не выдал вам доступ к курсу со статистикой."
 msgstr "An administrator has not granted you access to a course with statistics yet."
+
+#: apps/staff/src/account-provisioning-page.tsx
+#: apps/staff/src/problem-import-page.tsx
+#: apps/staff/src/problem-synonym-page.tsx
+#: apps/staff/src/staff-access-page.tsx
+msgid "Администрирование"
+msgstr "Administration"
 
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "Администрирование тестовой задачи"
@@ -1100,17 +1101,13 @@ msgstr "Temporary password"
 msgid "Время"
 msgstr "Time"
 
-#: apps/staff/src/staff-lesson-block-editor.tsx
-msgid "Время ({businessTimezone})"
-msgstr "Time ({businessTimezone})"
+#: apps/staff/src/course-time-hint.tsx
+msgid "Время {own}."
+msgstr "Time: {own}."
 
 #: apps/staff/src/course-schedule-editor.tsx
 msgid "Время задаётся относительно даты начала цикла и сохраняется в часовом поясе курса."
 msgstr "Time is set relative to the cycle start date and saved in the course time zone."
-
-#: apps/staff/src/content-page.tsx
-msgid "Время занятия: {businessTimezone}. Сервер проверит переходы летнего времени."
-msgstr "Class time zone: {businessTimezone}. The server will check daylight saving time transitions."
 
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Время неизвестно"
@@ -1121,17 +1118,13 @@ msgid "Время по парным входам и выходам. Пересе
 msgstr "Time from paired joins and leaves. Overlapping connections are combined."
 
 #: apps/staff/src/staff-audit-page.tsx
+#: apps/staff/src/staff-lesson-block-editor.tsx
 msgid "Время публикации"
 msgstr "Publication time"
 
-#: apps/staff/src/content-page.tsx
-msgid "Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений."
-msgstr "Time is shown in {timezone}. The deadline is changed separately from solution publication."
-
-#. placeholder {0}: Intl.DateTimeFormat().resolvedOptions().timeZone
-#: apps/staff/src/oral-weekly-draft.tsx
-msgid "Время: {0}. Отметьте дни, которые нужно создать. Общие окна изменяются сразу для всех своих групп."
-msgstr "Time: {0}. Select the days to create. Shared windows are changed immediately for all their groups."
+#: apps/staff/src/course-time-hint.tsx
+msgid "Время указывается по вашему часовому поясу ({own}); рядом показано время курса ({course})."
+msgstr "Times are in your time zone ({own}); the course time ({course}) is shown alongside."
 
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Вручную"
@@ -1470,16 +1463,16 @@ msgid "Выше"
 msgstr "Above"
 
 #: apps/staff/src/problem-review-workflow.tsx
-msgid "Генерация metadata"
+msgid "Генерация метаданных"
 msgstr "Metadata generation"
-
-#: apps/staff/src/problem-review-workflow.tsx
-msgid "Генерируем metadata…"
-msgstr "Generating metadata…"
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Генерируем и перепроверяем metadata. Обычно это занимает 30–60 секунд"
 msgstr "Generating and checking metadata. This usually takes 30–60 seconds"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Генерируем метаданные…"
+msgstr "Generating metadata…"
 
 #: apps/staff/src/rich-markdown-editor.tsx
 #: apps/staff/src/staff-lesson-block-editor.tsx
@@ -1547,7 +1540,6 @@ msgstr "Group for overrides"
 msgid "Группа для файла {0}"
 msgstr "Group for file {0}"
 
-#: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-oral-results-page.tsx
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "Групповое занятие {groupLessonId}"
@@ -1606,6 +1598,10 @@ msgstr "Two integers"
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Дедлайн и публикация решений независимы. Расписание можно менять отдельно."
 msgstr "The deadline and solution publication are independent. You can change their schedules separately."
+
+#: apps/staff/src/content-page.tsx
+msgid "Дедлайн меняется отдельно от публикации решений."
+msgstr "The deadline changes separately from solution publication."
 
 #: apps/staff/src/content-page.tsx
 msgid "Дедлайн не изменён"
@@ -2167,8 +2163,12 @@ msgid "Закрыть все"
 msgstr "Close all"
 
 #: apps/staff/src/staff-lessons-page.tsx
-msgid "Закрыть приём · Москва"
-msgstr "Close submissions · Moscow"
+msgid "Закрыть приём"
+msgstr "Close submissions"
+
+#: apps/staff/src/content-page.tsx
+msgid "Закрыть приём прямо сейчас? Школьники этой группы больше не смогут сдавать решения."
+msgstr "Close submissions right now? Students of this group will no longer be able to submit."
 
 #: apps/staff/src/content-page.tsx
 msgid "Закрыть приём сейчас"
@@ -2194,6 +2194,7 @@ msgstr "Replace the current draft with the previous class’s windows shifted by
 msgid "Заменить черновик тремя окнами пн/вт/ср недели первой даты? Время, ссылка и группы берутся из первого окна."
 msgstr "Replace the draft with three Mon/Tue/Wed windows in the week of the first date? Time, link, and groups come from the first window."
 
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/family-digest-panel.tsx
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/live-marking-page.tsx
@@ -2206,9 +2207,10 @@ msgstr "Replace the draft with three Mon/Tue/Wed windows in the week of the firs
 msgid "Занятие"
 msgstr "Class"
 
+#. placeholder {0}: heading.lessonNumber
 #. placeholder {0}: item.lessonNumber
 #. placeholder {0}: l.number
-#. placeholder {0}: lesson.lessonNumber
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/staff-statistics-page.tsx
 #: apps/staff/src/student-results-page.tsx
@@ -2254,6 +2256,10 @@ msgid "Занятия — тестирование"
 msgstr "Classes — testing"
 
 #: apps/staff/src/staff-lessons-page.tsx
+msgid "Занятия групп, их условия, подсказки и решения."
+msgstr "Group lessons with their statements, hints and solutions."
+
+#: apps/staff/src/staff-lessons-page.tsx
 msgid "Занятия не созданы"
 msgstr "Classes not created"
 
@@ -2284,10 +2290,10 @@ msgid "Запланировать"
 msgstr "Schedule"
 
 #. placeholder {0}: selectedRevision?.data.revisionNumber ?? '—'
-#. placeholder {1}: state.scheduleAt.replace('T', ' ')
+#. placeholder {1}: formatInBusinessTimezone(browserWallTimeToIso(state.scheduleAt), businessTimezone)
 #: apps/staff/src/content-page.tsx
-msgid "Запланировать версию {0} на {1} ({businessTimezone})?"
-msgstr "Schedule version {0} for {1} ({businessTimezone})?"
+msgid "Запланировать версию {0} на {1}?"
+msgstr "Schedule version {0} for {1}?"
 
 #: apps/staff/src/staff-local-news-composer.tsx
 msgid "Запланировать публикацию"
@@ -2335,10 +2341,6 @@ msgstr "This will contain preview, dry-run, categories, and separate PWA/Telegra
 #: apps/staff/src/staff-access-page.tsx
 msgid "Здесь настраивается только область данных: весь курс или выбранные группы. Рассылки, аудитории, аудит и административные настройки преподавателю недоступны."
 msgstr "Only the data scope is configured here: a whole course or selected groups. Deliveries, rooms, audit, and administrative settings are unavailable to the teacher."
-
-#: apps/staff/src/staff-lessons-page.tsx
-msgid "Здесь отображаются только занятия и публикации, сохранённые в базе данных."
-msgstr "Only classes and publications saved in the database are shown here."
 
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Игнорировать"
@@ -2444,7 +2446,7 @@ msgstr "Edit"
 msgid "Изменить дедлайн"
 msgstr "Change deadline"
 
-#. placeholder {0}: value.replace('T', ' ')
+#. placeholder {0}: formatInBusinessTimezone(browserWallTimeToIso(value), window.businessTimezone)
 #: apps/staff/src/content-page.tsx
 msgid "Изменить дедлайн сдачи на {0}?"
 msgstr "Change the submission deadline to {0}?"
@@ -2780,8 +2782,8 @@ msgid "Конец занятий"
 msgstr "End of classes"
 
 #: apps/staff/src/staff-group-banners-page.tsx
-msgid "Конец показа · Москва"
-msgstr "Display ends · Moscow"
+msgid "Конец показа"
+msgstr "Show until"
 
 #: apps/staff/src/review-reaction-inbox-page.tsx
 msgid "Контроль проверки"
@@ -3045,6 +3047,10 @@ msgstr "Batch ready"
 msgid "Нажатия на оценку: было → + → − → не трогать. ∅ — не сдавал. ↶ — снять свои оценки этой ячейки. Красное — сохранение не подтверждено. Отменить: Ctrl/Cmd+Z."
 msgstr "Grade clicks: current → + → − → leave unchanged. ∅ means did not submit. ↶ removes your grades from this cell. Red means the save is unconfirmed. Undo: Ctrl/Cmd+Z."
 
+#: apps/staff/src/classroom-assignment-page.tsx
+msgid "Нажмите «Пересчитать», чтобы распределить школьников по аудиториям."
+msgstr "Press “Recalculate” to assign students to rooms."
+
 #: apps/staff/src/live-marking-page.tsx
 #: apps/staff/src/review-history-page.tsx
 msgid "Назад"
@@ -3222,13 +3228,10 @@ msgstr "Natural number"
 msgid "Натуральное число"
 msgstr "Natural number"
 
+#: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Начало"
 msgstr "Start"
-
-#: apps/staff/src/classroom-event-page.tsx
-msgid "Начало · Москва"
-msgstr "Start · Moscow"
 
 #. placeholder {0}: row.name
 #: apps/staff/src/teacher-work-page.tsx
@@ -3236,8 +3239,8 @@ msgid "Начало для {0}"
 msgstr "Start for {0}"
 
 #: apps/staff/src/staff-group-banners-page.tsx
-msgid "Начало показа · Москва"
-msgstr "Display begins · Moscow"
+msgid "Начало показа"
+msgstr "Show from"
 
 #: apps/staff/src/pages.tsx
 msgid "Начинающие · с занятия 38"
@@ -3546,7 +3549,7 @@ msgid "Не удалось разобрать распределение. Пов
 msgstr "Could not parse the roster. Try again."
 
 #: apps/staff/src/problem-review-workflow.tsx
-msgid "Не удалось сгенерировать metadata"
+msgid "Не удалось сгенерировать метаданные"
 msgstr "Could not generate metadata"
 
 #: apps/staff/src/whiteboard-export-generator.tsx
@@ -3967,7 +3970,7 @@ msgstr "Refresh statistics"
 msgid "Обновить статус"
 msgstr "Refresh status"
 
-#. placeholder {0}: report.data.run.completedAt
+#. placeholder {0}: formatDateTime(new Date(report.data.run.completedAt), { dateStyle: 'medium', timeStyle: 'short' })
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Обновлено: {0}"
 msgstr "Updated: {0}"
@@ -4125,8 +4128,8 @@ msgid "Окно {0} · "
 msgstr "Window {0} · "
 
 #: apps/staff/src/classroom-event-page.tsx
-msgid "Окончание · Москва"
-msgstr "End · Moscow"
+msgid "Окончание"
+msgstr "End"
 
 #. placeholder {0}: row.name
 #: apps/staff/src/teacher-work-page.tsx
@@ -4177,22 +4180,19 @@ msgstr "The published statement is unavailable."
 #: apps/staff/src/content-page.tsx
 #: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
+#: apps/staff/src/staff-local-news-composer.tsx
 msgid "Опубликовано"
 msgstr "Published"
 
 #: apps/staff/src/staff-local-news-composer.tsx
-msgid "Опубликовано по московскому времени"
-msgstr "Published in Moscow time"
+msgid "Опубликовать"
+msgstr "Publish"
 
 #. placeholder {0}: materialLabels[kind].toLowerCase()
 #. placeholder {1}: selectedRevision?.data.revisionNumber ?? '—'
 #: apps/staff/src/content-page.tsx
 msgid "Опубликовать {0} версии {1} сейчас?"
 msgstr "Publish {0}, version {1}, now?"
-
-#: apps/staff/src/staff-local-news-composer.tsx
-msgid "Опубликовать по московскому времени"
-msgstr "Publish in Moscow time"
 
 #: apps/staff/src/content-page.tsx
 msgid "Опубликовать по расписанию"
@@ -4361,8 +4361,8 @@ msgid "Открыть приём"
 msgstr "Open submissions"
 
 #: apps/staff/src/staff-lessons-page.tsx
-msgid "Открыть приём · Москва (необязательно)"
-msgstr "Open submissions · Moscow (optional)"
+msgid "Открыть приём (необязательно)"
+msgstr "Open submissions (optional)"
 
 #: apps/staff/src/student-results-history.tsx
 #: apps/staff/src/student-results-page.tsx
@@ -4446,6 +4446,10 @@ msgstr "Undo last action"
 #: apps/staff/src/content-page.tsx
 msgid "Отменить расписание"
 msgstr "Cancel schedule"
+
+#: apps/staff/src/oral-weekly-draft.tsx
+msgid "Отметьте дни, которые нужно создать. Общие окна изменяются сразу для всех своих групп."
+msgstr "Tick the days to create. Shared windows change for all their groups at once."
 
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Отношение"
@@ -4673,8 +4677,12 @@ msgid "Первый пароль"
 msgstr "Initial password"
 
 #: apps/staff/src/problem-review-workflow.tsx
-msgid "Перегенерировать metadata с типами из таблицы? Типы задач сохранятся, остальные поля черновика будут заменены. Результат нужно проверить и сохранить вручную."
-msgstr "Regenerate metadata using the table types? Problem types will be preserved; the other draft fields will be replaced. Review and save the result manually."
+msgid "Перегенерировать метаданные с типами из таблицы? Типы задач сохранятся, остальные поля черновика будут заменены. Результат нужно проверить и сохранить вручную."
+msgstr "Regenerate metadata with types from the table? Task types are kept, other draft fields are replaced. Review and save the result manually."
+
+#: apps/staff/src/content-page.tsx
+msgid "Перед публикацией проверьте предпросмотр"
+msgstr "Check the preview before publishing"
 
 #. placeholder {0}: item.movedTo
 #: apps/staff/src/review-series-page.tsx
@@ -5014,8 +5022,8 @@ msgid "Подсказки"
 msgstr "Hints"
 
 #: apps/staff/src/staff-lessons-page.tsx
-msgid "Подсказки · Москва (необязательно)"
-msgstr "Hints · Moscow (optional)"
+msgid "Подсказки (необязательно)"
+msgstr "Hints (optional)"
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Подсказки и решения"
@@ -5214,8 +5222,8 @@ msgid "Полная шкала: +, +., ±, +/2, ∓, −., −"
 msgstr "Full scale: +, +., ±, +/2, ∓, −., −"
 
 #: apps/staff/src/problem-review-workflow.tsx
-msgid "Полностью перегенерировать metadata? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач."
-msgstr "Regenerate all metadata? The current draft and displayed table will be replaced by the model output. After review, “Save metadata” will replace the saved problem configuration."
+msgid "Полностью перегенерировать метаданные? Текущий черновик и показанная таблица будут заменены результатом модели. После проверки «Сохранить метаданные» заменит сохранённую конфигурацию задач."
+msgstr "Fully regenerate metadata? The current draft and table will be replaced by the model output. After review, “Save metadata” replaces the saved task configuration."
 
 #: apps/staff/src/pages.tsx
 msgid "Полный Markdown-редактор и отправка появятся во второй продуктовой фазе."
@@ -5719,8 +5727,8 @@ msgid "Проверьте преподавателей и исключения �
 msgstr "Check the teachers and time exceptions before confirming."
 
 #: apps/staff/src/problem-review-workflow.tsx
-msgid "Проверьте сгенерированные metadata"
-msgstr "Review generated metadata"
+msgid "Проверьте сгенерированные метаданные"
+msgstr "Review the generated metadata"
 
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/classroom-catalog-page.tsx
@@ -6162,8 +6170,8 @@ msgid "Решения"
 msgstr "Solutions"
 
 #: apps/staff/src/staff-lessons-page.tsx
-msgid "Решения · Москва (необязательно)"
-msgstr "Solutions · Moscow (optional)"
+msgid "Решения (необязательно)"
+msgstr "Solutions (optional)"
 
 #: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
@@ -6353,7 +6361,7 @@ msgid "Связь со школьником удалена. Учётная за�
 msgstr "The student link was removed. The parent account was kept."
 
 #: apps/staff/src/problem-review-workflow.tsx
-msgid "Сгенерировать metadata"
+msgid "Сгенерировать метаданные"
 msgstr "Generate metadata"
 
 #: apps/staff/src/problem-review-workflow.tsx
@@ -6617,10 +6625,6 @@ msgstr "First link at least one active parent account to a student in this group
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Сначала создайте группу"
 msgstr "Create a group first"
-
-#: apps/staff/src/classroom-assignment-page.tsx
-msgid "Сначала создайте предпросмотр распределения школьников."
-msgstr "First create a student-assignment preview."
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Сначала создайте учебный сезон, затем добавьте в него курсы и группы."
@@ -7186,8 +7190,8 @@ msgid "Таблица учёта работы"
 msgstr "Teacher work table"
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
-msgid "Такого времени нет в часовом поясе занятия. Выберите другое время."
-msgstr "This time does not exist in the class time zone. Select another time."
+msgid "Такого времени нет в вашем часовом поясе. Выберите другое время."
+msgstr "This time does not exist in your time zone. Choose another time."
 
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "такой Telegram-токен уже используется"
@@ -7285,6 +7289,10 @@ msgstr "Answer type"
 #: apps/staff/src/mcp-access-page.tsx
 msgid "Токен открывает учебные материалы ваших кружков и групп, включая неопубликованные решения и изображения из диалогов. Через него можно загружать приватные предложения ИИ для учителя."
 msgstr "This token grants access to learning materials in your courses and groups, including unpublished solutions and images in conversations. It can upload private AI suggestions for teachers."
+
+#: apps/staff/src/staff-group-banners-page.tsx
+msgid "Только для администраторов"
+msgstr "Administrators only"
 
 #: apps/staff/src/product-analytics-page.tsx
 msgid "Только для глобального администратора"
@@ -7438,8 +7446,8 @@ msgid "Уже уведомлены {0}; сейчас будут уведомле
 msgstr "Already notified: {0}; notifying now: {1}."
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
-msgid "Укажите время публикации в часовом поясе занятия."
-msgstr "Enter the publication time in the class time zone."
+msgid "Укажите дату и время публикации."
+msgstr "Enter the publication date and time."
 
 #: apps/staff/src/content-page.tsx
 msgid "Укажите корректные дату и время публикации."
@@ -7479,6 +7487,7 @@ msgstr "levels published"
 msgid "Урок {lessonId}"
 msgstr "Class {lessonId}"
 
+#: apps/staff/src/content-page.tsx
 #: apps/staff/src/routes/__root.tsx
 msgid "Уроки"
 msgstr "Lessons"
@@ -7620,6 +7629,10 @@ msgstr "A teacher sees the permitted groups; an admin also sees the administrati
 #: apps/staff/src/routes/__root.tsx
 msgid "Учитель и администратор"
 msgstr "Teacher and administrator"
+
+#: apps/staff/src/product-analytics-page.tsx
+msgid "Учитель/админ"
+msgstr "Teacher/admin"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Учительская пометка"
@@ -7804,13 +7817,13 @@ msgstr "Chat"
 msgid "Черновик"
 msgstr "Draft"
 
-#: apps/staff/src/problem-review-workflow.tsx
-msgid "Черновик metadata обновлён"
-msgstr "Metadata draft updated"
-
 #: apps/staff/src/content-page.tsx
 msgid "Черновик готов"
 msgstr "Draft ready"
+
+#: apps/staff/src/problem-review-workflow.tsx
+msgid "Черновик метаданных обновлён"
+msgstr "Metadata draft updated"
 
 #: apps/staff/src/problem-review-workflow.tsx
 msgid "Черновик не потерян. Сверьте строки с текущими данными перед сохранением."
@@ -8003,8 +8016,8 @@ msgid "Эти строки не будут загружены, пока ошиб
 msgstr "These rows will not be uploaded until the errors are fixed:"
 
 #: apps/staff/src/staff-lesson-block-editor.tsx
-msgid "Это время неоднозначно в часовом поясе занятия. Выберите другое время."
-msgstr "This time is ambiguous in the class time zone. Select another time."
+msgid "Это время неоднозначно в вашем часовом поясе. Выберите другое время."
+msgstr "This time is ambiguous in your time zone. Choose another time."
 
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "этот родитель уже был импортирован с теми же данными"
