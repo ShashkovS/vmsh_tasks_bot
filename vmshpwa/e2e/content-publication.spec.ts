@@ -203,10 +203,12 @@ test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solu
   await lessonForm.getByLabel('Номер занятия').fill(String(lessonNumber))
   await lessonForm.getByLabel('Название (необязательно)').fill(lessonTitle)
   await lessonForm.getByLabel('Дата занятия').fill(`2027-02-0${projectOffset}`)
-  await lessonForm.getByLabel('Открыть приём · Москва (необязательно)').fill('2026-01-01T16:00')
-  await lessonForm.getByLabel('Закрыть приём · Москва').fill('2027-02-08T20:50')
-  await lessonForm.getByLabel('Подсказки · Москва (необязательно)').fill('2027-02-06T12:00')
-  await lessonForm.getByLabel('Решения · Москва (необязательно)').fill('2027-02-08T21:00')
+  await lessonForm
+    .getByLabel('Открыть приём (необязательно)', { exact: true })
+    .fill('2026-01-01T16:00')
+  await lessonForm.getByLabel('Закрыть приём', { exact: true }).fill('2027-02-08T20:50')
+  await lessonForm.getByLabel('Подсказки (необязательно)', { exact: true }).fill('2027-02-06T12:00')
+  await lessonForm.getByLabel('Решения (необязательно)', { exact: true }).fill('2027-02-08T21:00')
 
   const createdResponse = page.waitForResponse(
     (response) =>

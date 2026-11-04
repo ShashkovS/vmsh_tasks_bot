@@ -72,8 +72,8 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   await createForm.getByLabel('Показывать').selectOption({ index: 1 })
   await createForm.getByLabel('Markdown публикации').fill(originalText)
   await createForm.getByRole('button', { name: 'Сейчас' }).click()
-  await expect(createForm.getByLabel('Опубликовать по московскому времени')).not.toHaveValue('')
-  await createForm.getByLabel('Опубликовать по московскому времени').fill('2099-08-04T17:00')
+  await expect(createForm.getByLabel('Опубликовать', { exact: true })).not.toHaveValue('')
+  await createForm.getByLabel('Опубликовать', { exact: true }).fill('2099-08-04T17:00')
   const createResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
@@ -100,7 +100,7 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
     name: 'Изменить запланированную публикацию',
   })
   await expect(restoredDialog.getByLabel('Markdown публикации')).toContainText(editedText)
-  await restoredDialog.getByLabel('Опубликовать по московскому времени').fill('2099-08-05T18:30')
+  await restoredDialog.getByLabel('Опубликовать', { exact: true }).fill('2099-08-05T18:30')
   const updateResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
@@ -128,7 +128,7 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
   await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
   await createForm.getByLabel('Показывать').selectOption({ index: 1 })
   await createForm.getByLabel('Markdown публикации').fill(originalText)
-  await createForm.getByLabel('Опубликовать по московскому времени').fill('2020-08-04T17:00')
+  await createForm.getByLabel('Опубликовать', { exact: true }).fill('2020-08-04T17:00')
   const createResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
@@ -140,7 +140,7 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
   const row = page.getByText(originalText, { exact: true }).locator('xpath=ancestor::li[1]')
   await row.getByRole('button', { name: /Исправить опубликованную/ }).click()
   const editDialog = page.getByRole('dialog', { name: 'Исправить опубликованную новость' })
-  await expect(editDialog.getByLabel('Опубликовано по московскому времени')).toBeDisabled()
+  await expect(editDialog.getByLabel('Опубликовано', { exact: true })).toBeDisabled()
   await editDialog.getByLabel('Markdown публикации').fill(correctedText)
   const updateResponse = page.waitForResponse(
     (response) =>

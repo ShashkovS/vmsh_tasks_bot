@@ -59,7 +59,7 @@ test('news attachment survives publication and caption editing for Student and F
     '/staff/api/v1/rich-media/files/uploads',
   )
   await form.screenshot({ path: testInfo.outputPath('news-file-editor-staff.png') })
-  await form.getByLabel('Опубликовать по московскому времени').fill('2020-08-04T17:00')
+  await form.getByLabel('Опубликовать', { exact: true }).fill('2020-08-04T17:00')
   const created = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
