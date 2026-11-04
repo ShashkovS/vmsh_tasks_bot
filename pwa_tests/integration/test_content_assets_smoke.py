@@ -167,6 +167,42 @@ async def test_real_content_asset_toolchain_produces_safe_svg_and_bounded_webp(
 
 
 @pytest.mark.asyncio
+async def test_real_tikz_keeps_both_pictures_inside_resized_table(
+    tmp_path: Path,
+) -> None:
+    """usl-08-n wrapper regression; content-compiler-support-matrix.md, Assets."""
+    converter = ContentAssetConverter(
+        _local_tools(), temp_root=tmp_path, timeout_seconds=30
+    )
+    converted = await converter.tikz_to_svg(r"""
+\newcounter{itemnum}
+\newcommand{\vmshPartLabel}{\stepcounter{itemnum}\textbf{\arabic{itemnum})}}
+\resizebox{38mm}{!}{%
+\begin{tabular}{@{}c@{\hspace{2mm}}c@{}}
+\vmshPartLabel &
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+    \fill[red] (0,0) rectangle (4,1);
+    \node at (2,.5) {Первый};
+\end{tikzpicture}
+\\[2mm]
+\vmshPartLabel &
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+    \fill[blue] (0,0) rectangle (4,1);
+    \node at (2,.5) {Второй};
+\end{tikzpicture}
+\end{tabular}%
+}
+""")
+
+    # pdf2svg exports page 1 only: both colors prove neither row was split off.
+    compact_svg = b"".join(converted.data.split())
+    assert b"rgb(100%,0%,0%)" in compact_svg
+    assert b"rgb(0%,0%,100%)" in compact_svg
+    assert converted.width > 0 and converted.height > 0
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.asyncio
 async def test_real_triangle_dissection_tikz_with_legacy_part_counter(
     tmp_path: Path,
 ) -> None:

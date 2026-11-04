@@ -151,6 +151,9 @@ Production migration не начинает историю с занятия 39. 
    Исправление выбора кириллических шрифтов по тексту вне комментариев и этот
    SVG boundary выпущены на оба production в `35c0a6ab`:
    [проверки исходного рисунка и rollout](../../../pwa_tests/reports/tikz-svg-20261103/README.md).
+   Standalone захватывает весь source одной страницей, включая вложенные
+   `resizebox`/`tabular`; реальный regression test двух цветных рисунков:
+   `pwa_tests/integration/test_content_assets_smoke.py`.
 5. Сгенерировать web AST/HTML для client KaTeX, Telegram-rich dialect и PDF.
 6. Проверить link/media/Telegram limits и sanitizer/CSP. Поддерживаемый корпус — KaTeX + конструкции исторического `a16_html_from_tex.py`.
 7. Сохранить compiler version/hash. Recompile не меняет publication до явного действия.

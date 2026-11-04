@@ -373,7 +373,11 @@ def _standalone_document(tikz_source: str) -> str:
         else ""
     )
     return (
-        "\\documentclass[tikz,border=5pt]{standalone}\n"
+        # Capture the whole source, including resizebox/tabular wrappers; the
+        # class's tikz option captures nested pictures separately and breaks
+        # their TeX groups. See content-compiler-support-matrix.md, Assets.
+        "\\documentclass[border=5pt]{standalone}\n"
+        "\\usepackage{tikz}\n"
         f"{cyrillic_preamble}"
         "\\usepackage{amsmath}\n"
         "\\usepackage{tkz-euclide}\n"

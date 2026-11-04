@@ -197,7 +197,7 @@ async def test_tikz_latex_failure_exposes_generated_tex_and_redacted_tool_output
 
     error = captured.value
     assert error.capability == "latex-to-pdf"
-    assert error.debug["generatedTex"].startswith(r"\documentclass[tikz,border=5pt]")
+    assert error.debug["generatedTex"].startswith(r"\documentclass[border=5pt]")
     assert r"\badcommand" in error.debug["generatedTex"]
     assert "content.tex:7: Undefined control sequence." in error.debug["toolOutput"]
     assert str(temp_root) not in error.debug["toolOutput"]

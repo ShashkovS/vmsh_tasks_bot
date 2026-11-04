@@ -68,6 +68,12 @@ TeX-определения из `newlistok.sty` compiler не исполняет
 
 - TikZ converter использует фиксированный argv `pdflatex -no-shell-escape` →
   `pdf2svg`, isolated temporary files, timeout и redacted failures.
+- Standalone захватывает весь effective source одной страницей, включая
+  `resizebox`/`tabular` с несколькими `tikzpicture`. Опция класса `tikz`
+  обрезала вложенные рисунки отдельно и вызывала `Missing \endgroup inserted`
+  в составном рисунке из отчёта `usl-08-n.tex`. Реализация:
+  [`assets.py`](../../helpers/pwa/content/assets.py); реальный regression test:
+  [`test_content_assets_smoke.py`](../../pwa_tests/integration/test_content_assets_smoke.py).
 - Кириллическая преамбула включается только по тексту вне TeX-комментариев
   (с учётом экранированного `\%`). Регрессия `usl-09-x.tex`, рисунок
   `tikz-52fa6f5d8d036181`: русские комментарии при латинских подписях
