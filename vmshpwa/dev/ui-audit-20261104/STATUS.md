@@ -35,12 +35,12 @@
 - Vitest unit: 1123/1123 PASS.
 - pytest `tests` + `pwa_tests`: 3007 PASS, 1 FAIL — `test_database_performance_guard.py::test_guard_rejects_a_correlated_full_scan_and_accepts_indexed_lookup`: синтетическая схема, не связана с изменениями, падает и отдельно.
 - `make pwa-check-fast` останавливается на `python-dependencies`: в `.venv` 15 пакетов вне lock (mcp, uvicorn…); `uv sync` их удалил бы — не запускался.
-- E2E **не прогнаны**: порт 8380 занят API из worktree Codex (`~/.codex/worktrees/c754`).
+- E2E (Chromium/WebKit/Firefox, по режимам): content 6, classrooms+review+submissions 33, organizers 9, student-results 9, oral 15, oral-windows 3, live-marking 15, news 18, rich-files 9 — PASS после обновления подписей в спеках (`fef930ac`). rich-files один раз упал в Chromium на шаге входа (нет редиректа на /staff/login), повтор зелёный — нестабильность, не связанная с изменениями.
 - Визуально на agent runtime: меню Staff (1280×720), шапка урока, «Аудитории» (время, состояния групп), Zoom-окна, «Сейчас» и задачи школьника (375 px), переносы.
 
 ## Часовые пояса (2026-11-04, не закоммичено)
 
-Ввод и показ разовых времён — в поясе браузера, время курса (МСК) рядом; подробности и файлы — в разделе «Часовые пояса» BACKLOG.md. Проверки: format/types/eslint/i18n PASS, Vitest 1128/1128. Вживую в поясе Asia/Nicosia: дедлайн «18:30» в Staff сохранился как 16:30Z (19:30 МСК), школьник видит «до 15 ноября в 18:30 (19:30 МСК)». E2E не прогнаны (порт 8380 занят API Codex).
+Ввод и показ разовых времён — в поясе браузера, время курса (МСК) рядом; подробности и файлы — в разделе «Часовые пояса» BACKLOG.md. Проверки: format/types/eslint/i18n PASS, Vitest 1128/1128. Вживую в поясе Asia/Nicosia: дедлайн «18:30» в Staff сохранился как 16:30Z (19:30 МСК), школьник видит «до 15 ноября в 18:30 (19:30 МСК)».
 
 ## Известные хвосты
 
