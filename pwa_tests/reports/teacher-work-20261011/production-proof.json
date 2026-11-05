@@ -1,0 +1,180 @@
+{
+  "checked_at_utc": "2026-10-11T13:50:19.177237+00:00",
+  "pull_request": "https://github.com/ShashkovS/vmsh_tasks_bot/pull/103",
+  "production_branch": "vmshpwa",
+  "merge_commit": "33f6c950bd42ac48a33b630cb3d390bec6a65190",
+  "merged_gate": {
+    "revision": "6f0ec9b3391cb79753cdb07595c484b9409fc56f",
+    "exit_code": 0,
+    "source_changed": false,
+    "python_passed": 2955,
+    "python_skipped": 12,
+    "frontend_passed": 1090,
+    "storybook_passed": 372,
+    "e2e_passed": 9,
+    "engines": [
+      "chromium",
+      "webkit",
+      "firefox"
+    ]
+  },
+  "vmsh": {
+    "origin": "https://vmsh.shashkovs.ru",
+    "static_release": "33f6c950bd42-20261011133807",
+    "public_http_checks": 25,
+    "new_api_anonymous_401": 5,
+    "staff_assets_sha256_matched": 48,
+    "production_provenance_apps": 4,
+    "maintenance": false,
+    "services": [
+      "vmshpwa",
+      "gunicorn.vmsh_tasks_bot",
+      "vmsh-analytics.timer"
+    ],
+    "services_active": true,
+    "schema_head": "0118.teacher_work",
+    "zoom_events": 8768,
+    "backups": {
+      "before": "/web/vmsh_tasks_bot/backups/vmsh-before-deploy-20261011133914.sqlite3",
+      "after": "/web/vmsh_tasks_bot/backups/vmsh-after-deploy-20261011133933.sqlite3",
+      "quick_check": "ok"
+    },
+    "migration_rehearsal": {
+      "added_empty_tables": [
+        "teacher_work_aliases",
+        "teacher_work_mutations",
+        "teacher_work_overrides",
+        "teacher_work_rosters",
+        "teacher_work_run_requests",
+        "teacher_work_runs",
+        "teacher_work_settings",
+        "teacher_work_shifts"
+      ],
+      "existing_tables_preserved": 160,
+      "foreign_key_count_preserved": 627,
+      "integrity": "ok",
+      "new_foreign_key_violations": 0,
+      "up_down_up": "pass"
+    },
+    "calculation": {
+      "private_rows_exported": false,
+      "snapshots": [
+        {
+          "cells": 171,
+          "course_public_id": "c-1",
+          "run_id": 1,
+          "seconds": 0.935,
+          "state": "completed",
+          "teachers": 39,
+          "tsv_columns": 67,
+          "tsv_headers": 3
+        }
+      ],
+      "verification_mode": "fresh_server_only_copy"
+    },
+    "live_work_snapshots": 0,
+    "first_live_run": "admin Recalculate button or analytics timer at 2026-10-11T15:00:00Z",
+    "server_proof_directory": "/web/vmsh_tasks_bot/vmsh_tasks_bot/db/teacher-work-release-20261011"
+  },
+  "tlf": {
+    "origin": "https://prep.leaders.tech",
+    "static_release": "tlfprep-20261011-teacher-work-33f6c950bd42",
+    "public_http_checks": 25,
+    "new_api_anonymous_401": 5,
+    "staff_assets_sha256_matched": 48,
+    "production_provenance_apps": 4,
+    "maintenance": false,
+    "services": [
+      "vmshpwa",
+      "vmshzoom",
+      "vmsh-analytics.timer",
+      "nats",
+      "vmsh-cross-backup.timer",
+      "vmsh-cross-backup-sync.timer",
+      "vmsh-cross-backup-verify.timer"
+    ],
+    "services_active": true,
+    "schema_head": "0118.teacher_work",
+    "existing_tables_preserved": 160,
+    "new_foreign_key_violations": 0,
+    "legacy_foreign_key_violations_preserved": 627,
+    "canonical_settings_preserved_except_release": true,
+    "nats_pid_preserved": true,
+    "backups": {
+      "before": "20261011T133819.334179Z",
+      "after": "20261011T134144.245994Z",
+      "integrity": "ok",
+      "zoom_receipts_before": 2713,
+      "zoom_receipts_after": 2713
+    },
+    "migration_rehearsal": {
+      "added_empty_tables": [
+        "teacher_work_aliases",
+        "teacher_work_mutations",
+        "teacher_work_overrides",
+        "teacher_work_rosters",
+        "teacher_work_run_requests",
+        "teacher_work_runs",
+        "teacher_work_settings",
+        "teacher_work_shifts"
+      ],
+      "existing_tables_preserved": 160,
+      "foreign_key_count_preserved": 627,
+      "integrity": "ok",
+      "new_foreign_key_violations": 0,
+      "up_down_up": "pass"
+    },
+    "calculation": {
+      "private_rows_exported": false,
+      "snapshots": [
+        {
+          "cells": 3,
+          "course_public_id": "c-1",
+          "run_id": 2,
+          "seconds": 0.01,
+          "state": "completed",
+          "teachers": 2,
+          "tsv_columns": 28,
+          "tsv_headers": 3
+        },
+        {
+          "cells": 0,
+          "course_public_id": "c-2",
+          "run_id": 3,
+          "seconds": 0.004,
+          "state": "completed",
+          "teachers": 0,
+          "tsv_columns": 23,
+          "tsv_headers": 3
+        }
+      ],
+      "verification_mode": "live_database_derived_snapshots"
+    },
+    "deployment_record": "/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261011-teacher-work-33f6c950bd42",
+    "recovery": {
+      "initial_issue": "proof-file permissions; application user could not read root-owned JSON",
+      "compatible_rollback": "8357df87e2fee869ea9a1e127684d9e01c4d4a6c",
+      "schema_and_new_data_retained": true,
+      "resume_passed": true
+    },
+    "live_migration_preservation": {
+      "added_empty_tables": [
+        "teacher_work_aliases",
+        "teacher_work_mutations",
+        "teacher_work_overrides",
+        "teacher_work_rosters",
+        "teacher_work_run_requests",
+        "teacher_work_runs",
+        "teacher_work_settings",
+        "teacher_work_shifts"
+      ],
+      "existing_tables_preserved": 160,
+      "foreign_key_count_preserved": 627,
+      "integrity": "ok",
+      "new_foreign_key_violations": 0
+    }
+  },
+  "admin_ui_production_acceptance": "not claimed; no authenticated browser session available",
+  "initial_aliases_and_school_rosters": "admin confirmation required; legacy user IDs not auto-imported",
+  "production_personal_rows_exported": false
+}

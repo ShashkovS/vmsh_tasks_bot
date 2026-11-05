@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "students": [
+    {
+      "studentId": "u-101",
+      "surname": "Тестовый-Онлайн",
+      "name": "Алексей",
+      "middleName": "Петрович",
+      "grade": 6,
+      "birthday": "2013-03-14",
+      "strength": 7.4,
+      "usernameSuggestion": null,
+      "webAccount": {
+        "accountId": "a-1001",
+        "username": "testovyi-14",
+        "status": "active",
+        "credentialVersion": 1
+      },
+      "familyAccounts": [
+        {
+          "accountId": "a-1101",
+          "username": "family-testovye",
+          "displayName": "Семья Тестовых",
+          "status": "active",
+          "credentialVersion": 1,
+          "relationshipLabel": "родитель",
+          "isPrimary": true
+        }
+      ],
+      "enrollments": [
+        {
+          "enrollmentId": "en-2001",
+          "course": {
+            "courseId": "course-math-5-7-fixture",
+            "code": "math-5-7",
+            "name": "Математика 5–7",
+            "subjectCode": "math"
+          },
+          "activeGroupId": "g-1",
+          "allowedGroups": [
+            {
+              "groupId": "g-1",
+              "code": "н",
+              "name": "Начинающие",
+              "status": "active",
+              "colorKey": "level-1",
+              "sortOrder": 10
+            },
+            {
+              "groupId": "g-2",
+              "code": "п",
+              "name": "Продолжающие",
+              "status": "active",
+              "colorKey": "level-2",
+              "sortOrder": 20
+            }
+          ],
+          "attendanceMode": "online",
+          "status": "active",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "studentId": "user-student-unprovisioned",
+      "surname": "Новый",
+      "name": "Школьник",
+      "middleName": null,
+      "grade": null,
+      "birthday": "2013-06-12",
+      "strength": null,
+      "usernameSuggestion": {
+        "username": "novyi-12",
+        "state": "ready"
+      },
+      "webAccount": null,
+      "familyAccounts": [],
+      "enrollments": []
+    }
+  ],
+  "requestId": "admin-enrollments-fixture"
+}

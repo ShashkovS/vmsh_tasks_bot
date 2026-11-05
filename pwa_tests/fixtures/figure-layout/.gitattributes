@@ -1,0 +1,2 @@
+# Preserve original CP1251 bytes and CRLF source offsets in import regressions.
+*.tex binary

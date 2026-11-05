@@ -1,0 +1,59 @@
+{
+  "fixtureVersion": 1,
+  "audience": "student",
+  "loginRequest": {
+    "username": "synthetic-student-14",
+    "telegramToken": "synthetic-telegram-token-not-a-secret",
+    "deviceLabel": "Synthetic student browser"
+  },
+  "authContext": {
+    "principal": {
+      "accountId": "a-1001",
+      "audience": "student",
+      "displayName": "Синтетический ученик",
+      "sessionVersion": 3,
+      "credentialVersion": 2,
+      "userId": "user-student-fixture"
+    },
+    "currentSession": {
+      "sessionId": "00000000000000000000000000000001",
+      "audience": "student",
+      "isCurrent": true,
+      "deviceLabel": "Synthetic student browser",
+      "userAgentFamily": "Fixture Browser",
+      "createdAt": "2026-07-20T09:00:00Z",
+      "lastSeenAt": "2026-07-27T08:00:00Z",
+      "expiresAt": "2036-08-09T21:00:00Z"
+    },
+    "policy": {
+      "accessExpiresAt": "2026-07-27T08:15:00Z",
+      "sessionExpiresAt": "2036-08-09T21:00:00Z",
+      "supportEmail": "support-fixture@example.invalid"
+    }
+  },
+  "sessionsResponse": {
+    "audience": "student",
+    "sessions": [
+      {
+        "sessionId": "00000000000000000000000000000001",
+        "audience": "student",
+        "isCurrent": true,
+        "deviceLabel": "Synthetic student browser",
+        "userAgentFamily": "Fixture Browser",
+        "createdAt": "2026-07-20T09:00:00Z",
+        "lastSeenAt": "2026-07-27T08:00:00Z",
+        "expiresAt": "2036-08-09T21:00:00Z"
+      },
+      {
+        "sessionId": "00000000000000000000000000000002",
+        "audience": "student",
+        "isCurrent": false,
+        "deviceLabel": null,
+        "userAgentFamily": "Synthetic Mobile",
+        "createdAt": "2026-07-18T12:00:00Z",
+        "lastSeenAt": "2026-07-25T18:30:00Z",
+        "expiresAt": "2036-08-09T21:00:00Z"
+      }
+    ]
+  }
+}

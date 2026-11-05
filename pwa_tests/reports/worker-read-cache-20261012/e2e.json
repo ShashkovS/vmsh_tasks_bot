@@ -1,0 +1,66 @@
+{
+  "modes": [
+    "authentication",
+    "content",
+    "realtime"
+  ],
+  "browser": "chromium",
+  "seconds": 64.108,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 4.777,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/authentication.spec.ts",
+        "e2e/content-publication.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 50.972,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.633,
+        "key": "2a3fa0c5b89c872d2ac27676311c8f6c93fec50a42c00d0b84e5b80550c6b238"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/runtime-isolation.spec.ts",
+        "--grep",
+        "product realtime|current-session revoke",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 7.997,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.026,
+        "key": "2a3fa0c5b89c872d2ac27676311c8f6c93fec50a42c00d0b84e5b80550c6b238"
+      }
+    }
+  ]
+}

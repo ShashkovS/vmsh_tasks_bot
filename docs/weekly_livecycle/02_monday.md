@@ -43,6 +43,25 @@ Trace-backed observations:
   - `zoom.conversation.started`
   - `teacher.oral_round.finished`
 
+### Before 16:50. Classroom plan is confirmed
+Admin behavior:
+- the reusable classroom catalog is checked for active rooms;
+- the latest confirmed room-to-group layout is inherited unless this lesson needs a change;
+- if edited, a lesson draft is materialized, previewed, and confirmed;
+- the student assignment plan is calculated, manually corrected where necessary, and confirmed.
+
+Assignment rules:
+- one room contains students from one group only, while one group may use several rooms;
+- rooms have no configured capacity; the planner shows actual counts;
+- a previous eligible room is kept where possible, otherwise the least-loaded room is selected with natural room-name ordering for ties;
+- an in-person student without an eligible room is a blocking incident, not a silently omitted row.
+
+Product consequences:
+- Student and Family see only the confirmed assignment;
+- Student receives PWA notifications when a room is assigned, withdrawn, or changed; Family does not receive a classroom push;
+- a late group or attendance-mode change immediately recalculates that student's assignment;
+- hiding an assigned room immediately shows “Аудитория переназначается” for affected current students and requires a new confirmed plan.
+
 ### 16:50. In-school circle starts
 Pedagogical meaning:
 - students physically present in school interact with teachers live;
@@ -52,6 +71,7 @@ Product consequences:
 - students explicitly switch themselves to `/in_school`;
 - teachers may record oral outcomes with `RES_TYPE.SCHOOL`;
 - after school, those same students can continue through the bot.
+- the student's current room comes from the confirmed versioned assignment plan, not directly from a spreadsheet cell.
 
 Migration implication:
 - "attendance mode" is a real weekly-state parameter, not just a user preference.

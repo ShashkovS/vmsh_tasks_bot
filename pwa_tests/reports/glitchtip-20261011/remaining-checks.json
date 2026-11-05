@@ -1,0 +1,21 @@
+{
+  "before_digest": "67dd06faf30982eed3d843aaa18b66d5810a133cb5dce32034bed150a79e8d0b",
+  "phases": [
+    {
+      "name": "frontend",
+      "exit_code": 0,
+      "seconds": 134.29
+    },
+    {
+      "name": "storybook",
+      "exit_code": 0,
+      "seconds": 122.79
+    },
+    {
+      "name": "e2e",
+      "exit_code": 0,
+      "seconds": 179.01
+    }
+  ],
+  "after_digest": "67dd06faf30982eed3d843aaa18b66d5810a133cb5dce32034bed150a79e8d0b"
+}

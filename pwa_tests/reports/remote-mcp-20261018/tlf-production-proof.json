@@ -1,0 +1,75 @@
+{
+  "ai_migration": "0122.ai_review_assistant",
+  "database_quick_check": "ok",
+  "mcp_anonymous_status": {
+    "/staff/api/ai-review/v1/tools/list_courses": 401,
+    "/staff/api/v1/ai-review/tokens": 401,
+    "/staff/api/ai-review/v1/mcp": 401,
+    "remote_mcp_without_origin": 401
+  },
+  "backend_only": false,
+  "checked_at_utc": "2026-10-18T17:36:13.236799+00:00",
+  "origin": "https://prep.leaders.tech",
+  "source": "450903b77351627b50f9845fca9a5d7abb66880d",
+  "static_release": "tlfprep-20261018-remote-mcp-450903b77351",
+  "staff_assets_sha256_matched": 119,
+  "production_provenance": {
+    "landing": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-remote-mcp-450903b77351",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "landing"
+    },
+    "student": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-remote-mcp-450903b77351",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "student"
+    },
+    "family": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-remote-mcp-450903b77351",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "family"
+    },
+    "staff": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-remote-mcp-450903b77351",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "staff"
+    }
+  },
+  "html_sha256_matched": 4,
+  "media_anonymous_status": 401,
+  "public_sourcemaps": false,
+  "maintenance": false,
+  "services_active": [
+    "vmshpwa.service",
+    "vmshzoom.service",
+    "vmsh-analytics.timer",
+    "nats.service",
+    "vmsh-cross-backup.timer",
+    "vmsh-cross-backup-sync.timer",
+    "vmsh-cross-backup-verify.timer"
+  ]
+}

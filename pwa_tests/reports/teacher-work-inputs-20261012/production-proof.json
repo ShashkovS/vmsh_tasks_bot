@@ -1,0 +1,141 @@
+{
+  "vmsh": {
+    "checked_at_utc": "2026-10-11T21:56:19.455391+00:00",
+    "origin": "https://vmsh.shashkovs.ru",
+    "source": "278515d194d30bdfe7eccdf60c95358610360e63",
+    "static_release": "278515d194d3-20261011215407",
+    "staff_assets_sha256_matched": 116,
+    "production_provenance": {
+      "landing": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "landing"
+      },
+      "student": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "student"
+      },
+      "family": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "family"
+      },
+      "staff": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "staff"
+      }
+    },
+    "html_sha256_matched": 4,
+    "media_anonymous_status": 401,
+    "teacher_work_anonymous_status": 401,
+    "public_sourcemaps": false,
+    "maintenance": false,
+    "services_active": [
+      "vmshpwa.service",
+      "gunicorn.vmsh_tasks_bot.service",
+      "vmsh-analytics.timer"
+    ]
+  },
+  "tlf": {
+    "checked_at_utc": "2026-10-11T21:55:35.559528+00:00",
+    "origin": "https://prep.leaders.tech",
+    "source": "278515d194d30bdfe7eccdf60c95358610360e63",
+    "static_release": "tlfprep-20261012-teacher-inputs-278515d194d3",
+    "staff_assets_sha256_matched": 116,
+    "production_provenance": {
+      "landing": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "landing"
+      },
+      "student": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "student"
+      },
+      "family": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "family"
+      },
+      "staff": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "staff"
+      }
+    },
+    "html_sha256_matched": 4,
+    "media_anonymous_status": 401,
+    "teacher_work_anonymous_status": 401,
+    "public_sourcemaps": false,
+    "maintenance": false,
+    "services_active": [
+      "vmshpwa.service",
+      "vmshzoom.service",
+      "vmsh-analytics.timer",
+      "nats.service",
+      "vmsh-cross-backup.timer",
+      "vmsh-cross-backup-sync.timer",
+      "vmsh-cross-backup-verify.timer"
+    ]
+  },
+  "tlf_data": {
+    "data_preserved": true,
+    "tables": 168,
+    "rows": 37067
+  },
+  "vmsh_database": {
+    "integrity": "ok",
+    "zoom_events": 8768
+  }
+}

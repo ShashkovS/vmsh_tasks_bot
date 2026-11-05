@@ -1,0 +1,38 @@
+{
+  "modes": [
+    "review"
+  ],
+  "browser": "all",
+  "seconds": 67.382,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.148,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 66.979,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.492,
+        "key": "7ac0515a213726e9a5ad027f4944d3deae6ba5f7940b5e5afa56088decd4d143"
+      }
+    }
+  ]
+}

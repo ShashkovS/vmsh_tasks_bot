@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "assignmentPlan": {
+    "event": {
+      "publicId": "event-41",
+      "name": "Очное занятие",
+      "startsAt": "2026-10-11T10:00:00Z",
+      "endsAt": "2026-10-11T13:00:00Z",
+      "status": "scheduled"
+    },
+    "plan": {
+      "publicId": "classroom-plan.41",
+      "state": "draft",
+      "staleReason": null,
+      "version": 2,
+      "updatedAt": "2026-10-05T12:00:00Z",
+      "confirmedAt": null
+    },
+    "groups": [
+      {
+        "groupLessonPublicId": "group-lesson-41",
+        "coursePublicId": "course-math",
+        "courseName": "Математика 5–7",
+        "groupPublicId": "group-beginner",
+        "groupName": "Начинающие",
+        "shortCode": "н",
+        "colorKey": "level-1",
+        "lessonNumber": 41,
+        "inPersonCount": 1
+      }
+    ],
+    "rooms": [
+      {
+        "publicId": "room-201",
+        "name": "201",
+        "status": "active",
+        "groupLessonPublicId": "group-lesson-41"
+      }
+    ],
+    "students": [
+      {
+        "enrollmentPublicId": "enrollment-anna",
+        "studentPublicId": "student-anna",
+        "surname": "Белова",
+        "name": "Анна",
+        "age": 13.6,
+        "grade": 7,
+        "strength": 8,
+        "groupLessonPublicId": "group-lesson-41",
+        "groupPublicId": "group-beginner",
+        "classroomPublicId": "room-201",
+        "classroomName": "201",
+        "status": "assigned",
+        "source": "least-loaded"
+      }
+    ]
+  },
+  "requestId": "classroom-assignment-fixture"
+}

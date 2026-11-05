@@ -1,0 +1,188 @@
+{
+  "implementationCommit": "dbcde4e1fe94d10135df70053540bcdb15cd5959",
+  "deploymentScriptCommit": "56654543a830fe4f35e4c16d1d400337f56a67f9",
+  "vmsh": {
+    "origin": "https://vmsh.shashkovs.ru",
+    "rehearsal": {
+      "migration": "0110.pwa_written_result_precedence",
+      "sourceSha256": "c43c64611b51d0396bf88cfd6cb52933ea09f8b0aabf78da1e149ac21cb89231",
+      "sourceUnchanged": true,
+      "upDownUp": true,
+      "integrity": "ok",
+      "existingForeignKeyViolations": 627,
+      "newForeignKeyViolations": 0,
+      "unchangedProductTables": 156,
+      "resultsCount": 37540,
+      "retainedManualPointers": 5567,
+      "changedCurrentResults": 85,
+      "repairedAcceptedResults": 22,
+      "performanceMs": {
+        "up": 83.192,
+        "down": 25.626,
+        "again": 102.461
+      }
+    },
+    "guard": {
+      "schemaVersion": 1,
+      "database": "production_v2.db",
+      "viewsChecked": 7,
+      "probes": [
+        {
+          "name": "effective-results-current-test-attempt",
+          "elapsedMs": 209.774
+        }
+      ]
+    },
+    "backupComparison": {
+      "changedTables": [
+        {
+          "table": "auth_events",
+          "beforeCount": 62462,
+          "afterCount": 62463
+        },
+        {
+          "table": "auth_refresh_consumed_secrets",
+          "beforeCount": 51642,
+          "afterCount": 51643
+        },
+        {
+          "table": "auth_sessions",
+          "beforeCount": 4026,
+          "afterCount": 4026
+        },
+        {
+          "table": "idempotency_records",
+          "beforeCount": 49267,
+          "afterCount": 49268
+        },
+        {
+          "table": "results",
+          "beforeCount": 37544,
+          "afterCount": 37545
+        },
+        {
+          "table": "test_attempt_result_events",
+          "beforeCount": 22666,
+          "afterCount": 22667
+        },
+        {
+          "table": "test_attempts",
+          "beforeCount": 22601,
+          "afterCount": 22602
+        }
+      ],
+      "unchangedTables": 149,
+      "beforeResults": 37544,
+      "afterResults": 37545,
+      "deletedResults": 0,
+      "modifiedHistoricalResults": 0,
+      "newResults": 1,
+      "manualPointersUnchanged": true,
+      "changedCurrentResults": 86,
+      "repairedAcceptedResults": 23,
+      "integrity": [["ok"]],
+      "foreignKeysUnchanged": true
+    },
+    "liveWriteVerification": {
+      "newAutomaticTestResults": 1,
+      "newResultLinkedToActiveAttempt": true,
+      "migrationOnlyChangedCurrentResults": 85,
+      "migrationOnlyRepairedAcceptedResults": 22,
+      "refreshedAuthSessions": 1,
+      "changedAuthSessionFields": [
+        "last_seen_at",
+        "refresh_secret_hash",
+        "updated_at",
+        "version"
+      ]
+    },
+    "httpSmoke": "PASS: 25 read-only checks accepted https://vmsh.shashkovs.ru as production.",
+    "beforeBackup": "vmsh-before-deploy-20261003192456.sqlite3",
+    "afterBackup": "vmsh-after-deploy-20261003192530.sqlite3",
+    "appendOnlyVerification": [
+      {
+        "table": "auth_events",
+        "newRows": 1,
+        "deletedRows": 0,
+        "changedHistoricalRows": 0
+      },
+      {
+        "table": "auth_refresh_consumed_secrets",
+        "newRows": 1,
+        "deletedRows": 0,
+        "changedHistoricalRows": 0
+      },
+      {
+        "table": "idempotency_records",
+        "newRows": 1,
+        "deletedRows": 0,
+        "changedHistoricalRows": 0
+      },
+      {
+        "table": "test_attempts",
+        "newRows": 1,
+        "deletedRows": 0,
+        "changedHistoricalRows": 0
+      },
+      {
+        "table": "test_attempt_result_events",
+        "newRows": 1,
+        "deletedRows": 0,
+        "changedHistoricalRows": 0
+      }
+    ]
+  },
+  "tlf": {
+    "origin": "https://prep.leaders.tech",
+    "beforeBackup": {
+      "backup": "20261003T192717.162838Z",
+      "createdAt": "2026-10-03T19:27:17.162838+00:00",
+      "integrity": "ok",
+      "zoomReceipts": 1091
+    },
+    "afterBackup": {
+      "backup": "20261003T192838.095736Z",
+      "createdAt": "2026-10-03T19:28:38.095736+00:00",
+      "integrity": "ok",
+      "zoomReceipts": 1091
+    },
+    "data": {
+      "changedCurrentResults": 0,
+      "existingForeignKeyViolations": 627,
+      "integrity": "ok",
+      "newForeignKeyViolations": 0,
+      "repairedAcceptedResults": 0,
+      "resultsCount": 1002,
+      "retainedManualPointers": 0,
+      "schemaObjects": 510,
+      "unchangedProductTables": 156
+    },
+    "rehearsal": {
+      "migration": "0110.pwa_written_result_precedence",
+      "sourceSha256": "b74388aafecd4a0d2e0f2411fc956ed96eaeeef9f1ad75c7943bac5081651734",
+      "sourceUnchanged": true,
+      "upDownUp": true,
+      "integrity": "ok",
+      "existingForeignKeyViolations": 627,
+      "newForeignKeyViolations": 0,
+      "unchangedProductTables": 156,
+      "resultsCount": 1001,
+      "retainedManualPointers": 0,
+      "changedCurrentResults": 0,
+      "repairedAcceptedResults": 0,
+      "incidents": []
+    },
+    "productionGuard": {
+      "database": "production_prep.db",
+      "schemaVersion": 1,
+      "viewsChecked": 7,
+      "probes": [
+        {
+          "elapsedMs": 1.873,
+          "name": "effective-results-current-test-attempt"
+        }
+      ]
+    },
+    "httpSmoke": "PASS: 25 read-only checks accepted https://prep.leaders.tech as production."
+  }
+}

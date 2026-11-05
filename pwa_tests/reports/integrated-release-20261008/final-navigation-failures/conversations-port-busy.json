@@ -1,0 +1,37 @@
+{
+  "modes": [
+    "support",
+    "review",
+    "student-results"
+  ],
+  "browser": "all",
+  "seconds": 6.419,
+  "exit_code": 1,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.555,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/support-dialogue.spec.ts",
+        "e2e/browser-image-upload.spec.ts",
+        "e2e/review-workspace.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 4.135,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

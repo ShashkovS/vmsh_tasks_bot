@@ -1,0 +1,320 @@
+{
+  "fixtureVersion": 1,
+  "corpusId": "lesson-40-n-condition",
+  "lessonNumber": 40,
+  "groupCode": "n",
+  "source": {
+    "path": "_vmsh_examples/usl-40-n.tex",
+    "sha256": "2d25df743bdef95fd937053f6ee4cb791b8569517ffdd22ab9e2fff522970f63"
+  },
+  "referencePdf": {
+    "path": "_vmsh_examples/usl-40-n.pdf",
+    "sha256": "48b39f77d0c75445f846e55db52535d349426b7e496b25ce16d080bd46a3977d"
+  },
+  "webDocument": {
+    "contractVersion": 1,
+    "introduction": [
+      {
+        "children": [
+          {
+            "type": "text",
+            "value": "«Тест»-задачи"
+          }
+        ],
+        "level": 2,
+        "type": "heading"
+      }
+    ],
+    "materialKind": "condition",
+    "problems": [
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nЧисла "
+              },
+              {
+                "latex": "a",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": " и "
+              },
+              {
+                "latex": "b",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": " дают при делении на 7 остатки 5 и 6. Какой остаток даёт "
+              },
+              {
+                "latex": "a+b",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": "?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 1,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nЕсли 20 июля — понедельник, каким днём недели будет 20 августа того же года?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 2,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nКакой цифрой оканчивается число "
+              },
+              {
+                "latex": "7^{2026}",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": "?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 3,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nНа круге отмечено 18 точек. Фишка каждый раз перескакивает через 4 точки, то есть сдвигается на 5 позиций. Вернётся ли она в исходную точку ровно через 18 ходов?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 4,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nПоследовательность начинается так: "
+              },
+              {
+                "latex": "2,5,8,11,\\ldots",
+                "type": "math"
+              },
+              {
+                "type": "text",
+                "value": ". Какой остаток при делении на 7 имеет её сотый член?\n"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": "«Письменные» задачи"
+              }
+            ],
+            "level": 2,
+            "type": "heading"
+          }
+        ],
+        "ordinal": 5,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nДокажите, что среди любых восьми целых чисел найдутся два, разность которых делится на 7.\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 6,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nПо кругу расположено 12 кувшинок. Лягушка прыгает каждый раз на 8 кувшинок вперёд. Сколько разных кувшинок она посетит, прежде чем впервые вернётся на начальную?\n"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": "«Устные» задачи"
+              }
+            ],
+            "level": 2,
+            "type": "heading"
+          }
+        ],
+        "ordinal": 7,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nКакие остатки может давать квадрат целого числа при делении на 4?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 8,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nСтрелка указывает на число 3 на циферблате с числами от 1 до 12. На какое число она укажет после 50 переводов на одно деление вперёд?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 9,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nМожет ли сумма двух чисел, каждое из которых даёт остаток 2 при делении на 5, делиться на 5?\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 10,
+        "sourceItem": null,
+        "title": null
+      },
+      {
+        "blocks": [
+          {
+            "children": [
+              {
+                "type": "text",
+                "value": " "
+              },
+              {
+                "type": "text",
+                "value": "\nДокажите: если число при делении на 6 даёт остаток 5, то после прибавления 7 получится число, делящееся на 6.\n"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "ordinal": 11,
+        "sourceItem": null,
+        "title": null
+      }
+    ],
+    "revisionId": "revision:golden-40-n-condition",
+    "sourceSha256": "2d25df743bdef95fd937053f6ee4cb791b8569517ffdd22ab9e2fff522970f63",
+    "title": "Занятие 40 · Начинающие"
+  },
+  "telegram": {
+    "rendererVersion": "vmsh-telegram-rich/1;telegram-bot-api=10.2",
+    "sha256": "00ab1e6e83d044731241fa3d41bb26e91b03fa98cbaae55b10ba10b9cdbbb7d4",
+    "html": "<h2>«Тест»-задачи</h2><h3>Задача 1</h3><p>  Числа <tg-math>a</tg-math> и <tg-math>b</tg-math> дают при делении на 7 остатки 5 и 6. Какой остаток даёт <tg-math>a+b</tg-math>? </p><h3>Задача 2</h3><p>  Если 20 июля — понедельник, каким днём недели будет 20 августа того же года? </p><h3>Задача 3</h3><p>  Какой цифрой оканчивается число <tg-math>7^{2026}</tg-math>? </p><h3>Задача 4</h3><p>  На круге отмечено 18 точек. Фишка каждый раз перескакивает через 4 точки, то есть сдвигается на 5 позиций. Вернётся ли она в исходную точку ровно через 18 ходов? </p><h3>Задача 5</h3><p>  Последовательность начинается так: <tg-math>2,5,8,11,\\ldots</tg-math>. Какой остаток при делении на 7 имеет её сотый член? </p><h2>«Письменные» задачи</h2><h3>Задача 6</h3><p>  Докажите, что среди любых восьми целых чисел найдутся два, разность которых делится на 7. </p><h3>Задача 7</h3><p>  По кругу расположено 12 кувшинок. Лягушка прыгает каждый раз на 8 кувшинок вперёд. Сколько разных кувшинок она посетит, прежде чем впервые вернётся на начальную? </p><h2>«Устные» задачи</h2><h3>Задача 8</h3><p>  Какие остатки может давать квадрат целого числа при делении на 4? </p><h3>Задача 9</h3><p>  Стрелка указывает на число 3 на циферблате с числами от 1 до 12. На какое число она укажет после 50 переводов на одно деление вперёд? </p><h3>Задача 10</h3><p>  Может ли сумма двух чисел, каждое из которых даёт остаток 2 при делении на 5, делиться на 5? </p><h3>Задача 11</h3><p>  Докажите: если число при делении на 6 даёт остаток 5, то после прибавления 7 получится число, делящееся на 6. </p>"
+  }
+}

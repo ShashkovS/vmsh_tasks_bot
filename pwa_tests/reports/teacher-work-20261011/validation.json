@@ -1,0 +1,41 @@
+{
+  "checked_at": "2026-10-11",
+  "branch": "codex/teacher-work-accounting",
+  "base": "a926dc61a85821630ee02ea6269ea1e5ca6bbea5",
+  "release_gate": "PASS",
+  "python": {
+    "passed": 2925,
+    "skipped": 7
+  },
+  "frontend": {
+    "passed": 1090
+  },
+  "storybook": {
+    "passed": 372
+  },
+  "final_e2e": {
+    "passed": 9,
+    "failed": 0,
+    "browsers": ["chromium", "webkit", "firefox"],
+    "modes": ["teacher-work"]
+  },
+  "final_types_lint_format": "PASS",
+  "migration_up_down_up": "PASS",
+  "production_changed": false,
+  "product_files_sha256": {
+    "apps/pwa_api/teacher_work_routes.py": "e9c17c8bc4e813b555ad7ffd65eb0af1918ec36b6c1ff228a7b7574f198ffe16",
+    "db_methods/pwa/teacher_work.py": "0f085bfe9cf8637b154263de60fdf76f371bc28f3cec7378d32a2c11d7536b75",
+    "migrations/0118.teacher_work.py": "e153989f3affd8f4d21428ac49c5dca5b3aac7cd0259404e1a09e8a74736fd4e",
+    "models/pwa/teacher_work.py": "f1bd670366b3c378b887cac2d05da5428ac31aa2e7bf1cab3ea64bc0d5051ad6",
+    "models/pwa/teacher_work_commands.py": "49b6b8e4cb7543df4c8e6e466247847206fa0f934817a5af6525cffc72791698",
+    "models/pwa/teacher_work_report.py": "7044bc84f440d8badfc8e3a26a220f397decfcb1fd4353f2b5f23025aa7e8a6a",
+    "models/pwa/teacher_work_runner.py": "572fff80034ab1f14220347dd7aa2a3b8d05ca133ffcd617275bd0bf2d93cb08",
+    "vmshpwa/apps/staff/src/locales/en.po": "e336ad80da4b1b05825c2816214b1f5e8492aa7544f97b2dd037ee6e06f8c0bc",
+    "vmshpwa/apps/staff/src/teacher-work-page.stories.tsx": "32726a37d9419f60ebaf5a752fa1c81f873a15b524a26425a39a7f8b2ee58c4f",
+    "vmshpwa/apps/staff/src/teacher-work-page.tsx": "852c99bfb1a0476e8ec3022c35fa3bcfdac14df9e742680bae10ed3a858dd870",
+    "vmshpwa/apps/staff/src/teacher-work.css": "4a23498783a01e366c92d4dd446276edeaed3f91d4a8769a06f3d6dcf9ec76c2",
+    "vmshpwa/packages/app-shell/src/teacher-work-client.ts": "73ff1f0e5682e308b97dff4d20444b8b93c3baef36d362b3e9ea9a775d8699a3",
+    "vmshpwa/packages/contracts/src/teacher-work.test.ts": "1d8dd8ecdd2110b55aa288cc0d58d5f7908ce684b85f732266e9dde885924d72",
+    "vmshpwa/packages/contracts/src/teacher-work.ts": "21c780e8043f2f5b94f55194918d4f045dc85989e0e226ac903490edef3eb4ad"
+  }
+}

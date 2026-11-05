@@ -1,0 +1,66 @@
+{
+  "checked_at_utc": "2026-10-11T14:30:37.398336+00:00",
+  "production_branch": "vmshpwa",
+  "product_release": "33f6c950bd42ac48a33b630cb3d390bec6a65190",
+  "source_before_audit": "72a9a472c54b6da13172147c5aa19bd1691f6943",
+  "archived_source_and_ignored_worktrees": 15,
+  "removed_completed_checkouts": 14,
+  "pruned_missing_registration": 1,
+  "archived_stashes": 2,
+  "remaining_stashes": 0,
+  "remaining_worktrees": [
+    {
+      "path": "/Users/sergeyshashkov/repos/vmsh_tasks_bot",
+      "clean": true,
+      "unreleased_commits": 0
+    },
+    {
+      "path": "/Users/sergeyshashkov/.codex/worktrees/051d/vmsh_tasks_bot",
+      "clean": true,
+      "unreleased_commits": 0
+    }
+  ],
+  "archive_directory": "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/worktree-archive-20261011",
+  "bundle_verified": true,
+  "archive_refs_prefix": "refs/archive/worktree-cleanup-20261011/",
+  "active_checkout_kept_reason": "Codex archive_worktree: The task's primary checkout cannot be removed.",
+  "production": {
+    "vmsh": {
+      "head_matches_production_branch": true,
+      "maintenance": false,
+      "services_active": true,
+      "schema_current": true,
+      "missing_migrations": [],
+      "unexpected_migrations": [],
+      "hash_mismatches": [],
+      "stuck_teacher_work_operations": 0
+    },
+    "tlf": {
+      "head_matches_production_branch": true,
+      "maintenance": false,
+      "services_active": true,
+      "cross_backup_timers_active": true,
+      "schema_current": true,
+      "missing_migrations": [],
+      "unexpected_migrations": [],
+      "hash_mismatches": [],
+      "completed_teacher_work_operations": 3,
+      "stuck_teacher_work_operations": 0
+    }
+  },
+  "current_feature_prs_unmerged": 0,
+  "historical_open_pr": {
+    "number": 102,
+    "base": "prod",
+    "head": "vmshpwa",
+    "created_at": "2026-07-29T20:09:17Z",
+    "disposition": "retained; historical branch migration, no undeployed product changes"
+  },
+  "historical_refs": [
+    "groups_to_db",
+    "stripe_integration",
+    "codex/content-recovery-rollback-20261004",
+    "codex/content-upload-generation-rollback-20261004"
+  ],
+  "production_personal_rows_exported": false
+}

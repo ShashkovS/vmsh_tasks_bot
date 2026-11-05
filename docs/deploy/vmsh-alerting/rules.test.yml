@@ -1,0 +1,69 @@
+rule_files: [rules.yml]
+evaluation_interval: 30s
+tests:
+  - name: CPU alert waits two minutes and sustained saturation escalates
+    interval: 30s
+    input_series:
+      - series: 'node_cpu_seconds_total{job="node",instance="vmsh.shashkovs.ru",cpu="0",mode="idle"}'
+        values: '0 30 60 90 120 150 180 210 240 270 300 330 360 390 420 450 480 510 540 570 600 601 602 603 604 605 606 607 608 609 610'
+    alert_rule_test:
+      - eval_time: 10m30s
+        alertname: VmshCpuCritical
+        exp_alerts: []
+      - eval_time: 11m30s
+        alertname: VmshCpuCritical
+        exp_alerts: []
+      - eval_time: 13m
+        alertname: VmshCpuCritical
+        exp_alerts:
+          - exp_labels: {instance: vmsh.shashkovs.ru, severity: critical, component: cpu}
+            exp_annotations:
+              summary: "CPU выше 95 процентов больше двух минут"
+              description: "Найти потребителя CPU и проверить доступность форм и очереди; не перезапускать вслепую."
+      - eval_time: 13m
+        alertname: VmshCpuHigh
+        exp_alerts: []
+  - name: full disk is an alert even when the raw value is zero
+    interval: 30s
+    input_series:
+      - series: 'node_filesystem_avail_bytes{job="node",instance="vmsh.shashkovs.ru",device="/dev/vda1",mountpoint="/"}'
+        values: '0+0x10'
+      - series: 'node_filesystem_size_bytes{job="node",instance="vmsh.shashkovs.ru",device="/dev/vda1",mountpoint="/"}'
+        values: '1000+0x10'
+    promql_expr_test:
+      - expr: '(100 * node_filesystem_avail_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} / node_filesystem_size_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} < 5) * 0 + 1'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{instance="vmsh.shashkovs.ru",job="node",device="/dev/vda1",mountpoint="/"}'
+            value: 1
+    alert_rule_test:
+      - eval_time: 1m30s
+        alertname: VmshDiskCritical
+        exp_alerts: []
+      - eval_time: 2m30s
+        alertname: VmshDiskCritical
+        exp_alerts:
+          - exp_labels: {instance: vmsh.shashkovs.ru, job: node, device: /dev/vda1, mountpoint: /, severity: critical, component: disk}
+            exp_annotations:
+              summary: "Диск: меньше пяти процентов места или inode, либо файловая система read-only"
+              description: "Под угрозой запись ответов и SQLite. Проверить состояние файловой системы и безопасно освободить место."
+      - eval_time: 2m30s
+        alertname: VmshDiskLow
+        exp_alerts: []
+  - name: healthy low-volume routes and admission do not page
+    interval: 30s
+    input_series:
+      - series: 'vmsh_db_waiting{job="aiohttp",instance="vmsh.shashkovs.ru",role="read",pid="101"}'
+        values: '0 30 0 0 0 0'
+      - series: 'vmsh_db_waiting{job="aiohttp",instance="vmsh.shashkovs.ru",role="read",pid="102"}'
+        values: '0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: VmshDbQueue
+        exp_alerts: []
+      - eval_time: 1m
+        alertname: VmshInteractiveSlow
+        exp_alerts: []
+      - eval_time: 1m
+        alertname: VmshApiErrors
+        exp_alerts: []

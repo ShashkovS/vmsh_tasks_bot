@@ -1,0 +1,11 @@
+{
+  "tests": 65,
+  "result": "PASS",
+  "runtimeApplicationCandidate": "f799f449e2ef4c1e6c76d6597cf8cf224e71e833",
+  "releaseGateRuntimeFilesUnchanged": 83,
+  "files": {
+    "vmshpwa/scripts/production_frontend_build.py": "8110a0728288af4774144f7c1d863cdc2acfa7c2d4350e51818e7e7838673da9",
+    "tests/test_glitchtip_production_build.py": "40cf27b3ac32ca11c3a421abab3ee68383e9a6820dd89627fa53f419e8c8fda5"
+  },
+  "proxyOrFirewallChanges": false
+}

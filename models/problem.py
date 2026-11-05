@@ -28,6 +28,9 @@ class Problem:
     synonyms: str = None  # Список синонимичных задач
     group_code: str = None
     id: int = None
+    # Browser/API identity introduced by migration 0044. Legacy constructors
+    # may still omit it; database reads include it after the migration.
+    public_id: str = None
 
     def __post_init__(self):
         if self.id is None:

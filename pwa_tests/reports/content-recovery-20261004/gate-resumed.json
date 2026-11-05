@@ -1,0 +1,72 @@
+{
+  "profile": "fast",
+  "modes": [
+    "content",
+    "figure-layout"
+  ],
+  "previous_static_report": "20261004T085107.398183Z/summary.json",
+  "revision": "b6476a52133ca301ad17861f30cc6c8a6c4b5bc7",
+  "source_digest": "00d9d17ca254e39cc8b483b08ad2986cd39ef601ceb9c60ddd2811eb6193faa9",
+  "started_at": "2026-10-04T08:58:05.614220+00:00",
+  "steps": [
+    {
+      "name": "python",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-n4",
+        "--durations=20",
+        "tests",
+        "pwa_tests"
+      ],
+      "seconds": 39.852,
+      "exit_code": 0
+    },
+    {
+      "name": "frontend",
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "seconds": 45.805,
+      "exit_code": 0
+    },
+    {
+      "name": "storybook",
+      "command": [
+        "pnpm",
+        "storybook:test"
+      ],
+      "seconds": 58.441,
+      "exit_code": 0
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.e2e_runner",
+        "--browser",
+        "chromium",
+        "--report",
+        "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmshpwa/checks/20261004T085805.153104Z-content-resume/e2e.json",
+        "--mode",
+        "content",
+        "--mode",
+        "figure-layout"
+      ],
+      "seconds": 48.103,
+      "exit_code": 0
+    }
+  ],
+  "exit_code": 0,
+  "seconds": 192.398
+}

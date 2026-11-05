@@ -1,0 +1,14 @@
+{
+  "vmsh": {
+    "productTables": 168,
+    "productRows": 825909,
+    "allProductRowsSha256Unchanged": true,
+    "migration": "0120 (indexes only)"
+  },
+  "tlf": {
+    "productTables": 168,
+    "productRows": 38246,
+    "allProductRowsSha256Unchanged": true,
+    "migration": "0120 (indexes only)"
+  }
+}

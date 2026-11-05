@@ -1,0 +1,36 @@
+{
+  "host": "tlf",
+  "migration": "0113.content_upload_compiler_generation",
+  "migration_sha256": "be936ccf3093b7b05209409608c1c601beb9b76fcc78a278f2be427001dede8a",
+  "repository_method_sha256": "299262e346f475c1d336f97586fdaf4a122b94098efb9a005f2b819b6a824873",
+  "migration_seconds": 0.064,
+  "product_tables": 158,
+  "product_rows": 21955,
+  "product_rows_identical": true,
+  "changed_objects": [
+    "content_revisions"
+  ],
+  "integrity": "ok",
+  "existing_fk_errors": 627,
+  "new_fk_errors": 0,
+  "old_failure_reproduced": [],
+  "upload_probes": [
+    {
+      "old_revision": "cr-1",
+      "old_status": "ready",
+      "new_generation": "uploaded",
+      "repeated_upload_idempotent": true,
+      "source_lineage_retained": true,
+      "terminal_snapshot_identical": true
+    },
+    {
+      "old_revision": "cr-2",
+      "old_status": "ready",
+      "new_generation": "uploaded",
+      "repeated_upload_idempotent": true,
+      "source_lineage_retained": true,
+      "terminal_snapshot_identical": true
+    }
+  ],
+  "data_export": "Production row data stayed on server; disposable copy removed."
+}

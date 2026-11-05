@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily GlitchTip backup
+
+[Timer]
+OnCalendar=*-*-* 02:35:00 UTC
+RandomizedDelaySec=600
+Persistent=true
+Unit=glitchtip-backup.service
+
+[Install]
+WantedBy=timers.target

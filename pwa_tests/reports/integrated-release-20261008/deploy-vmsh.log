@@ -1,0 +1,55 @@
+apps/student build: dist/assets/workbox-window.prod.es5-Bd17z0YL.js                         5.65 kB │ gzip:   2.20 kB
+apps/student build: dist/assets/profile.notifications-eLWucUJi.js                           7.69 kB │ gzip:   2.93 kB
+apps/student build: dist/assets/student-support-pages-DZEnc2lo.js                          12.45 kB │ gzip:   3.92 kB
+apps/student build: dist/assets/offline-student-data-x33UxzBz.js                           16.31 kB │ gzip:   4.68 kB
+apps/student build: dist/assets/useStore-CcKO72-p.js                                       27.52 kB │ gzip:   9.76 kB
+apps/student build: dist/assets/Match-DezLPr3A.js                                          48.50 kB │ gzip:  15.74 kB
+apps/student build: dist/assets/catalog-en-K_kEGJks.js                                     57.11 kB │ gzip:  22.34 kB
+apps/student build: dist/assets/student-tasks-page--C3Hxj_s.js                             62.02 kB │ gzip:  18.74 kB
+apps/student build: dist/assets/catalog-ru-BbU_h2gj.js                                     88.47 kB │ gzip:  26.48 kB
+apps/student build: dist/assets/index-C_dkqJqg.js                                         205.00 kB │ gzip:  66.27 kB
+apps/student build: dist/assets/src-fQiQ1a4C.js                                         1,226.11 kB │ gzip: 360.20 kB
+apps/student build: [32m✓ built in 6.14s[39m
+apps/student build: [33m[plugin builtin:vite-reporter] 
+apps/student build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/student build: - Using dynamic import() to code-split the application
+apps/student build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/student build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+apps/student build: PWA v1.3.0
+apps/student build: Building src/sw.ts service worker ("es" format)...
+apps/student build: [36mvite v8.1.5 [32mbuilding client environment for production...[36m[39m
+apps/student build: [warn] `inlineDynamicImports` option is deprecated, please use `codeSplitting: false` instead.
+apps/student build: [2K
+apps/student build: transforming...✓ 244 modules transformed.
+apps/student build: rendering chunks...
+apps/student build: computing gzip size...
+apps/student build: dist/sw.mjs  344.69 kB │ gzip: 92.35 kB
+apps/student build: [32m✓ built in 298ms[39m
+apps/student build: PWA v1.3.0
+apps/student build: mode      injectManifest
+apps/student build: format:   es
+apps/student build: precache  127 entries (3372.06 KiB)
+apps/student build: files generated
+apps/student build:   dist/sw.js
+apps/student build: Done
+UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.static_release package --release-id "d4bf4a30ce9d-20261008155618" --release-root "/web/vmsh_tasks_bot/vmshpwa" --report "/web/vmsh_tasks_bot/vmshpwa/reports/d4bf4a30ce9d-20261008155618-package.json"
+{"applications": {"family": {"bytes": 5069487, "files": 181, "sha256": "07d275bf6ef935d5f8f689134754359c4d0ac1186a131e3ea2bd3b6685c647af"}, "landing": {"bytes": 1621000, "files": 63, "sha256": "ec280bc0e38bd4003cb573a128385894c6fcd7be69b9f62434a631fb46756e5e"}, "staff": {"bytes": 6579189, "files": 311, "sha256": "c0bedb5a7a4af4739f94785065308f18f34e7a7d9792d3f8fdb9b80bb16d1375"}, "student": {"bytes": 5351928, "files": 202, "sha256": "1c6817e08adca303c177e774297db01d51136e172538287ee95c07715486e596"}}, "build": {"msw": false, "profile": "production", "prototype": false, "publicMediaOrigin": "https://vmshstor.shashkovs.ru", "releaseId": "d4bf4a30ce9d-20261008155618", "sentryConfigured": true, "sentryOrigin": "https://o489435.ingest.us.sentry.io"}, "recordedAt": "2026-10-08T15:57:12.579860Z", "releaseId": "d4bf4a30ce9d-20261008155618", "schemaVersion": 1}
+SQLite backup ready: /web/vmsh_tasks_bot/backups/vmsh-before-deploy-20261008155713.sqlite3
+Migrated production: /web/vmsh_tasks_bot/vmsh_tasks_bot/db/production_v2.db (6 migrations)
+Health check passed: aiohttp-metrics
+Health check passed: student-runtime
+Health check passed: family-runtime
+Health check passed: staff-runtime
+UV_CACHE_DIR=.runtime/uv-cache uv run python -m vmshpwa.scripts.static_release activate --release-id "d4bf4a30ce9d-20261008155618" --release-root "/web/vmsh_tasks_bot/vmshpwa" --report "/web/vmsh_tasks_bot/vmshpwa/reports/d4bf4a30ce9d-20261008155618-activate.json"
+{"currentLinkTarget": "d4bf4a30ce9d-20261008155618", "operation": "static-release-activate", "previousReleaseId": "55ed5e9c7e9c-20261008065457", "recordedAt": "2026-10-08T15:57:33.743370Z", "releaseId": "d4bf4a30ce9d-20261008155618", "schemaVersion": 1}
+Health check passed: landing
+Health check passed: student
+Health check passed: family
+Health check passed: staff
+Student CSP allows the production media origin.
+Health check passed: student-runtime-ready
+Health check passed: family-runtime-ready
+Health check passed: staff-runtime-ready
+SQLite backup ready: /web/vmsh_tasks_bot/backups/vmsh-after-deploy-20261008155734.sqlite3
+Deployment infrastructure changed in git; reinstall root-owned webhook/nginx/systemd artifacts manually.
+Deploy finished: revision=d4bf4a30ce9d frontend=true backend=true migrations=true
