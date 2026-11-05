@@ -88,3 +88,4 @@ E2E фазы 2, Chromium (одним прогоном `e2e_runner --mode all --b
 ## Q12 (2026-11-05)
 
 Оба лимита попыток считают только неверные ответы (`db_methods/pwa/submissions.py`); подпись лимита скрыта до первой ошибки, затем «Осталось ошибок: N за час · M за день»; прогресс «N задач зачтено · начато M». Проверки: pytest по отправкам 207 PASS, Vitest 1152, Storybook 384, i18n/types/lint PASS, E2E submissions (Chromium) 3/3.
+Выкатка Q12 (2026-11-05): `7ee70914` → `ui-audit-20261104-7ee709141ded` на vmsh.shashkovs.ru и prep.leaders.tech — оба PASS (25 HTTP-проверок, воркеры заменены, в скрипт выкатки добавлен разрешённый `db_methods/pwa/submissions.py`).
