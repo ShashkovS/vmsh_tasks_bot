@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
 import {
+  CollapsibleCreateSection,
   PageLayout,
   PageSection,
   PageStatePanel,
@@ -291,8 +292,10 @@ export function StaffNewsPage({
             </AlertContent>
           </Alert>
         ) : null}
-        <PageSection
+        <CollapsibleCreateSection
           description={t`Публикация появится в ленте выбранного курса или группы в указанное время. Telegram не изменяется.`}
+          initiallyOpen={localDraft.text !== '' || localDraft.publishedLocal !== ''}
+          openLabel={t`Новая публикация`}
           title={t`Новая публикация в PWA`}
         >
           {catalog.isPending ? <PageStatePanel state="loading" /> : null}
@@ -339,7 +342,7 @@ export function StaffNewsPage({
               </CardContent>
             </Card>
           ) : null}
-        </PageSection>
+        </CollapsibleCreateSection>
         <PageSection title={t`Новости`}>{content}</PageSection>
         <Dialog
           onOpenChange={(open) => {

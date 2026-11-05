@@ -189,7 +189,9 @@ export function StudentProfilePage() {
       }
       title={principal.displayName}
     >
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* UI-15 (dev/ui-audit-20261104/BACKLOG.md): cards keep their own height; the long
+          session list spans the full width last instead of stretching its neighbour. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
         {courses.data.enrollments.map((enrollment) => {
           const group = activeGroup(enrollment)
           const currentMutation = mutation.variables?.courseId === enrollment.course.courseId
@@ -232,7 +234,6 @@ export function StudentProfilePage() {
           </CardContent>
         </Card>
         <InterfaceLanguageCard />
-        <AccountSessionManager title={t`Устройства и сеансы`} />
         <Card>
           <CardHeader>
             <CardTitle>
@@ -257,6 +258,9 @@ export function StudentProfilePage() {
             </a>
           </CardContent>
         </Card>
+        <div className="lg:col-span-2">
+          <AccountSessionManager title={t`Устройства и сеансы`} />
+        </div>
       </div>
     </PageLayout>
   )

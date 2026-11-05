@@ -169,7 +169,7 @@ export function StudentHomePage() {
   }
 
   return (
-    <PageLayout actions={<OrganizerLink create />} eyebrow={t`Ваши курсы`} title={t`Сейчас`}>
+    <PageLayout actions={<OrganizerLink create />} title={t`Сейчас`}>
       {bannerQuery.data ? (
         <div className="mb-5 space-y-2 empty:hidden" aria-label={t`Объявления`}>
           {bannerQuery.data.items
@@ -191,7 +191,9 @@ export function StudentHomePage() {
             title={t`Нет активных курсов`}
           />
         ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div
+            className={`grid gap-3 ${query.data.courses.length > 1 ? 'lg:grid-cols-2' : ''}`}
+          >
             {query.data.courses.map((course) => {
               const classroom = classroomQuery.data?.items.find(
                 (item) => item.coursePublicId === course.enrollment.course.courseId,

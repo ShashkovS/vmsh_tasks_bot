@@ -341,17 +341,24 @@ export function LoadedReviewWorkspace({
   )
   const first = currentLease.branches[0]!
   const errors = complete.error ?? release.error
+  const embedded = onCompleted !== undefined
 
   return (
     <PageLayout
       actions={
-        <Button disabled={release.isPending} onClick={() => void abandon()} variant="ghost">
+        <Button disabled={release.isPending} onClick={() => void abandon()} variant="outline">
           <Trans>Отказаться от проверки</Trans>
         </Button>
       }
-      description={`${currentLease.student.displayName} · ${first.courseName ?? t`Курс`} · ${first.groupName}`}
-      eyebrow={`${first.problemNumber} · ${first.problemTitle}`}
-      title={t`Проверка работы`}
+      // X14 (dev/ui-audit-20261104/BACKLOG.md): inside a series the task is already the page
+      // heading, so the embedded workspace is titled by the student instead of repeating it.
+      description={
+        embedded
+          ? `${first.courseName ?? t`Курс`} · ${first.groupName}`
+          : `${currentLease.student.displayName} · ${first.courseName ?? t`Курс`} · ${first.groupName}`
+      }
+      {...(embedded ? {} : { eyebrow: `${first.problemNumber} · ${first.problemTitle}` })}
+      title={embedded ? currentLease.student.displayName : t`Проверка работы`}
       width="wide"
     >
       <div className="space-y-3">

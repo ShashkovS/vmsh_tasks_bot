@@ -2,7 +2,7 @@ import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 import { Menu } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 
 import {
   Button,
@@ -21,6 +21,8 @@ export interface NavigationItem {
   label: string
   to: string
   icon: ReactNode
+  /** Optional group heading; consecutive items with the same section share it. */
+  section?: string
 }
 
 export interface AppShellProps {
@@ -64,7 +66,7 @@ export function AppShell({
         <div
           className={`mx-auto flex max-w-[1600px] items-center gap-3 px-4 ${compactHeader ? 'h-10' : 'h-14'}`}
         >
-          <div className="flex min-w-0 items-baseline gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Link className="shrink-0 font-semibold tracking-tight" to="/">
               <span className="inline-flex items-center gap-2">
                 <Sign179 size={24} />
@@ -75,8 +77,8 @@ export function AppShell({
               <span
                 className={
                   displayName
-                    ? 'truncate text-sm text-muted-foreground'
-                    : 'hidden text-sm text-muted-foreground sm:inline'
+                    ? 'truncate border-l border-border pl-2 text-sm leading-5 text-muted-foreground'
+                    : 'hidden border-l border-border pl-2 text-sm leading-5 text-muted-foreground sm:inline'
                 }
                 title={displayName ?? title}
               >
@@ -104,7 +106,7 @@ export function AppShell({
 
       <div className="mx-auto flex max-w-[1600px]">
         <aside
-          className={`sticky hidden w-56 shrink-0 overflow-y-auto overscroll-contain border-r p-3 md:block ${
+          className={`sticky hidden w-60 shrink-0 overflow-y-auto overscroll-contain border-r p-3 md:block ${
             compactHeader ? 'top-10 h-[calc(100svh-2.5rem)]' : 'top-14 h-[calc(100svh-3.5rem)]'
           }`}
         >
@@ -168,17 +170,27 @@ function ShellNavigation({
 }) {
   return (
     <nav aria-label={t`Основная навигация`} className="space-y-1">
-      {navigation.map((item) => (
-        <Link
-          activeProps={{ className: 'bg-accent text-accent-foreground' }}
-          className="flex min-h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          key={item.to}
-          onClick={onNavigate}
-          to={item.to}
-        >
-          {item.icon}
-          <span>{item.label}</span>
-        </Link>
+      {navigation.map((item, index) => (
+        <Fragment key={item.to}>
+          {item.section && item.section !== navigation[index - 1]?.section ? (
+            <p
+              className={`px-3 pb-1 text-caption font-medium text-muted-foreground ${index === 0 ? '' : 'pt-4'}`}
+            >
+              {item.section}
+            </p>
+          ) : null}
+          <Link
+            activeProps={{
+              className: 'bg-accent font-medium text-accent-foreground hover:bg-accent',
+            }}
+            className="flex min-h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+            onClick={onNavigate}
+            to={item.to}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
+        </Fragment>
       ))}
     </nav>
   )

@@ -5,7 +5,16 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { PageLayout, useAuthenticatedPrincipal, useAuthentication } from '@vmsh/app-shell'
 import { ApiResponseError, apiErrorSchema, staffTestingCoursesSchema } from '@vmsh/contracts'
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@vmsh/ui'
 
 // Student reuse and audience boundaries: docs/staff-testing.md; pages-and-flows § Staff.
 export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' | 'courses' }) {
@@ -59,12 +68,18 @@ export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' |
           статистику.
         </Trans>
       </p>
-      <p className="text-small text-muted-foreground">
-        <Trans>
-          Текущий вход в кабинет школьника в этом браузере будет заменён. Вход в Staff сохранится.
-          Перед входом завершите отправки и закройте другие вкладки кабинета школьника.
-        </Trans>
-      </p>
+      {/* F13/K18 (dev/ui-audit-20261104/BACKLOG.md): the caveat is a real warning block. */}
+      <Alert className="my-4" tone="warning">
+        <AlertContent>
+          <AlertDescription>
+            <Trans>
+              Текущий вход в кабинет школьника в этом браузере будет заменён. Вход в Staff
+              сохранится. Перед входом завершите отправки и закройте другие вкладки кабинета
+              школьника.
+            </Trans>
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
       {courses.isPending ? (
         <p role="status">
           <Trans>Загружаем доступные курсы…</Trans>
@@ -96,7 +111,11 @@ export function StaffTestingPage({ view = 'tasks' }: { view?: 'tasks' | 'news' |
             </CardHeader>
             <CardContent className="grid gap-3">
               <p>{course.groups.map((group) => group.name).join(' · ')}</p>
-              <Button disabled={enter.isPending} onClick={() => enter.mutate(course.courseId)}>
+              <Button
+                className="w-fit"
+                disabled={enter.isPending}
+                onClick={() => enter.mutate(course.courseId)}
+              >
                 <Trans>Открыть как школьник</Trans>
               </Button>
             </CardContent>

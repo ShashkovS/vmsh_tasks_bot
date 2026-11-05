@@ -467,6 +467,16 @@
   margin-inline: auto;
 }
 
+/* UI-22 (dev/ui-audit-20261104/BACKLOG.md): a percentage of the printed text width
+ * shrank drawings to ~44 px on a phone. On narrow screens a figure keeps a readable
+ * floor; desktop and print keep the source geometry. */
+@media (max-width: 40rem) {
+  .vmsh-asset-figure,
+  .vmsh-asset-figure[data-placement^='float-'][data-float-hint] {
+    width: min(100%, max(calc(var(--vmsh-source-width, 100%) * var(--vmsh-figure-scale, 1)), 11rem));
+  }
+}
+
 .vmsh-problem,
 .vmsh-subpart {
   display: flow-root;

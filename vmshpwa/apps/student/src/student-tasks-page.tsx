@@ -10,7 +10,7 @@ import {
 } from './worksheet-return'
 
 import { useNavigate } from '@tanstack/react-router'
-import { BookOpen, ChevronRight, MessageCircleQuestion } from 'lucide-react'
+import { BookOpen, ChevronRight, Lightbulb, MessageCircleQuestion } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import {
@@ -47,6 +47,7 @@ import { Badge, Button, Card, CardHeader, CardTitle } from '@vmsh/ui'
 import { formatCalendarDate, problemCountLabel, toCourseEnrollmentView } from './student-home-view'
 import {
   lessonHeading,
+  lessonHasCustomTitle,
   publishedMaterialLabel,
   resolveStudentTasksContext,
   type StudentTasksSearch,
@@ -132,11 +133,8 @@ export function StudentLessonFeedItem({
     return (
       <section className="space-y-4" data-print-lesson>
         <Card className="overflow-hidden gap-0 py-0">
-          <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
-            <p className="text-caption text-muted-foreground">
-              <Trans>Занятие {lesson.lessonNumber} ·</Trans>{' '}
-              {formatCalendarDate(lesson.cycleAnchorDate)}
-            </p>
+          <CardHeader className="gap-2 border-b border-border bg-surface-subtle py-4">
+            <LessonEyebrow lesson={lesson} dateOnlyFallback />
             <CardTitle>{lessonHeading(lesson)}</CardTitle>
           </CardHeader>
         </Card>
@@ -239,6 +237,7 @@ export function StudentLessonFeedItem({
   const allExpanded =
     answerableProblems.length > 0 &&
     answerableProblems.every((problem) => expandedProblemIds.has(problem.problemId))
+  const materialLabel = publishedMaterialLabel(lesson)
 
   return (
     <section className="space-y-4" data-print-lesson>
@@ -249,17 +248,19 @@ export function StudentLessonFeedItem({
           idPrefix={`student-${lesson.groupLessonId}`}
         >
           <Card className="overflow-hidden gap-0 py-0">
-            <CardHeader className="gap-2 border-b border-border bg-surface-subtle">
+            <CardHeader className="gap-2 border-b border-border bg-surface-subtle py-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-caption text-muted-foreground">
-                    <Trans>Занятие {lesson.lessonNumber} ·</Trans>{' '}
-                    {formatCalendarDate(lesson.cycleAnchorDate)}
-                  </p>
+                  <LessonEyebrow lesson={lesson} />
                   <CardTitle>{lessonHeading(lesson)}</CardTitle>
                 </div>
                 <div className="flex flex-wrap items-center gap-2" data-print-hide>
-                  <Badge variant="neutral">{publishedMaterialLabel(lesson)}</Badge>
+                  {materialLabel ? (
+                    <Badge variant="info" className="h-6 px-2.5 text-small">
+                      <Lightbulb aria-hidden="true" />
+                      {materialLabel}
+                    </Badge>
+                  ) : null}
                   {answerableProblems.length > 0 ? (
                     <Button
                       onClick={() =>
@@ -287,6 +288,12 @@ export function StudentLessonFeedItem({
               >
                 <BookOpen aria-hidden="true" className="size-4" />
                 {problemCountLabel(lesson.problemCount)}
+                {lessonHasCustomTitle(lesson) ? null : (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>{formatCalendarDate(lesson.cycleAnchorDate)}</span>
+                  </>
+                )}
               </p>
             </CardHeader>
             {contentQuery.data.document.problems.length === 0 ? (
@@ -693,4 +700,25 @@ function useQuestionAnswerScroll(thread: SupportThread | undefined, attempt: num
       cancelAnimationFrame(frame)
     }
   }, [thread, attempt, completed])
+}
+
+function LessonEyebrow({
+  lesson,
+  dateOnlyFallback = false,
+}: {
+  lesson: StudentLessonSummary
+  dateOnlyFallback?: boolean
+}) {
+  if (!lessonHasCustomTitle(lesson)) {
+    return dateOnlyFallback ? (
+      <p className="text-caption text-muted-foreground">
+        {formatCalendarDate(lesson.cycleAnchorDate)}
+      </p>
+    ) : null
+  }
+  return (
+    <p className="text-caption text-muted-foreground">
+      <Trans>Занятие {lesson.lessonNumber} ·</Trans> {formatCalendarDate(lesson.cycleAnchorDate)}
+    </p>
+  )
 }

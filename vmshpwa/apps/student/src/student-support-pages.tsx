@@ -351,9 +351,22 @@ export function StudentSupportThreadPage({ threadId }: { threadId: string }) {
   return (
     <PageLayout
       actions={
-        <Link className={buttonVariants({ size: 'sm', variant: 'outline' })} to="/questions">
-          <Trans>Все вопросы</Trans>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {/* UI-24 (dev/ui-audit-20261104/BACKLOG.md): the conversation leads back to the
+              task; /tasks?question= already resolves course, group and lesson. */}
+          {thread.context.groupLessonId ? (
+            <Link
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+              search={{ question: thread.threadId }}
+              to="/tasks"
+            >
+              <Trans>К задаче</Trans>
+            </Link>
+          ) : null}
+          <Link className={buttonVariants({ size: 'sm', variant: 'outline' })} to="/questions">
+            <Trans>Все вопросы</Trans>
+          </Link>
+        </div>
       }
       description={supportThreadContext(thread.context)}
       eyebrow={t`Приватная переписка`}

@@ -12,23 +12,43 @@ export function renderCatalogFailure(root: HTMLElement): void {
     'w-full max-w-md rounded-xl bg-card p-6 text-sm text-card-foreground ring-1 ring-foreground/10'
   card.setAttribute('role', 'alert')
 
-  const title = document.createElement('h1')
-  title.className = 'font-medium'
-  // eslint-disable-next-line lingui/no-unlocalized-strings -- bilingual copy shown when no catalog could load
-  title.textContent = 'Не удалось загрузить интерфейс · Could not load the interface'
-  const description = document.createElement('p')
-  description.className = 'mt-1 leading-6 text-muted-foreground'
-  description.textContent =
-    // eslint-disable-next-line lingui/no-unlocalized-strings -- bilingual copy shown when no catalog could load
-    'Попробуйте обновить страницу позже. · Please try reloading the page later.'
+  // X0 (dev/ui-audit-20261104/BACKLOG.md): each language gets its own block instead of
+  // «·»-glued halves; Russian first, English below in a quieter tone.
+  const block = (heading: string, body: string, lang: string, quiet: boolean) => {
+    const section = document.createElement('div')
+    section.lang = lang
+    section.className = quiet ? 'mt-4 border-t border-border pt-4 text-muted-foreground' : ''
+    const title = document.createElement(quiet ? 'p' : 'h1')
+    title.className = 'font-medium'
+    title.textContent = heading
+    const description = document.createElement('p')
+    description.className = 'mt-1 leading-6 text-muted-foreground'
+    description.textContent = body
+    section.append(title, description)
+    return section
+  }
+  const russian = block(
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- shown when no catalog could load
+    'Не удалось загрузить интерфейс',
+    // eslint-disable-next-line lingui/no-unlocalized-strings -- shown when no catalog could load
+    'Попробуйте обновить страницу позже.',
+    'ru',
+    false,
+  )
+  const english = block(
+    'Could not load the interface',
+    'Please try reloading the page later.',
+    'en',
+    true,
+  )
   const reload = document.createElement('button')
   reload.type = 'button'
   reload.className = 'mt-4 h-8 rounded-lg bg-primary px-3 text-primary-foreground'
-  // eslint-disable-next-line lingui/no-unlocalized-strings -- bilingual copy shown when no catalog could load
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- shown when no catalog could load
   reload.textContent = 'Обновить · Reload'
   reload.addEventListener('click', () => window.location.reload())
 
-  card.append(title, description, reload)
+  card.append(russian, english, reload)
   main.append(card)
   root.replaceChildren(main)
 }

@@ -81,7 +81,15 @@ export function StudentNewsFeedPage() {
         {items.map((item) => (
           <div className="space-y-2" key={item.postId}>
             {item.document ? (
-              <RichDocumentView document={item.document} />
+              // N1 (dev/ui-audit-20261104/BACKLOG.md): a rich post is a dated card with its
+              // source, like Telegram posts, instead of an unbroken wall of text.
+              <article className="rounded-xl border border-border bg-card p-4 shadow-xs sm:p-5">
+                <p className="mb-2 text-caption text-muted-foreground">
+                  {item.attribution?.channel ?? t`Объявление кружка`} ·{' '}
+                  <time dateTime={item.publishedAt}>{formatMoment(item.publishedAt)}</time>
+                </p>
+                <RichDocumentView document={item.document} />
+              </article>
             ) : (
               <TelegramRichPost
                 post={toTelegramPostView(item, formatMoment)}

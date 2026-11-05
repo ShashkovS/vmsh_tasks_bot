@@ -146,10 +146,15 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
           />
           {summary.delivery ? (
             <SummaryCard
-              detail={t`${summary.delivery.failedBatches} рассылок требуют внимания`}
+              // F2/K4 (dev/ui-audit-20261104/BACKLOG.md): title and detail describe one fact.
+              detail={
+                summary.delivery.failedRecipients === 0
+                  ? t`Все сообщения доставлены`
+                  : t`Не получили сообщение · рассылок с ошибками: ${summary.delivery.failedBatches}`
+              }
               href="/staff/classrooms"
               icon={CircleAlert}
-              label={t`Не доставлены аудитории`}
+              label={t`Уведомления об аудиториях`}
               value={summary.delivery.failedRecipients}
               warning={summary.delivery.failedRecipients > 0}
             />
@@ -207,8 +212,8 @@ export function StaffDashboardView({ data }: { data: StaffDashboardResponse }) {
                     {lesson.oral.openWindows + lesson.oral.upcomingWindows > 0 ? (
                       <p className="border-t border-border pt-3 text-caption text-muted-foreground">
                         <Trans>
-                          Устно: открыто {lesson.oral.openWindows}, позже{' '}
-                          {lesson.oral.upcomingWindows}
+                          Окна устного приёма: открыто сейчас {lesson.oral.openWindows},
+                          запланировано {lesson.oral.upcomingWindows}
                         </Trans>
                       </p>
                     ) : null}

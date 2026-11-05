@@ -1609,10 +1609,6 @@ msgstr "Не используется"
 msgid "Не используются"
 msgstr "Не используются"
 
-#: packages/product/src/review-reaction-inbox.tsx
-msgid "Не меняет результат автоматически."
-msgstr "Не меняет результат автоматически."
-
 #: packages/product/src/problem-matching.tsx
 msgid "Не метчить, начать с нуля"
 msgstr "Не метчить, начать с нуля"

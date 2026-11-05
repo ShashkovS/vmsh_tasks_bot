@@ -2,8 +2,12 @@ import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { createFileRoute, Outlet, Link, useRouterState } from '@tanstack/react-router'
 import { MessageCircle, MessagesSquare } from 'lucide-react'
-import { useAuthenticatedPrincipal, useOrganizerCount } from '@vmsh/app-shell'
-import { cn } from '@vmsh/ui'
+import {
+  sectionTabClassName,
+  sectionTabsClassName,
+  useAuthenticatedPrincipal,
+  useOrganizerCount,
+} from '@vmsh/app-shell'
 
 export const Route = createFileRoute('/questions')({ component: QuestionsLayout })
 
@@ -25,18 +29,12 @@ function QuestionSections({ accountId }: { accountId: string }) {
     select: (state) => state.location.pathname.includes('/questions/organizers'),
   })
   const count = useOrganizerCount(accountId)
-  const tabClass = (active: boolean) =>
-    cn(
-      'flex min-h-11 min-w-0 flex-auto items-center justify-center gap-1 rounded-md px-2 py-2 text-caption sm:gap-2 sm:text-small font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:flex-none sm:px-4',
-      active
-        ? 'bg-primary text-primary-foreground'
-        : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground',
-    )
+  const tabClass = sectionTabClassName
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 pt-5 sm:px-6 sm:pt-7">
       <nav
         aria-label={t`Разделы вопросов`}
-        className="flex gap-1 rounded-lg border border-border bg-surface p-1 sm:w-fit"
+        className={sectionTabsClassName}
       >
         <Link
           to="/questions"
@@ -45,7 +43,7 @@ function QuestionSections({ accountId }: { accountId: string }) {
           aria-current={!organizers ? 'page' : undefined}
           className={tabClass(!organizers)}
         >
-          <MessageCircle aria-hidden="true" className="hidden size-4 shrink-0 sm:block" />
+          <MessageCircle aria-hidden="true" className="size-4 shrink-0" />
           <Trans>Школьников</Trans>
         </Link>
         <Link
@@ -54,7 +52,7 @@ function QuestionSections({ accountId }: { accountId: string }) {
           aria-current={organizers ? 'page' : undefined}
           className={tabClass(organizers)}
         >
-          <MessagesSquare aria-hidden="true" className="hidden size-4 shrink-0 sm:block" />
+          <MessagesSquare aria-hidden="true" className="size-4 shrink-0" />
           <Trans>Организаторам</Trans>
           {count.data ? (
             <span

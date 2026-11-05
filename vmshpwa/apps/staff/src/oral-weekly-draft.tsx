@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react'
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { useEffect, useState } from 'react'
@@ -278,7 +279,8 @@ export function OralWeeklyDraft({
           </div>
           {draft.entries.map((entry, index) => (
             <fieldset key={entry.id} className="space-y-2 rounded-md border p-3">
-              <legend>
+              {/* UI-13/K13 (dev/ui-audit-20261104/BACKLOG.md): the legend reads as the frame title. */}
+              <legend className="px-1 font-medium">
                 <label className="inline-flex min-h-11 items-center gap-2">
                   <input
                     type="checkbox"
@@ -289,7 +291,7 @@ export function OralWeeklyDraft({
                 </label>
               </legend>
               <fieldset disabled={!entry.included} className="space-y-2">
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2 2xl:grid-cols-2">
                   {(['opensAt', 'closesAt'] as const).map((field) => (
                     <div key={field}>
                       <Label htmlFor={`${entry.id}-${field}`}>
@@ -350,10 +352,11 @@ export function OralWeeklyDraft({
           ))}
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             disabled={draft.entries.length >= 20}
             onClick={() => update([...draft.entries, blank(groupLessonId)])}
           >
+            <Plus aria-hidden="true" />
             <Trans>Добавить ещё окно</Trans>
           </Button>
         </fieldset>

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { t } from '@lingui/core/macro'
-import { Button } from '@vmsh/ui'
+import { sectionTabClassName, sectionTabsClassName } from '@vmsh/app-shell'
 import { StaffStatisticsReports } from '../staff-statistics-reports'
 
 import { publicIdSchema } from '@vmsh/contracts'
@@ -47,7 +47,10 @@ function StatisticsRoute() {
   }
   return (
     <>
-      <nav className="flex flex-wrap gap-2 px-4 pt-4" aria-label={t`Разделы статистики`}>
+      <nav
+        className={`mx-4 mt-4 sm:mx-6 ${sectionTabsClassName}`}
+        aria-label={t`Разделы статистики`}
+      >
         {(
           [
             ['summary', t`Сводка курса`],
@@ -55,14 +58,15 @@ function StatisticsRoute() {
             ['analytics', t`Сложность и распределения`],
           ] as const
         ).map(([value, label]) => (
-          <Button
+          <button
             key={value}
-            variant={view === value ? 'secondary' : 'ghost'}
+            type="button"
+            className={sectionTabClassName(view === value)}
             aria-current={view === value ? 'page' : undefined}
             onClick={() => void navigate({ search: { ...search, view: value } })}
           >
             {label}
-          </Button>
+          </button>
         ))}
       </nav>
       {view === 'analytics' ? (

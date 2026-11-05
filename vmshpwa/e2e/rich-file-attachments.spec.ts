@@ -47,6 +47,7 @@ test('news attachment survives publication and caption editing for Student and F
   request,
 }, testInfo) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/news?state=all')
+  await page.getByRole('button', { name: 'Новая публикация', exact: true }).click()
   const form = page
     .getByRole('button', { name: 'Запланировать публикацию' })
     .locator('xpath=ancestor::form[1]')
@@ -105,6 +106,7 @@ test('broadcast banner attachment is published to Student and Family', async ({
   request,
 }, testInfo) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/broadcasts')
+  await page.getByRole('button', { name: 'Новое объявление', exact: true }).click()
   const form = page
     .getByRole('button', { name: 'Запланировать', exact: true })
     .locator('xpath=ancestor::form[1]')

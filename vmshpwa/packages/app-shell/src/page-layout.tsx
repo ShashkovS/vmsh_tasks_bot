@@ -1,7 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { CircleAlert, Inbox, LockKeyhole, RefreshCw, WifiOff } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { ChevronUp, CircleAlert, Inbox, LockKeyhole, Plus, RefreshCw, WifiOff } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 
 import { Button, Card, CardContent, Skeleton, cn } from '@vmsh/ui'
 import {
@@ -93,7 +93,7 @@ export function PageSection({
   description?: ReactNode
   action?: ReactNode
   children: ReactNode
-  className?: string
+  className?: string | undefined
 }) {
   return (
     <section className={cn('space-y-3', className)}>
@@ -108,6 +108,69 @@ export function PageSection({
       </div>
       {children}
     </section>
+  )
+}
+
+/**
+ * A creation form that does not push existing work below the fold
+ * (dev/ui-audit-20261104/BACKLOG.md, owner decision Q6). Closed it is one button;
+ * `initiallyOpen` keeps an unfinished draft visible after a reload.
+ */
+export function CollapsibleCreateSection({
+  openLabel,
+  title,
+  description,
+  initiallyOpen = false,
+  children,
+  className,
+}: {
+  openLabel: string
+  title: string
+  description?: ReactNode
+  initiallyOpen?: boolean
+  children: ReactNode
+  className?: string | undefined
+}) {
+  const [open, setOpen] = useState(initiallyOpen)
+  if (!open) {
+    return (
+      <div className={className}>
+        <Button onClick={() => setOpen(true)} variant="outline">
+          <Plus aria-hidden="true" />
+          {openLabel}
+        </Button>
+      </div>
+    )
+  }
+  return (
+    <PageSection
+      action={
+        <Button onClick={() => setOpen(false)} size="sm" variant="ghost">
+          <ChevronUp aria-hidden="true" />
+          <Trans>Свернуть форму</Trans>
+        </Button>
+      }
+      className={className}
+      description={description}
+      title={title}
+    >
+      {children}
+    </PageSection>
+  )
+}
+
+/**
+ * One look for section tabs across apps (dev/ui-audit-20261104/BACKLOG.md 2.2): an underline
+ * row, the same as the `line` variant of `TabsList` in @vmsh/ui.
+ */
+export const sectionTabsClassName = 'flex flex-wrap items-end gap-x-5 gap-y-1 border-b border-border'
+
+export function sectionTabClassName(active: boolean): string {
+  return cn(
+    '-mb-px inline-flex min-h-10 items-center gap-1.5 border-b-2 px-0.5 text-small font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+    active
+      ? 'border-foreground text-foreground'
+      : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
   )
 }
 

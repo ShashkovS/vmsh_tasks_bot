@@ -189,7 +189,8 @@ test('Staff sees English course, classroom, oral, and publishing administration'
 
     await page.goto('/staff/news?state=all')
     await expect(page.getByRole('heading', { level: 1, name: 'News' })).toBeVisible()
-    await expect(page.getByText('New PWA publication', { exact: true })).toBeVisible()
+    // The creation form opens from a button above the list (BACKLOG Q6).
+    await expect(page.getByRole('button', { name: 'New post', exact: true })).toBeVisible()
 
     await page.goto('/staff/broadcasts')
     await expect(page.getByRole('heading', { name: 'Mailings' })).toBeVisible()
@@ -252,7 +253,8 @@ test('Staff sees English lesson, import, synonym, and whiteboard tools', async (
     ).toBeVisible()
     await expect(page.getByRole('button', { name: 'Create class', exact: true })).toBeVisible()
     await page.goto('/staff/lessons/gl-921')
-    await expect(page.getByText('LaTeX and publications', { exact: true })).toBeVisible()
+    // The lesson page is titled by the lesson itself (UI audit phase 1, 1B.17).
+    await expect(page.getByRole('heading', { level: 1, name: /^Class\b/ })).toBeVisible()
     await page.locator('summary').filter({ hasText: 'Block before problems' }).click()
     const markdown = page.getByRole('textbox', { name: 'Block before problems: Markdown' })
     await markdown.fill('> ::video[Авторское название](https://youtu.be/dQw4w9WgXcQ)')

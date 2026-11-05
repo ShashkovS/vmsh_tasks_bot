@@ -436,6 +436,10 @@ msgstr "Результаты проверки, ответы преподават
 msgid "Родитель"
 msgstr "Родитель"
 
+#: packages/app-shell/src/page-layout.tsx
+msgid "Свернуть форму"
+msgstr "Свернуть форму"
+
 #: packages/app-shell/src/providers.tsx
 msgid "светлую"
 msgstr "светлую"

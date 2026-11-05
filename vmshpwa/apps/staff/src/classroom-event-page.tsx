@@ -190,6 +190,15 @@ function EventEditor({
   const storageKey = `vmsh:staff:in-person-event:${event?.publicId ?? 'new'}:browser-tz`
   const [draft, setDraft] = useState(() => readDraft(storageKey, initialDraft(event)))
   const [storageFailed, setStorageFailed] = useState(false)
+  const orderedCandidates = [...candidates].sort(
+    (left, right) =>
+      left.courseName.localeCompare(right.courseName, 'ru') ||
+      left.shortCode.localeCompare(right.shortCode, 'ru') ||
+      right.lessonNumber - left.lessonNumber,
+  )
+  const selectedCandidates = orderedCandidates.filter((candidate) =>
+    draft.groupLessonPublicIds.includes(candidate.groupLessonPublicId),
+  )
 
   const updateDraft = (next: EventDraft) => {
     setDraft(next)
@@ -276,12 +285,28 @@ function EventEditor({
           </option>
         </select>
       </Label>
+      {/* Owner decision Q5 (dev/ui-audit-20261104/BACKLOG.md): the same checkboxes, folded
+          behind a summary of the chosen lessons; ordered by group, newest lesson first. */}
       <fieldset className="grid gap-2">
         <legend className="text-label font-medium">
           <Trans>Какие группы участвуют</Trans>
         </legend>
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {candidates.map((candidate) => {
+        <p className="text-small text-muted-foreground">
+          {selectedCandidates.length === 0
+            ? t`Пока ни одно групповое занятие не выбрано.`
+            : selectedCandidates
+                .map((candidate) => t`${candidate.groupName} · занятие ${candidate.lessonNumber}`)
+                .join('; ')}
+        </p>
+        <details
+          className="group rounded-md border border-border bg-surface-subtle"
+          open={draft.groupLessonPublicIds.length === 0}
+        >
+          <summary className="cursor-pointer px-3 py-2 text-small font-medium">
+            <Trans>Выбрать занятия ({candidates.length})</Trans>
+          </summary>
+        <div className="grid gap-2 border-t border-border p-3 md:grid-cols-2 xl:grid-cols-3">
+          {orderedCandidates.map((candidate) => {
             const checked = draft.groupLessonPublicIds.includes(candidate.groupLessonPublicId)
             return (
               <Label
@@ -308,8 +333,8 @@ function EventEditor({
                       {candidate.shortCode} · {candidate.groupName}
                     </span>
                     <span className="block text-caption text-muted-foreground">
-                      {candidate.courseName} · занятие {candidate.lessonNumber} · очно{' '}
-                      {candidate.inPersonCount}
+                      {candidate.courseName} · занятие {candidate.lessonNumber} · очных
+                      школьников: {candidate.inPersonCount}
                     </span>
                   </Trans>
                 </span>
@@ -317,6 +342,7 @@ function EventEditor({
             )
           })}
         </div>
+        </details>
       </fieldset>
       {draft.status === 'scheduled' ? (
         <Alert tone="info">

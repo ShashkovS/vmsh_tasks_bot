@@ -834,7 +834,7 @@ export function StaffStudentDirectoryPage({
   return (
     <PageLayout
       description={t`Поиск школьника, его курсы, активные и доступные группы и формат занятий.`}
-      eyebrow={isAdmin ? 'Admin' : 'Teacher'}
+      eyebrow={isAdmin ? t`Администрирование` : t`Преподаватель`}
       title={t`Участники и группы`}
       width="wide"
     >

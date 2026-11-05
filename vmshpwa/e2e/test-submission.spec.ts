@@ -309,7 +309,8 @@ test('Phase 4: a test answer survives reload and an offline POST is delivered ex
   await page.context().setOffline(true)
   try {
     await page.getByLabel('Ответ', { exact: true }).fill('8')
-    await page.getByRole('button', { name: 'Проверить' }).click()
+    // After «Зачтено» the repeat send is a secondary «Отправить ещё раз» (BACKLOG Q3).
+    await page.getByRole('button', { name: 'Отправить ещё раз' }).click()
     await expect(page.getByText('В очереди', { exact: true })).toBeVisible()
   } finally {
     await page.context().setOffline(false)

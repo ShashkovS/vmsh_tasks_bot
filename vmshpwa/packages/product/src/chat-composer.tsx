@@ -135,6 +135,8 @@ export interface ChatComposerProps {
   attachmentsDisabled?: boolean
   /** Quiet line under the row: photo count, size, offline state. */
   hint?: ReactNode
+  /** Secondary look for a repeat send (e.g. after an accepted answer, BACKLOG Q3). */
+  sendVariant?: 'default' | 'outline'
   className?: string
 }
 
@@ -156,6 +158,7 @@ export function ChatComposer({
   onRemoveAttachment,
   attachmentsDisabled,
   hint,
+  sendVariant = 'default',
   className,
 }: ChatComposerProps) {
   return (
@@ -197,6 +200,7 @@ export function ChatComposer({
           aria-label={sendLabel}
           disabled={sendDisabled || sending}
           onClick={onSend}
+          variant={sendVariant}
         >
           <SendHorizontal aria-hidden="true" />
           <span className="max-sm:sr-only">{sending ? t`Отправляем…` : sendLabel}</span>

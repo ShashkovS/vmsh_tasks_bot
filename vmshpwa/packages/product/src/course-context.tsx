@@ -86,7 +86,7 @@ export function CourseGroupSwitcher({
             <button
               aria-pressed={active}
               className={cn(
-                'rounded-md border px-2 py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                'rounded-md border px-2.5 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                 active
                   ? 'border-primary bg-primary/10 text-foreground'
                   : 'border-border bg-surface text-muted-foreground hover:bg-surface-subtle',
@@ -95,7 +95,12 @@ export function CourseGroupSwitcher({
               onClick={() => onChange?.(group.id)}
               type="button"
             >
-              <LevelChip compact={compact} level={group} />
+              {/* One frame per option: the button is the chip (BACKLOG 2.1). */}
+              <LevelChip
+                className="border-0 bg-transparent px-0 py-0 text-inherit"
+                compact={compact}
+                level={group}
+              />
             </button>
           )
         })}

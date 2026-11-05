@@ -77,9 +77,11 @@ export function FamilyLoginPage({
           </span>
         }
         title={t`Кабинет родителя`}
+        // BACKLOG 2.10: brand, title and form share one axis.
+        className="max-w-md"
         width="reading"
       >
-        <Card className="mx-auto max-w-md">
+        <Card>
           <CardContent className="pt-5">
             <form className="space-y-4" onSubmit={handleSubmit}>
               {errorState ? (

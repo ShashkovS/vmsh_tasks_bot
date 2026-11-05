@@ -1002,9 +1002,27 @@ function MaterialWorkflowCard({
             <Label htmlFor={inputId}>
               <Trans>LaTeX-файл</Trans>
             </Label>
+            {/* X3/X4 (dev/ui-audit-20261104/BACKLOG.md): the native picker spoke English and
+                kept saying «No file chosen»; a localized button shows the real selection. */}
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <Button
+                onClick={() => globalThis.document.getElementById(inputId)?.click()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <FileCode2 aria-hidden="true" />
+                {state.file ? t`Выбрать другой файл` : t`Выбрать файл`}
+              </Button>
+              <span className="min-w-0 truncate text-small text-muted-foreground">
+                {state.file ? state.file.name : t`Файл не выбран`}
+              </span>
+            </div>
             <Input
               accept=".tex,text/plain,application/x-tex"
+              className="sr-only"
               id={inputId}
+              tabIndex={-1}
               onChange={(event) => {
                 const selected = event.currentTarget.files?.[0]
                 if (!selected) return

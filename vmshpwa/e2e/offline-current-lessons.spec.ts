@@ -29,7 +29,7 @@ for (const mode of ['network', 'api'] as const) {
       (lesson) => lesson.materials.condition.status === 'published',
     )
     expect(published.length).toBeGreaterThanOrEqual(2)
-    await expect(page.getByText('Задачи всех уровней сохранены', { exact: true })).toBeVisible({
+    await expect(page.getByTestId('offline-preparation')).toHaveAttribute('data-state', 'ready', {
       timeout: 30_000,
     })
     await page.evaluate(async () => {
@@ -117,7 +117,7 @@ for (const mode of ['network', 'api'] as const) {
       }
     }
     await page.reload()
-    await expect(page.getByText('Задачи всех уровней сохранены', { exact: true })).toBeVisible({
+    await expect(page.getByTestId('offline-preparation')).toHaveAttribute('data-state', 'ready', {
       timeout: 30_000,
     })
   })

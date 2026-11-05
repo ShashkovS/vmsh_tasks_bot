@@ -201,11 +201,6 @@ msgstr "Your solution"
 msgid "Ваши вопросы"
 msgstr "Your questions"
 
-#: apps/student/src/pages.tsx
-#: apps/student/src/student-home-page.tsx
-msgid "Ваши курсы"
-msgstr "Your courses"
-
 #: apps/student/src/student-support-pages.tsx
 msgid "Вложение"
 msgstr "Attachment"
@@ -409,10 +404,6 @@ msgstr "problems"
 msgid "Задачи"
 msgstr "Problems"
 
-#: apps/student/src/student-offline-preparation.tsx
-msgid "Задачи всех уровней сохранены"
-msgstr "Problems for all levels are saved"
-
 #: apps/student/src/student-readable-task-page.tsx
 msgid "Задачи ещё не опубликованы"
 msgstr "Problems have not been published yet"
@@ -507,6 +498,10 @@ msgstr "History"
 msgid "История вопросов"
 msgstr "Question history"
 
+#: apps/student/src/student-support-pages.tsx
+msgid "К задаче"
+msgstr "To the task"
+
 #: apps/student/src/student-task-detail-page.tsx
 msgid "К листку"
 msgstr "To worksheet"
@@ -577,7 +572,6 @@ msgstr "The login or password did not match. Check your keyboard layout and try 
 msgid "Локальное хранилище сейчас недоступно. Отправка без сети не будет надёжной, поэтому кабинет не открыт."
 msgstr "Local storage is unavailable right now. Offline sending would not be reliable, so your account is not opened."
 
-#: apps/student/src/student-offline-preparation.tsx
 #: apps/student/src/student-read-state-panel.tsx
 msgid "Материал ещё не сохранён на устройстве"
 msgstr "This material has not been saved on this device yet"
@@ -639,6 +633,10 @@ msgstr "Course setting was not saved"
 #: apps/student/src/student-notifications-page.tsx
 msgid "Настройка не сохранена"
 msgstr "Setting was not saved"
+
+#: apps/student/src/student-notifications-page.tsx
+msgid "Настройки уведомлений"
+msgstr "Notification settings"
 
 #: apps/student/src/pages.tsx
 msgid "Начинающие · очный режим"
@@ -862,6 +860,10 @@ msgstr "General question"
 msgid "Общий вопрос по занятию"
 msgstr "General question about the lesson"
 
+#: apps/student/src/student-news-page.tsx
+msgid "Объявление кружка"
+msgstr "Circle announcement"
+
 #: apps/student/src/student-home-page.tsx
 msgid "Объявления"
 msgstr "Announcements"
@@ -991,6 +993,10 @@ msgstr "We will send it when the network is available."
 #: apps/student/src/student-support-pages.tsx
 msgid "Отправить вопрос"
 msgstr "Send question"
+
+#: apps/student/src/student-test-answer.tsx
+msgid "Отправить ещё раз"
+msgstr "Send again"
 
 #: apps/student/src/student-written-submission.tsx
 msgid "Отправить новым сообщением"
@@ -1442,10 +1448,6 @@ msgstr "Problem event"
 msgid "Сообщение для вашей группы"
 msgstr "Message for your group"
 
-#: apps/student/src/student-offline-preparation.tsx
-msgid "Сохраняем задачи для просмотра без интернета"
-msgstr "Saving problems for offline reading"
-
 #: apps/student/src/student-profile-page.tsx
 msgid "Сохраняем…"
 msgstr "Saving…"
@@ -1483,10 +1485,6 @@ msgstr "Current worksheet and class archive. Problems within a worksheet are alw
 #: apps/student/src/routes/__root.tsx
 msgid "Тестирование учителем. Отправки не входят в общую статистику. <0>Вернуться в Staff</0>"
 msgstr "Teacher testing. Submissions are not included in the overall statistics. <0>Back to Staff</0>"
-
-#: apps/student/src/student-tasks-view.ts
-msgid "Только условие"
-msgstr "Problem statement only"
 
 #: apps/student/src/pages.tsx
 #: apps/student/src/student-notifications-page.tsx

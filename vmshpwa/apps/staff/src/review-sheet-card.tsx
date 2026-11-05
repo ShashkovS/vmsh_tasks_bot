@@ -534,7 +534,7 @@ function LoadedSheetCard({
                 onSubmit={(result) => void submit(result)}
                 submitLabel={changed ? t`Отправить мой результат` : undefined}
               />
-              <Button variant="ghost" disabled={busy} onClick={() => setAbandoned(true)}>
+              <Button variant="outline" size="sm" className="w-fit" disabled={busy} onClick={() => setAbandoned(true)}>
                 <Trans>Отказаться от проверки</Trans>
               </Button>
             </div>

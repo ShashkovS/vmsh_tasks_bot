@@ -51,7 +51,7 @@ export function LevelChip({ level, compact = false, className }: LevelChipProps)
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-0.5 text-label font-medium text-foreground',
+        'inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-label font-medium text-foreground',
         className,
       )}
     >

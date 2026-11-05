@@ -75,11 +75,17 @@ export function lessonHeading(lesson: StudentLessonSummary): string {
   return lesson.title?.trim() || t`Занятие ${lesson.lessonNumber}`
 }
 
-export function publishedMaterialLabel(lesson: StudentLessonSummary): string {
+/** Owner decision Q2 (dev/ui-audit-20261104/BACKLOG.md): a condition-only sheet gets no label. */
+export function publishedMaterialLabel(lesson: StudentLessonSummary): string | null {
   const available: string[] = []
   if (lesson.materials.hint.status === 'published') available.push(t`подсказка`)
   if (lesson.materials.solution.status === 'published') available.push(t`решение`)
-  return available.length === 0 ? t`Только условие` : t`Есть ${available.join(t` и `)}`
+  return available.length === 0 ? null : t`Есть ${available.join(t` и `)}`
+}
+
+/** The «Занятие N» eyebrow only adds information above a custom lesson title. */
+export function lessonHasCustomTitle(lesson: StudentLessonSummary): boolean {
+  return Boolean(lesson.title?.trim())
 }
 
 const taskStatusByValue: Record<StudentProblemStatus, TaskStatusView> = {

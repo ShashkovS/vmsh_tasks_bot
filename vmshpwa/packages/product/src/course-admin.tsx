@@ -79,7 +79,8 @@ export function CourseGroupCatalog({
         </Button>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-2">
+      {/* F18/K19 (dev/ui-audit-20261104/BACKLOG.md): a single course uses the full width. */}
+      <div className={cn('grid gap-3', courses.length > 1 && 'xl:grid-cols-2')}>
         {courses.map(({ course, groups, status }) => (
           <Card className="min-w-0" key={course.id}>
             <CardHeader className="gap-2">
@@ -106,11 +107,11 @@ export function CourseGroupCatalog({
                   <Settings2 aria-hidden="true" />
                   <Trans>Настроить</Trans>
                 </Button>
-                <Button onClick={() => onAddGroup?.(course.id)} size="xs" variant="ghost">
+                <Button onClick={() => onAddGroup?.(course.id)} size="xs" variant="outline">
                   <Plus aria-hidden="true" />
                   <Trans>Группа</Trans>
                 </Button>
-                <Button onClick={() => onArchiveCourse?.(course.id)} size="xs" variant="ghost">
+                <Button onClick={() => onArchiveCourse?.(course.id)} size="xs" variant="outline">
                   <Archive aria-hidden="true" />
                   {status === 'archived' ? t`Восстановить` : t`В архив`}
                 </Button>

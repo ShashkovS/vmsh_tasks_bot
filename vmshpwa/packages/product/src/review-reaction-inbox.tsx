@@ -182,9 +182,6 @@ export function ReviewReactionInbox({
                     <Trans>Комментарий: {item.comment}</Trans>
                   </p>
                 ) : null}
-                <p className="mt-1 text-caption text-muted-foreground">
-                  <Trans>Не меняет результат автоматически.</Trans>
-                </p>
                 {item.isLatestReview && onRecheck ? (
                   <Button
                     aria-expanded={recheckingReviewId === item.reviewId}

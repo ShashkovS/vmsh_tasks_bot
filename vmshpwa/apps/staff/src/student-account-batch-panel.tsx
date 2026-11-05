@@ -102,6 +102,18 @@ export function StudentAccountBatchPanel({
     saveSelection(new Set([...selectedIds].filter((studentId) => !created.has(studentId))))
   }
 
+  // UI-21 (dev/ui-audit-20261104/BACKLOG.md): with nobody ready the batch tool shrinks to
+  // one quiet line, so the directory search stays on the first screen.
+  if (candidates.length === 0 && result === null && selectedIds.size === 0) {
+    return (
+      <p className="text-small text-muted-foreground">
+        <Trans>
+          Web-входы: без входа {withoutAccount}, готовых к пакетному созданию нет.
+        </Trans>
+      </p>
+    )
+  }
+
   return (
     <Card>
       <CardHeader className="gap-2">

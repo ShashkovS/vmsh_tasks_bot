@@ -2,7 +2,12 @@ import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { createFileRoute, Outlet, Link, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { useAuthentication, useAuthenticatedPrincipal } from '@vmsh/app-shell'
+import {
+  sectionTabClassName,
+  sectionTabsClassName,
+  useAuthentication,
+  useAuthenticatedPrincipal,
+} from '@vmsh/app-shell'
 import { createBrowserStorageNamespace } from '@vmsh/contracts'
 import { reviewQueueSearchSchema } from '../review-queue-model'
 import { lastCompletedReview } from '../last-completed-review'
@@ -32,13 +37,10 @@ function ReviewNavigation() {
     <>
       <nav
         aria-label={t`Проверки`}
-        className="mx-4 mb-3 flex flex-wrap items-center gap-2 border-b border-border py-3"
+        className={`mx-4 mb-3 mt-3 ${sectionTabsClassName}`}
       >
         <Link
-          className={buttonVariants({
-            variant: inHistory || inSheet ? 'outline' : 'default',
-            size: 'sm',
-          })}
+          className={sectionTabClassName(!inHistory && !inSheet)}
           aria-current={!inHistory && !inSheet ? 'page' : undefined}
           activeProps={{ 'aria-current': 'page' }}
           activeOptions={{ exact: true }}
@@ -48,14 +50,14 @@ function ReviewNavigation() {
           <Trans>Очередь</Trans>
         </Link>
         <Link
-          className={buttonVariants({ variant: inHistory ? 'default' : 'outline', size: 'sm' })}
+          className={sectionTabClassName(inHistory)}
           activeProps={{ 'aria-current': 'page' }}
           to="/review/history"
         >
           <Trans>Проверено</Trans>
         </Link>
         <Link
-          className={buttonVariants({ variant: inSheet ? 'default' : 'outline', size: 'sm' })}
+          className={sectionTabClassName(inSheet)}
           aria-current={inSheet ? 'page' : undefined}
           activeProps={{ 'aria-current': 'page' }}
           to="/review/sheet"
@@ -65,7 +67,7 @@ function ReviewNavigation() {
         </Link>
         {last && (
           <Link
-            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} mb-1 ml-auto`}
             to="/review/history"
             search={{ review: last }}
           >

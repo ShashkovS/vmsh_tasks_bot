@@ -14,13 +14,21 @@ export function GroupBanner({
   onDismiss?: (() => void) | undefined
 }) {
   return (
-    <Alert className="border-accent/30 bg-accent/5" data-banner-id={banner.bannerId}>
+    // dev/ui-audit-20261104/BACKLOG.md 2.1: a banner reads as a card on the page grid, and
+    // headings inside it do not outrank the page title.
+    <Alert
+      className="border-border border-l-4 border-l-accent bg-card shadow-xs"
+      data-banner-id={banner.bannerId}
+    >
       <AlertContent className="min-w-0">
         <p className="mb-1 text-caption text-muted-foreground">
           {banner.group.courseName} · {banner.group.name}
         </p>
         {banner.document ? (
-          <RichDocumentView className="text-small" document={banner.document} />
+          <RichDocumentView
+            className="text-small [&_:is(h1,h2,h3)]:mt-0! [&_:is(h1,h2,h3)]:text-section!"
+            document={banner.document}
+          />
         ) : (
           <div
             className="text-small [&_a]:text-link [&_a]:underline [&_code]:rounded [&_code]:bg-surface-sunken [&_code]:px-1"

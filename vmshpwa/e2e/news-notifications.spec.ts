@@ -65,10 +65,12 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   const originalText = `Локальная публикация ${suffix}`
   const editedText = `Исправленная локальная публикация ${suffix}`
 
+  await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
+  // BACKLOG Q6: the creation form opens from a button above the list.
+  await page.getByRole('button', { name: 'Новая публикация', exact: true }).click()
   const createForm = page
     .getByRole('button', { name: 'Запланировать публикацию' })
     .locator('xpath=ancestor::form[1]')
-  await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
   await createForm.getByLabel('Показывать').selectOption({ index: 1 })
   await createForm.getByLabel('Markdown публикации').fill(originalText)
   await createForm.getByRole('button', { name: 'Сейчас' }).click()
@@ -122,10 +124,12 @@ test('Phase 8: Admin corrects a published local post without moving its time', a
   const originalText = `Опубликованная новость ${testInfo.project.name}`
   const correctedText = `Исправленная опубликованная новость ${testInfo.project.name}`
 
+  await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
+  // BACKLOG Q6: the creation form opens from a button above the list.
+  await page.getByRole('button', { name: 'Новая публикация', exact: true }).click()
   const createForm = page
     .getByRole('button', { name: 'Запланировать публикацию' })
     .locator('xpath=ancestor::form[1]')
-  await expect(page.getByRole('dialog', { name: 'Новая публикация в PWA' })).toHaveCount(0)
   await createForm.getByLabel('Показывать').selectOption({ index: 1 })
   await createForm.getByLabel('Markdown публикации').fill(originalText)
   await createForm.getByLabel('Опубликовать', { exact: true }).fill('2020-08-04T17:00')

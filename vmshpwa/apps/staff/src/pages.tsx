@@ -882,7 +882,7 @@ export function StaffClassroomsPage({
             />
           )}
           <Tabs onValueChange={setTab} value={tab}>
-            <TabsList>
+            <TabsList variant="line">
               <TabsTrigger value="catalog">
                 <Trans>Каталог</Trans>
               </TabsTrigger>

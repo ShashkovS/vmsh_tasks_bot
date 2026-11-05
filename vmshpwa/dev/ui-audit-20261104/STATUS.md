@@ -45,3 +45,40 @@
 ## Известные хвосты
 
 - Страницы Zoom-приёма всё ещё показывают «Групповое занятие gl-N» в надзаголовке.
+
+## Фаза 2 (2026-11-05, одним релизом, не закоммичено)
+
+Решение владельца: фаза 2 выкатывается одним релизом, полный E2E — один раз перед выкаткой. Ответы Q1–Q12 и разбор Q12 — в BACKLOG.md. Правило: только перекомпоновка, ни одна функция не убрана.
+
+| Тема | Реализация |
+| --- | --- |
+| O1–O4 каркас школьника | `app-shell.tsx` (имя на одной линии с брендом, ширина меню), `student-home-page.tsx`/`pages.tsx` (без надзаголовка «Ваши курсы», один курс — во всю ширину), `group-banner.tsx` (карточка, заголовки не крупнее страницы), `level-chip.tsx`, `course-context.tsx` (переключатель групп без рамки в рамке) |
+| Q1 статус офлайна | `student-offline-preparation.tsx` — молчит при успехе, показывает только ошибку с «Повторить» и истёкший вход; `data-state` для E2E (`offline-current-lessons.spec.ts`, `shells.spec.ts`) |
+| Q2 материалы листка | `student-tasks-view.ts` (`publishedMaterialLabel` → null без подсказки/решения), `student-tasks-page.tsx` (бейдж с лампочкой; надзаголовок «Занятие N» только над своим названием, дата — в подписи) |
+| Q3 повторная отправка | `chat-composer.tsx` (`sendVariant`), `student-test-answer.tsx` — «Отправить ещё раз» вторичной кнопкой после «Зачтено»; `test-submission.spec.ts` |
+| A1 образец ответа | `test-answer.tsx` — пример только в подсказке под полем, не плейсхолдером |
+| Q5 аудитории | `classroom-event-page.tsx` — те же галочки в `<details>`, сводка выбранного, порядок по группам |
+| Q6 формы ниже данных | `CollapsibleCreateSection` в `page-layout.tsx`; `staff-news-page.tsx`, `staff-group-banners-page.tsx`; пустой пакет web-входов — одна строка (`student-account-batch-panel.tsx`); E2E `news-notifications`, `rich-file-attachments` |
+| Q9 уведомления | `student-notifications-page.tsx` — лента сверху, «Настройки уведомлений» ниже |
+| Q10 навигация Staff | `routes/__root.tsx` (группы Работа/Материалы/Люди/Связь/Администрирование, разные иконки), `app-shell.tsx` (заголовки групп, active ≠ hover) |
+| Q11 лендинг | `apps/landing/src/landing-page.tsx` — главная кнопка у кабинета школьника |
+| 2.2 вкладки | `sectionTabClassName`/`sectionTabsClassName` в `page-layout.tsx`; `routes/review.tsx`, `routes/questions.tsx`, `routes/statistics.tsx`; `TabsList variant="line"` в аудиториях |
+| Вход | `apps/{staff,student,family}/src/login-page.tsx` — шапка и форма на одной оси; без «admin — административные разделы» |
+| Проверка | `review-workspace-page.tsx` (в серии заголовок — школьник, без третьего повтора задачи; «Отказаться» — кнопка), `review-sheet-card.tsx` |
+| Урок | `content-page.tsx` — своя кнопка выбора LaTeX-файла вместо «Choose File / No file chosen» |
+| Рисунки на телефоне | `packages/content/src/content.css` — минимум 11rem до 40rem ширины |
+| Zoom-окна | `oral-weekly-draft.tsx` — даты не обрезаются, легенда, «Добавить ещё окно» кнопкой |
+| Сводка | `staff-dashboard-page.tsx` — «Уведомления об аудиториях», понятная строка устных окон |
+| Реакции, тестирование, курсы, MCP, результаты | `review-reaction-inbox.tsx`, `staff-testing-page.tsx`, `course-admin.tsx`, `mcp-access-page.tsx` (копирование), `student-results-page.tsx` (отчество в имени) |
+| Профиль, новости, вопросы | `student-profile-page.tsx` (карточки не растягиваются), `student-news-page.tsx` (карточка с датой и источником), `student-support-pages.tsx` («К задаче») |
+| Аварийный экран | `packages/i18n/src/catalog-failure.ts` — два языка отдельными блоками |
+| Старые сторис | `content-page.stories.tsx`, `staff-local-news-composer.stories.tsx` — подписи после перехода на пояс браузера |
+
+Не сделано в фазе 2 (остаётся в BACKLOG): Q7 учёт работы и Q8 сеансы — по решению владельца; подписи Q12 ждут решения; поиск/фильтры списка уроков (UI-12); плотность очереди проверки (F6); панель пометок и размер фото в проверке (X15–X17); таблица метаданных (X6–X9); график прогресса (P2); родные file-input в импорте задач, пакетной загрузке и публикации; ленивый рендер (T2), гонка `useAuthenticatedPrincipal` (N3), `pwa-agent-dev` на свежем checkout, несколько `--mode` в `e2e_runner`.
+
+Проверки: typecheck, eslint, i18n:check — PASS; Vitest 1152/1152; Storybook 384/384.
+
+E2E фазы 2, Chromium (одним прогоном `e2e_runner --mode all --browser chromium`, затем добивка этапов после первой остановки):
+- основной набор: 141 PASS, 2 FAIL в `e2e/i18n.spec.ts` — ожидания старых текстов («New PWA publication» теперь за кнопкой «New post»; заголовок урока «LaTeX and publications» заменён фазой 1 на «Class N»). Спека исправлена, режим i18n — 12/12 PASS;
+- `figure-layout` 1/1, статистика (`playwright.statistics.config.ts`) 3/3 PASS — запущены напрямую `playwright test` после того, как раннер остановился на первом этапе;
+- `@visual`: «student current week» и «staff weekly dashboard» разошлись ожидаемо (шапка школьника, карточка объявления, группы меню, строка устных окон). Диффы просмотрены, эталоны обновлены для Chromium, WebKit и Firefox (просмотрен WebKit), 6/6 PASS.

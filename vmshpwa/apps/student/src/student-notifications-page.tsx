@@ -342,6 +342,32 @@ export function StudentNotificationsPage() {
       eyebrow={t`Профиль`}
       title={t`Уведомления`}
     >
+      <PageSection title={t`Последние события`}>
+        {events.isPending ? <PageStatePanel state="loading" /> : null}
+        {events.error ? (
+          <PageStatePanel
+            actionLabel={t`Повторить`}
+            onAction={() => void events.refetch()}
+            state="error"
+          />
+        ) : null}
+        {events.data?.items.length === 0 ? (
+          <PageStatePanel
+            description={t`Новые события появятся здесь.`}
+            state="empty"
+            title={t`Пока пусто`}
+          />
+        ) : null}
+        <div className="space-y-2">
+          {events.data?.items.map((event) => (
+            <VisibleNotification event={event} key={event.eventId} onRead={onRead} />
+          ))}
+        </div>
+      </PageSection>
+      {/* Owner decision Q9 (BACKLOG): the feed comes first, settings follow. */}
+      <h2 className="mt-10 border-t border-border pt-6 text-section font-semibold text-foreground">
+        <Trans>Настройки уведомлений</Trans>
+      </h2>
       {pushConfig.data?.enabled && pushConfig.data.applicationServerKey ? (
         <PageSection title={t`На этом устройстве`}>
           <PushDeviceSettings
@@ -472,28 +498,6 @@ export function StudentNotificationsPage() {
         </PageSection>
       ) : null}
 
-      <PageSection title={t`Последние события`}>
-        {events.isPending ? <PageStatePanel state="loading" /> : null}
-        {events.error ? (
-          <PageStatePanel
-            actionLabel={t`Повторить`}
-            onAction={() => void events.refetch()}
-            state="error"
-          />
-        ) : null}
-        {events.data?.items.length === 0 ? (
-          <PageStatePanel
-            description={t`Новые события появятся здесь.`}
-            state="empty"
-            title={t`Пока пусто`}
-          />
-        ) : null}
-        <div className="space-y-2">
-          {events.data?.items.map((event) => (
-            <VisibleNotification event={event} key={event.eventId} onRead={onRead} />
-          ))}
-        </div>
-      </PageSection>
     </PageLayout>
   )
 }

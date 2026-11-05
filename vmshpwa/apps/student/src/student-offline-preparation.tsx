@@ -114,28 +114,36 @@ function Preparation({ ownerId }: { ownerId: string }) {
       }
     },
   })
+  // Owner decision Q1 (dev/ui-audit-20261104/BACKLOG.md): background saving is silent; only
+  // states the student can act on are shown. `data-state` lets E2E wait for readiness.
+  const state = query.isFetching && navigator.onLine && verified
+    ? 'saving'
+    : query.isError
+      ? 'error'
+      : query.data
+        ? 'ready'
+        : 'missing'
+  const sessionExpired =
+    !verified &&
+    authentication.state.status === 'offline-unverified' &&
+    authentication.state.sessionExpired === true
+  const showError = state === 'error' && verified
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground"
+      data-testid="offline-preparation"
+      data-state={state}
+      className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground empty:hidden"
     >
-      {query.isFetching && navigator.onLine && verified
-        ? t`Сохраняем задачи для просмотра без интернета`
-        : query.isError
-          ? t`Не все задачи сохранены для просмотра без интернета`
-          : query.data
-            ? t`Задачи всех уровней сохранены`
-            : t`Материал ещё не сохранён на устройстве`}
-      {query.isError && verified ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void query.refetch()}
-        >{t`Повторить`}</Button>
+      {showError ? (
+        <>
+          {t`Не все задачи сохранены для просмотра без интернета`}
+          <Button variant="ghost" size="sm" onClick={() => void query.refetch()}>
+            {t`Повторить`}
+          </Button>
+        </>
       ) : null}
-      {!verified &&
-      authentication.state.status === 'offline-unverified' &&
-      authentication.state.sessionExpired === true ? (
+      {sessionExpired ? (
         <p>{t`Для отправки ответов и других действий войдите снова при наличии интернета.`}</p>
       ) : null}
     </div>

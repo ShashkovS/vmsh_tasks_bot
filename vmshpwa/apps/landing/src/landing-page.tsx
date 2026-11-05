@@ -71,7 +71,11 @@ export function LandingPage() {
                 <CardContent className="flex h-full flex-col gap-6 pt-0">
                   <p className="flex-1 text-muted-foreground">{destination.description}</p>
                   <a
-                    className={buttonVariants({ className: 'w-full sm:w-fit' })}
+                    // Owner decision Q11 (BACKLOG): the student cabinet is the main entry.
+                    className={buttonVariants({
+                      className: 'w-full sm:w-fit',
+                      variant: destination.href === '/student/' ? 'default' : 'outline',
+                    })}
                     href={destination.href}
                   >
                     <Trans>Открыть кабинет</Trans>

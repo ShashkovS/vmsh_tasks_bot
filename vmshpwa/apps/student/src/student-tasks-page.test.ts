@@ -59,7 +59,7 @@ describe('Student production Tasks mapping', () => {
 
   it('uses only actual publication state in archive labels', () => {
     expect(lessonHeading(lessons[0]!)).toBe('Занятие 42')
-    expect(publishedMaterialLabel(lessons[0]!)).toBe('Только условие')
+    expect(publishedMaterialLabel(lessons[0]!)).toBeNull()
     expect(publishedMaterialLabel(lessons[1]!)).toBe('Есть подсказка и решение')
   })
 

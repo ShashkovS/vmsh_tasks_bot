@@ -104,7 +104,7 @@ export const EditingPublished: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByLabelText('Группа')).toBeDisabled()
     await expect(canvas.getByLabelText('Очность')).toBeDisabled()
-    await expect(canvas.getByLabelText('Опубликовано по московскому времени')).toBeDisabled()
+    await expect(canvas.getByLabelText('Опубликовано', { exact: true })).toBeDisabled()
     const editor = await canvas.findByLabelText('Markdown публикации')
     await userEvent.type(editor, ' Уточнение.')
     await expect(canvas.getByRole('button', { name: 'Сохранить исправление' })).toBeEnabled()

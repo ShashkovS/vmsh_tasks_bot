@@ -230,7 +230,7 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
               <Trans>Не удалось загрузить список. Проверьте соединение и нажмите «Обновить».</Trans>
             </p>
           )}
-          <ul className="max-h-72 overflow-auto divide-y rounded border">
+          <ul className="max-h-[min(30rem,60svh)] overflow-auto divide-y rounded border">
             {matches.map((s) => (
               <li key={s.studentId}>
                 <button
@@ -241,9 +241,12 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
                     onChange({ student: s.studentId })
                   }}
                 >
-                  <span className="block text-small font-semibold">{s.name}</span>
+                  {/* F20/K16 (BACKLOG): the patronymic belongs to the name, not to metadata. */}
+                  <span className="block text-small font-semibold">
+                    {[s.name, s.middleName].filter(Boolean).join(' ')}
+                  </span>
                   <span className="text-caption text-muted-foreground">
-                    {[s.grade ? t`${s.grade} кл.` : '', s.middleName, s.groups]
+                    {[s.grade ? t`${s.grade} кл.` : '', s.groups]
                       .filter(Boolean)
                       .join(' · ') || t`Архивный школьник`}
                   </span>
@@ -279,12 +282,14 @@ function StudentResultsWorkspace({ search, onChange }: Props) {
         <>
           <div className="flex flex-wrap items-center gap-2">
             <div className="mr-auto min-w-0">
-              <h2 className="font-semibold">{data.student.name}</h2>
-              <p className="text-caption text-muted-foreground">
-                {[data.student.grade ? t`${data.student.grade} кл.` : '', data.student.middleName]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </p>
+              <h2 className="font-semibold">
+                {[data.student.name, data.student.middleName].filter(Boolean).join(' ')}
+              </h2>
+              {data.student.grade ? (
+                <p className="text-caption text-muted-foreground">
+                  {t`${data.student.grade} кл.`}
+                </p>
+              ) : null}
             </div>
             <Button variant="outline" size="sm" onClick={() => setSearchOpen((v) => !v)}>
               <Trans>Сменить школьника</Trans>

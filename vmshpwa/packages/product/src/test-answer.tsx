@@ -101,7 +101,6 @@ export function TestAnswer({
           name={name}
           onBlur={() => setTouched(true)}
           onChange={(event) => emitText(event.target.value)}
-          placeholder={example || undefined}
           value={text}
         />
       ) : null}
@@ -118,8 +117,7 @@ export function TestAnswer({
             name={name}
             onBlur={() => setTouched(true)}
             onChange={(event) => emitText(event.target.value)}
-            placeholder={example || undefined}
-            value={text}
+              value={text}
           />
           {parsedItems.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1" role="status">

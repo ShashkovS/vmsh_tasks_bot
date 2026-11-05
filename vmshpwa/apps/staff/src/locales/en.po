@@ -199,11 +199,13 @@ msgstr "{0} · visible only to staff"
 msgid "{0} · задача"
 msgstr "{0} · problem"
 
+#. placeholder {0}: candidate.groupName
 #. placeholder {0}: group.name
 #. placeholder {0}: lesson.group.name
-#. placeholder {0}: plan.data.courseName
+#. placeholder {1}: candidate.lessonNumber
 #. placeholder {1}: lesson.lessonNumber
 #. placeholder {1}: plan.data.lessonNumber
+#: apps/staff/src/classroom-event-page.tsx
 #: apps/staff/src/lesson-statistics.tsx
 #: apps/staff/src/oral-weekly-draft.tsx
 #: apps/staff/src/staff-dashboard-page.tsx
@@ -291,11 +293,6 @@ msgstr "{0} not sent"
 #: apps/staff/src/live-marking-page.tsx
 msgid "{0} оценок · "
 msgstr "{0} grades · "
-
-#. placeholder {0}: summary.delivery.failedBatches
-#: apps/staff/src/staff-dashboard-page.tsx
-msgid "{0} рассылок требуют внимания"
-msgstr "{0} deliveries need attention"
 
 #. placeholder {0}: summary.review.claimedByOthers
 #: apps/staff/src/staff-dashboard-page.tsx
@@ -418,8 +415,8 @@ msgstr "+, +/2, and −"
 #. placeholder {3}: candidate.lessonNumber
 #. placeholder {4}: candidate.inPersonCount
 #: apps/staff/src/classroom-event-page.tsx
-msgid "<0>{0} · {1}</0><1>{2} · занятие {3} · очно {4}</1>"
-msgstr "<0>{0} · {1}</0><1>{2} · class {3} · in person {4}</1>"
+msgid "<0>{0} · {1}</0><1>{2} · занятие {3} · очных школьников: {4}</1>"
+msgstr "<0>{0} · {1}</0><1>{2} · lesson {3} · in-person students: {4}</1>"
 
 #. placeholder {0}: r.name
 #. placeholder {1}: r.groupName
@@ -602,6 +599,10 @@ msgstr "Web sign-in is unavailable"
 msgid "Web-вход отключён"
 msgstr "Web sign-in is disabled"
 
+#: apps/staff/src/student-account-batch-panel.tsx
+msgid "Web-входы: без входа {withoutAccount}, готовых к пакетному созданию нет."
+msgstr "Web sign-ins: {withoutAccount} without one, none ready for batch creation."
+
 #: apps/staff/src/problem-import-page.tsx
 msgid "XLSX-файл"
 msgstr "XLSX file"
@@ -638,7 +639,9 @@ msgstr "An administrator has not granted you access to a course with statistics 
 #: apps/staff/src/account-provisioning-page.tsx
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-synonym-page.tsx
+#: apps/staff/src/routes/__root.tsx
 #: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 msgid "Администрирование"
 msgstr "Administration"
 
@@ -1209,6 +1212,10 @@ msgstr "All work is reviewed"
 msgid "Все работы уже взяты другими преподавателями"
 msgstr "All work has already been assigned to other teachers"
 
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Все сообщения доставлены"
+msgstr "All messages delivered"
+
 #: apps/staff/src/student-results-page.tsx
 msgid "Все сохранённые изменения и ответы по задаче"
 msgstr "All saved changes and answers for the problem"
@@ -1432,10 +1439,23 @@ msgstr "Choose {0} for {1}"
 msgid "Выбрать вердикт"
 msgstr "Use verdict"
 
+#: apps/staff/src/content-page.tsx
+msgid "Выбрать другой файл"
+msgstr "Choose another file"
+
+#. placeholder {0}: candidates.length
+#: apps/staff/src/classroom-event-page.tsx
+msgid "Выбрать занятия ({0})"
+msgstr "Choose lessons ({0})"
+
 #. placeholder {0}: matches.length
 #: apps/staff/src/student-account-batch-panel.tsx
 msgid "Выбрать найденных · {0}"
 msgstr "Select found · {0}"
+
+#: apps/staff/src/content-page.tsx
+msgid "Выбрать файл"
+msgstr "Choose file"
 
 #: apps/staff/src/student-account-batch-panel.tsx
 msgid "Выбрать школьников"
@@ -1691,6 +1711,10 @@ msgstr "A test problem requires an answer type"
 #: apps/staff/src/staff-worksheet-preview.tsx
 msgid "Для ученического превью сначала загрузите условия."
 msgstr "Upload statements first to see the student preview."
+
+#: apps/staff/src/login-page.tsx
+msgid "Для учителей и администраторов школы."
+msgstr "For school teachers and administrators."
 
 #: apps/staff/src/lesson-statistics.tsx
 msgid "Для школьника пока нет расчёта силы по занятиям от 1."
@@ -2954,6 +2978,10 @@ msgstr "Local copies of Telegram posts. Hiding affects only the PWA and does not
 msgid "Локальный черновик не сохранён"
 msgstr "Local draft not saved"
 
+#: apps/staff/src/routes/__root.tsx
+msgid "Люди"
+msgstr "People"
+
 #: apps/staff/src/pages.tsx
 msgid "Маршрут включён в информационную архитектуру первой версии."
 msgstr "The route is included in the first-version information architecture."
@@ -2973,6 +3001,10 @@ msgstr "The material has changed. Data refreshed; check the version and confirm 
 #: apps/staff/src/content-page.tsx
 msgid "Материал уже изменён. Обновляем версии и публикации…"
 msgstr "The material has changed. Refreshing versions and publications…"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Материалы"
+msgstr "Materials"
 
 #: apps/staff/src/review-history-page.tsx
 msgid "Материалы выбранной проверки"
@@ -3275,10 +3307,6 @@ msgid "Не добавлен"
 msgstr "Not added"
 
 #: apps/staff/src/staff-dashboard-page.tsx
-msgid "Не доставлены аудитории"
-msgstr "Rooms not delivered"
-
-#: apps/staff/src/staff-dashboard-page.tsx
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Не задано"
 msgstr "Not set"
@@ -3318,6 +3346,11 @@ msgstr "Not marked"
 #: apps/staff/src/live-marking-page.tsx
 msgid "Не отправлено"
 msgstr "Not sent"
+
+#. placeholder {0}: summary.delivery.failedBatches
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Не получили сообщение · рассылок с ошибками: {0}"
+msgstr "Did not receive the message · mailings with errors: {0}"
 
 #: apps/staff/src/login-page.tsx
 msgid "Не помните доступ? Напишите на <0>{supportEmail}</0>."
@@ -3776,6 +3809,10 @@ msgid "Новая группа"
 msgstr "New group"
 
 #: apps/staff/src/staff-news-page.tsx
+msgid "Новая публикация"
+msgstr "New post"
+
+#: apps/staff/src/staff-news-page.tsx
 msgid "Новая публикация в PWA"
 msgstr "New PWA publication"
 
@@ -4125,6 +4162,12 @@ msgstr "Oral session windows"
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Окна устного приёма: {0}, {1}, занятие {2}"
 msgstr "Oral session windows: {0}, {1}, class {2}"
+
+#. placeholder {0}: lesson.oral.openWindows
+#. placeholder {1}: lesson.oral.upcomingWindows
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Окна устного приёма: открыто сейчас {0}, запланировано {1}"
+msgstr "Oral windows: open now {0}, scheduled {1}"
 
 #: apps/staff/src/oral-weekly-draft.tsx
 msgid "Окно"
@@ -5155,6 +5198,10 @@ msgstr "No submissions yet"
 msgid "Пока нет очных событий с подтверждёнными аудиториями."
 msgstr "There are no in-person events with confirmed rooms yet."
 
+#: apps/staff/src/classroom-event-page.tsx
+msgid "Пока ни одно групповое занятие не выбрано."
+msgstr "No group lesson selected yet."
+
 #. placeholder {0}: visibleRows.length
 #. placeholder {1}: filteredRows.length
 #: apps/staff/src/problem-import-page.tsx
@@ -5464,6 +5511,7 @@ msgstr "Teachers created"
 
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/staff-access-page.tsx
+#: apps/staff/src/staff-student-directory-page.tsx
 #: apps/staff/src/student-results-history.tsx
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Преподаватель"
@@ -5901,6 +5949,10 @@ msgstr "work"
 #: apps/staff/src/review-queue-model.ts
 msgid "работа"
 msgstr "work"
+
+#: apps/staff/src/routes/__root.tsx
+msgid "Работа"
+msgstr "Work"
 
 #: apps/staff/src/pages.tsx
 msgid "Работа блокируется за одним учителем; очередь обновляется в реальном времени."
@@ -6369,6 +6421,10 @@ msgstr "Links affect only the computed view. Each submission, conversation, and 
 msgid "Связи с родителями"
 msgstr "Parent links"
 
+#: apps/staff/src/routes/__root.tsx
+msgid "Связь"
+msgstr "Communication"
+
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Связь активна"
 msgstr "Link is active"
@@ -6513,6 +6569,14 @@ msgstr "Download attachment"
 #: apps/staff/src/staff-statistics-page.tsx
 msgid "Сколько задач решено"
 msgstr "Problems solved"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Скопировано"
+msgstr "Copied"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Скопировать"
+msgstr "Copy"
 
 #: apps/staff/src/staff-oral-windows-page.tsx
 msgid "скоро"
@@ -7417,6 +7481,10 @@ msgstr "This group has no published classes yet. Choose a different problem leve
 msgid "Убрать файл {0}"
 msgstr "Remove file {0}"
 
+#: apps/staff/src/staff-dashboard-page.tsx
+msgid "Уведомления об аудиториях"
+msgstr "Classroom notifications"
+
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Увеличить ширину"
 msgstr "Increase width"
@@ -7596,12 +7664,6 @@ msgstr "Oral"
 msgid "Устная с письменной сдачей"
 msgstr "Oral with written submission"
 
-#. placeholder {0}: lesson.oral.openWindows
-#. placeholder {1}: lesson.oral.upcomingWindows
-#: apps/staff/src/staff-dashboard-page.tsx
-msgid "Устно: открыто {0}, позже {1}"
-msgstr "Oral: open {0}, later {1}"
-
 #: apps/staff/src/live-marking-page.tsx
 msgid "Устные"
 msgstr "Oral"
@@ -7652,10 +7714,6 @@ msgstr "Work accounting is available only to administrators."
 msgid "Учётные записи входа"
 msgstr "Sign-in accounts"
 
-#: apps/staff/src/login-page.tsx
-msgid "Учитель видит разрешённые группы; admin — административные разделы."
-msgstr "A teacher sees the permitted groups; an admin also sees the administration sections."
-
 #: apps/staff/src/routes/__root.tsx
 msgid "Учитель и администратор"
 msgstr "Teacher and administrator"
@@ -7694,6 +7752,10 @@ msgstr "File to attach"
 #: apps/staff/src/problem-import-page.tsx
 msgid "Файл и курс"
 msgstr "File and course"
+
+#: apps/staff/src/content-page.tsx
+msgid "Файл не выбран"
+msgstr "No file chosen"
 
 #: apps/staff/src/student-results-history.tsx
 msgid "Файл не сохранился или недоступен."

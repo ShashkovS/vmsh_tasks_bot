@@ -72,7 +72,7 @@ test('@visual student current week', async ({ page }) => {
   )
   await loginThroughUi(page, AUTH_PERSONAS.student)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
-  await expect(page.getByText('Задачи всех уровней сохранены', { exact: true })).toBeVisible({
+  await expect(page.getByTestId('offline-preparation')).toHaveAttribute('data-state', 'ready', {
     timeout: 30_000,
   })
   await page.evaluate(() => document.fonts.ready)

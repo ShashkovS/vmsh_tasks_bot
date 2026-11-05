@@ -436,6 +436,10 @@ msgstr "Review results, teacher replies and new materials."
 msgid "Родитель"
 msgstr "Parent"
 
+#: packages/app-shell/src/page-layout.tsx
+msgid "Свернуть форму"
+msgstr "Collapse form"
+
 #: packages/app-shell/src/providers.tsx
 msgid "светлую"
 msgstr "light"

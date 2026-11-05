@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
+  CollapsibleCreateSection,
   PageLayout,
   PageSection,
   PageStatePanel,
@@ -228,7 +229,13 @@ export function StaffGroupBannersPage() {
       title={t`Рассылки`}
       width="wide"
     >
-      <PageSection title={editing ? t`Изменить объявление` : t`Новое объявление`}>
+      {/* BACKLOG Q6: the list stays on the first screen; editing reopens the same form. */}
+      <CollapsibleCreateSection
+        initiallyOpen={editing !== null || draft.markdown.trim() !== ''}
+        key={editing ? `edit:${editing.bannerId}` : 'create'}
+        openLabel={t`Новое объявление`}
+        title={editing ? t`Изменить объявление` : t`Новое объявление`}
+      >
         {owners.isPending ? <PageStatePanel state="loading" /> : null}
         {owners.error ? <PageStatePanel state="error" /> : null}
         {owners.data ? (
@@ -451,7 +458,7 @@ export function StaffGroupBannersPage() {
             </AlertContent>
           </Alert>
         ) : null}
-      </PageSection>
+      </CollapsibleCreateSection>
       <PageSection title={t`Запланированные и прошлые`}>
         {banners.isPending ? <PageStatePanel state="loading" /> : null}
         {banners.error ? <PageStatePanel state="error" /> : null}

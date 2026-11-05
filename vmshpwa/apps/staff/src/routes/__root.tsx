@@ -4,7 +4,6 @@ import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
   ChartNoAxesCombined,
-  BookOpenCheck,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -18,6 +17,12 @@ import {
   Users,
   Palette,
   KeyRound,
+  BookOpen,
+  DoorOpen,
+  FlaskConical,
+  GraduationCap,
+  Presentation,
+  Video,
 } from 'lucide-react'
 import { useCallback, useState, type ReactNode } from 'react'
 
@@ -40,18 +45,15 @@ interface StaffNavigationItem {
   to: string
   icon: ReactNode
   capability?: StaffCapability
+  /** BACKLOG Q10: nav groups only add headings and order; items are unchanged. */
+  section: string
 }
 
 const navigation: StaffNavigationItem[] = [
   {
-    get label() {
-      return t`Оформление`
+    get section() {
+      return t`Работа`
     },
-    to: '/branding',
-    icon: <Palette className="size-4" aria-hidden="true" />,
-    capability: 'staff.manage',
-  },
-  {
     get label() {
       return t`Сводка`
     },
@@ -59,6 +61,9 @@ const navigation: StaffNavigationItem[] = [
     icon: <House className="size-4" aria-hidden="true" />,
   },
   {
+    get section() {
+      return t`Работа`
+    },
     get label() {
       return t`Проверка`
     },
@@ -67,29 +72,9 @@ const navigation: StaffNavigationItem[] = [
     capability: 'review.write',
   },
   {
-    get label() {
-      return t`Реакции`
+    get section() {
+      return t`Работа`
     },
-    to: '/reactions',
-    icon: <MessageSquareWarning className="size-4" aria-hidden="true" />,
-    capability: 'audit.read',
-  },
-  {
-    get label() {
-      return t`Вопросы`
-    },
-    to: '/questions',
-    icon: <MessageCircleQuestion className="size-4" aria-hidden="true" />,
-  },
-  {
-    get label() {
-      return t`Тестирование`
-    },
-    to: '/testing',
-    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
-    capability: 'content.manage',
-  },
-  {
     get label() {
       return t`Очное занятие`
     },
@@ -98,29 +83,41 @@ const navigation: StaffNavigationItem[] = [
     capability: 'oral.manage',
   },
   {
+    get section() {
+      return t`Работа`
+    },
     get label() {
       return t`Zoom-приём`
     },
     to: '/oral',
-    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
+    icon: <Video className="size-4" aria-hidden="true" />,
     capability: 'oral.manage',
   },
   {
+    get section() {
+      return t`Материалы`
+    },
     get label() {
       return t`Уроки`
     },
     to: '/lessons',
-    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
+    icon: <BookOpen className="size-4" aria-hidden="true" />,
   },
   {
+    get section() {
+      return t`Материалы`
+    },
     get label() {
       return t`Материалы для разбора`
     },
     to: '/whiteboard-export',
-    icon: <BookOpenCheck className="size-4" aria-hidden="true" />,
+    icon: <Presentation className="size-4" aria-hidden="true" />,
     capability: 'course.read',
   },
   {
+    get section() {
+      return t`Материалы`
+    },
     get label() {
       return t`Курсы`
     },
@@ -128,21 +125,9 @@ const navigation: StaffNavigationItem[] = [
     icon: <Boxes className="size-4" aria-hidden="true" />,
   },
   {
-    get label() {
-      return t`Новости`
+    get section() {
+      return t`Люди`
     },
-    to: '/news',
-    icon: <Newspaper className="size-4" aria-hidden="true" />,
-  },
-  {
-    get label() {
-      return t`Результаты школьника`
-    },
-    to: '/student-results',
-    icon: <ClipboardCheck className="size-4" aria-hidden="true" />,
-    capability: 'audit.read',
-  },
-  {
     get label() {
       return t`Участники`
     },
@@ -150,14 +135,62 @@ const navigation: StaffNavigationItem[] = [
     icon: <Users className="size-4" aria-hidden="true" />,
   },
   {
+    get section() {
+      return t`Люди`
+    },
+    get label() {
+      return t`Результаты школьника`
+    },
+    to: '/student-results',
+    icon: <GraduationCap className="size-4" aria-hidden="true" />,
+    capability: 'audit.read',
+  },
+  {
+    get section() {
+      return t`Люди`
+    },
     get label() {
       return t`Аудитории`
     },
     to: '/classrooms',
-    icon: <Building2 className="size-4" aria-hidden="true" />,
+    icon: <DoorOpen className="size-4" aria-hidden="true" />,
     capability: 'classroom.manage',
   },
   {
+    get section() {
+      return t`Связь`
+    },
+    get label() {
+      return t`Вопросы`
+    },
+    to: '/questions',
+    icon: <MessageCircleQuestion className="size-4" aria-hidden="true" />,
+  },
+  {
+    get section() {
+      return t`Связь`
+    },
+    get label() {
+      return t`Реакции`
+    },
+    to: '/reactions',
+    icon: <MessageSquareWarning className="size-4" aria-hidden="true" />,
+    capability: 'audit.read',
+  },
+  {
+    get section() {
+      return t`Связь`
+    },
+    get label() {
+      return t`Новости`
+    },
+    to: '/news',
+    icon: <Newspaper className="size-4" aria-hidden="true" />,
+  },
+  {
+    get section() {
+      return t`Связь`
+    },
     get label() {
       return t`Рассылки`
     },
@@ -166,6 +199,9 @@ const navigation: StaffNavigationItem[] = [
     capability: 'broadcast.manage',
   },
   {
+    get section() {
+      return t`Администрирование`
+    },
     get label() {
       return t`Статистика`
     },
@@ -173,6 +209,9 @@ const navigation: StaffNavigationItem[] = [
     icon: <BarChart3 className="size-4" aria-hidden="true" />,
   },
   {
+    get section() {
+      return t`Администрирование`
+    },
     get label() {
       return t`Аналитика`
     },
@@ -181,6 +220,9 @@ const navigation: StaffNavigationItem[] = [
     capability: 'product-analytics.read',
   },
   {
+    get section() {
+      return t`Администрирование`
+    },
     get label() {
       return t`Аудит`
     },
@@ -189,6 +231,31 @@ const navigation: StaffNavigationItem[] = [
     capability: 'audit.read',
   },
   {
+    get section() {
+      return t`Администрирование`
+    },
+    get label() {
+      return t`Оформление`
+    },
+    to: '/branding',
+    icon: <Palette className="size-4" aria-hidden="true" />,
+    capability: 'staff.manage',
+  },
+  {
+    get section() {
+      return t`Администрирование`
+    },
+    get label() {
+      return t`Тестирование`
+    },
+    to: '/testing',
+    icon: <FlaskConical className="size-4" aria-hidden="true" />,
+    capability: 'content.manage',
+  },
+  {
+    get section() {
+      return t`Администрирование`
+    },
     get label() {
       return t`MCP-доступ`
     },

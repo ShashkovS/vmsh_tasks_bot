@@ -32,7 +32,7 @@ export function StaffClassroomsPage({
       <div className="space-y-6">
         {event}
         <Tabs onValueChange={(value) => onTabChange(value as ClassroomPageTab)} value={tab}>
-          <TabsList>
+          <TabsList variant="line">
             <TabsTrigger value="catalog">
               <Trans>Каталог</Trans>
             </TabsTrigger>

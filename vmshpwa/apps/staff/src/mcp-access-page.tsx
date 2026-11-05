@@ -44,6 +44,7 @@ export function McpAccessPage() {
       setBusy(false)
     }
   }
+  const mcpUrl = `${window.location.origin}/staff/api/ai-review/v1/mcp`
   return (
     <PageLayout title={t`MCP-доступ`}>
       <div className="max-w-2xl space-y-4">
@@ -53,9 +54,11 @@ export function McpAccessPage() {
             Bearer. Клон репозитория и установка Python не нужны.
           </Trans>
         </p>
-        <code className="block break-all text-small">
-          {`${window.location.origin}/staff/api/ai-review/v1/mcp`}
-        </code>
+        {/* F30 (dev/ui-audit-20261104/BACKLOG.md): values meant for another app get a copy button. */}
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle p-2">
+          <code className="min-w-0 flex-1 break-all text-small">{mcpUrl}</code>
+          <CopyButton value={mcpUrl} />
+        </div>
         <p className="text-small">
           <Trans>
             Токен открывает учебные материалы ваших кружков и групп, включая неопубликованные
@@ -99,6 +102,7 @@ export function McpAccessPage() {
               <Trans>Сохраните этот секрет в настройках MCP-клиента.</Trans>
             </p>
             <code className="block break-all select-all text-small">{secret}</code>
+            <CopyButton value={secret} />
             <Button variant="outline" onClick={() => setSecret(null)}>
               <Trans>Скрыть секрет</Trans>
             </Button>
@@ -121,7 +125,7 @@ export function McpAccessPage() {
           {query.data?.items.map((token) => (
             <li
               key={token.tokenId}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3"
+              className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 ${token.revokedAt ? 'bg-surface-subtle opacity-70' : ''}`}
             >
               <div>
                 <p className="text-label">{token.name}</p>
@@ -147,5 +151,27 @@ export function McpAccessPage() {
         </ul>
       </div>
     </PageLayout>
+  )
+}
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <Button
+      onClick={() => {
+        void navigator.clipboard
+          .writeText(value)
+          .then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2_000)
+          })
+          .catch(() => undefined)
+      }}
+      size="sm"
+      type="button"
+      variant="outline"
+    >
+      {copied ? t`Скопировано` : t`Скопировать`}
+    </Button>
   )
 }

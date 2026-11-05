@@ -219,7 +219,7 @@ function StatefulPage({
 export function StudentTodayPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
     <StatefulPage state={state} title={t`Сейчас`}>
-      <PageLayout eyebrow={t`Ваши курсы`} title={t`Сейчас`}>
+      <PageLayout title={t`Сейчас`}>
         <div className="space-y-5">
           <div className="flex flex-wrap items-center justify-end gap-2">
             <ConnectionBanner state="online" />

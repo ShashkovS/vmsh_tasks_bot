@@ -417,6 +417,7 @@ export function StudentTestAnswer({
   const submissionClosed = closed || deadlineClosed
   const fieldLocked = sendState === 'sending' || queuedSend
   const history = historyQuery.data?.pages.flatMap((page) => page.attempts) ?? []
+  const alreadyAccepted = history.some((attempt) => attempt.outcome === 'correct')
   // The API pages newest first; a conversation reads the other way round.
   const ordered = [...history].reverse()
   const shown = showEveryTurn ? ordered : ordered.slice(-VISIBLE_TURNS)
@@ -556,7 +557,10 @@ export function StudentTestAnswer({
           onSend={() => void submit()}
           sendDisabled={!answer.trim()}
           sending={sendState === 'sending'}
-          sendLabel={t`Проверить`}
+          // Owner decision Q3 (BACKLOG): re-sending stays possible after «Зачтено», as a
+          // secondary action so it is not mistaken for the next step.
+          sendLabel={alreadyAccepted ? t`Отправить ещё раз` : t`Проверить`}
+          sendVariant={alreadyAccepted ? 'outline' : 'default'}
         >
           <TestAnswer
             key={`${identity}:${editorEpoch}`}
