@@ -82,3 +82,5 @@ E2E фазы 2, Chromium (одним прогоном `e2e_runner --mode all --b
 - основной набор: 141 PASS, 2 FAIL в `e2e/i18n.spec.ts` — ожидания старых текстов («New PWA publication» теперь за кнопкой «New post»; заголовок урока «LaTeX and publications» заменён фазой 1 на «Class N»). Спека исправлена, режим i18n — 12/12 PASS;
 - `figure-layout` 1/1, статистика (`playwright.statistics.config.ts`) 3/3 PASS — запущены напрямую `playwright test` после того, как раннер остановился на первом этапе;
 - `@visual`: «student current week» и «staff weekly dashboard» разошлись ожидаемо (шапка школьника, карточка объявления, группы меню, строка устных окон). Диффы просмотрены, эталоны обновлены для Chromium, WebKit и Firefox (просмотрен WebKit), 6/6 PASS.
+
+Выкатка фазы 2 (2026-11-05): `3a633879` → выпуск `ui-audit-20261104-3a633879503d` на vmsh.shashkovs.ru и prep.leaders.tech — оба PASS (25 read-only HTTP-проверок, онлайн-бэкапы, конфигурация и NATS сохранены; на VMSh сохранены три посторонние правки). Записи — `/web/vmsh_tasks_bot/deploy/releases/ui-audit-20261104-3a633879503d/result.json` на каждом сервере.
