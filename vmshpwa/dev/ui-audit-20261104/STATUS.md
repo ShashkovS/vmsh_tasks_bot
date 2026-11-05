@@ -84,3 +84,7 @@ E2E фазы 2, Chromium (одним прогоном `e2e_runner --mode all --b
 - `@visual`: «student current week» и «staff weekly dashboard» разошлись ожидаемо (шапка школьника, карточка объявления, группы меню, строка устных окон). Диффы просмотрены, эталоны обновлены для Chromium, WebKit и Firefox (просмотрен WebKit), 6/6 PASS.
 
 Выкатка фазы 2 (2026-11-05): `3a633879` → выпуск `ui-audit-20261104-3a633879503d` на vmsh.shashkovs.ru и prep.leaders.tech — оба PASS (25 read-only HTTP-проверок, онлайн-бэкапы, конфигурация и NATS сохранены; на VMSh сохранены три посторонние правки). Записи — `/web/vmsh_tasks_bot/deploy/releases/ui-audit-20261104-3a633879503d/result.json` на каждом сервере.
+
+## Q12 (2026-11-05)
+
+Оба лимита попыток считают только неверные ответы (`db_methods/pwa/submissions.py`); подпись лимита скрыта до первой ошибки, затем «Осталось ошибок: N за час · M за день»; прогресс «N задач зачтено · начато M». Проверки: pytest по отправкам 207 PASS, Vitest 1152, Storybook 384, i18n/types/lint PASS, E2E submissions (Chromium) 3/3.

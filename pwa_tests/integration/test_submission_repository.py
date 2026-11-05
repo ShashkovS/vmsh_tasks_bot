@@ -1503,7 +1503,7 @@ async def test_hour_limit_blocks_fourth_counted_attempt_but_not_invalid_format(
     assert counts == (4, 3)
 
 
-async def test_hour_limit_counts_only_wrong_answers_while_day_counts_all_answers(
+async def test_hour_and_day_limits_count_only_wrong_answers(
     submission_fixture: SubmissionFixture,
 ):
     fixture = submission_fixture
@@ -1512,6 +1512,7 @@ async def test_hour_limit_counts_only_wrong_answers_while_day_counts_all_answers
             command(fixture, answer="7", key=f"attempt-correct-{index}")
         )
         assert receipt.attempts.used_this_hour == 0
+        assert receipt.attempts.used_today == 0
 
     for index in range(3):
         receipt = await fixture.repository.submit_test_answer(
@@ -1519,7 +1520,7 @@ async def test_hour_limit_counts_only_wrong_answers_while_day_counts_all_answers
         )
 
     assert receipt.attempts.used_this_hour == 3
-    assert receipt.attempts.used_today == 5
+    assert receipt.attempts.used_today == 3
     with pytest.raises(SubmissionRejected) as caught:
         await fixture.repository.submit_test_answer(
             command(fixture, answer="8", key="attempt-fourth-wrong")

@@ -549,10 +549,12 @@ export function StudentTestAnswer({
         </div>
       ) : (
         <ChatComposer
-          {...(receipt && !receipt.attempts.unlimited
-            ? {
-                hint: t`Осталось попыток: ${receipt.attempts.remainingThisHour ?? '—'} в этот час, ${receipt.attempts.remainingToday ?? '—'} сегодня.`,
-              }
+          // Owner decision Q12 (dev/ui-audit-20261104/BACKLOG.md): limits count only wrong
+          // answers, and the caption stays hidden until the first wrong one.
+          {...(receipt &&
+          !receipt.attempts.unlimited &&
+          (receipt.attempts.usedThisHour > 0 || receipt.attempts.usedToday > 0)
+            ? { hint: attemptLimitHint(receipt.attempts) }
             : {})}
           onSend={() => void submit()}
           sendDisabled={!answer.trim()}
@@ -574,4 +576,15 @@ export function StudentTestAnswer({
       )}
     </section>
   )
+}
+
+function attemptLimitHint(attempts: {
+  remainingThisHour: number | null
+  remainingToday: number | null
+}): string {
+  const parts = [
+    attempts.remainingThisHour === null ? null : t`${attempts.remainingThisHour} за час`,
+    attempts.remainingToday === null ? null : t`${attempts.remainingToday} за день`,
+  ].filter((part): part is string => part !== null)
+  return t`Осталось ошибок: ${parts.join(' · ')}`
 }

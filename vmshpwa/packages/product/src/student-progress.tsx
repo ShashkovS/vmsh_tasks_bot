@@ -44,23 +44,26 @@ export function StudentProgress({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <p className="text-title font-semibold text-foreground">
-        <span className="font-num">{solvedCount}</span>{' '}
-        <Plural
-          value={solvedCount}
-          one="задача зачтена"
-          few="задачи зачтено"
-          many="задач зачтено"
-          other="задачи зачтено"
-        />
+      {/* Owner decision Q12 (dev/ui-audit-20261104/BACKLOG.md): «14 задач зачтено · начато 27». */}
+      <p className="flex flex-wrap items-baseline gap-x-2">
+        <span className="text-title font-semibold text-foreground">
+          <span className="font-num">{solvedCount}</span>{' '}
+          <Plural
+            value={solvedCount}
+            one="задача зачтена"
+            few="задачи зачтено"
+            many="задач зачтено"
+            other="задачи зачтено"
+          />
+        </span>
+        {attemptedCount ? (
+          <span className="text-small text-muted-foreground">
+            <Trans>
+              · начато <span className="font-num">{attemptedCount}</span>
+            </Trans>
+          </span>
+        ) : null}
       </p>
-      {attemptedCount ? (
-        <p className="text-small text-muted-foreground">
-          <Trans>
-            из <span className="font-num">{attemptedCount}</span>, над которыми вы работали
-          </Trans>
-        </p>
-      ) : null}
 
       {streakDays && streakDays > 1 ? (
         <p className="inline-flex items-center gap-1.5 text-small text-foreground">

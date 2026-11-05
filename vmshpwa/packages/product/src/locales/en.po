@@ -98,6 +98,10 @@ msgstr "· grade "
 msgid "· например {example}"
 msgstr "· for example {example}"
 
+#: packages/product/src/student-progress.tsx
+msgid "· начато <0>{attemptedCount}</0>"
+msgstr "· started <0>{attemptedCount}</0>"
+
 #. placeholder {0}: item.revision
 #: packages/product/src/news-moderation.tsx
 msgid "· ревизия {0}"
@@ -1200,10 +1204,6 @@ msgstr "and {inheritedStudents} "
 #: packages/product/src/lesson-video.ts
 msgid "Идентификатор YouTube-видео некорректен"
 msgstr "The YouTube video ID is invalid"
-
-#: packages/product/src/student-progress.tsx
-msgid "из <0>{attemptedCount}</0>, над которыми вы работали"
-msgstr "out of <0>{attemptedCount}</0> you have worked on"
 
 #: packages/product/src/classroom-planning.tsx
 msgid "из схемы перед подтверждением."

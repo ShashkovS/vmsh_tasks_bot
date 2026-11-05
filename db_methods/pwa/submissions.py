@@ -909,6 +909,8 @@ def _attempt_boundaries(now: datetime, timezone: str) -> tuple[datetime, datetim
 
 
 def _attempt_counts(
+    # Owner decision 2026-11-05 (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, Q12): both the
+    # hour and the day limit count only wrong answers; a correct answer never uses one up.
     connection: sqlite3.Connection,
     *,
     student_user_id: int,
@@ -919,7 +921,7 @@ def _attempt_counts(
     row = connection.execute(
         "SELECT count(*) FILTER (WHERE server_received_at >= ? AND verdict = -1) "
         "AS hour_count, "
-        "count(*) FILTER (WHERE server_received_at >= ?) AS day_count "
+        "count(*) FILTER (WHERE server_received_at >= ? AND verdict = -1) AS day_count "
         "FROM test_attempts WHERE student_user_id = ? AND problem_id = ? "
         "AND counts_as_attempt = 1",
         (
@@ -1981,9 +1983,11 @@ class PwaTestSubmissionRepository:
                     "(attempt_id, result_id, created_at) VALUES (?, ?, ?)",
                     (int(row["id"]), result_id, created_at),
                 )
-            if evaluation.counts_as_attempt:
-                if evaluation.verdict == VERDICT.WRONG_ANSWER:
-                    hour_count += 1
+            if (
+                evaluation.counts_as_attempt
+                and evaluation.verdict == VERDICT.WRONG_ANSWER
+            ):
+                hour_count += 1
                 day_count += 1
             receipt = TestAttemptReceipt(
                 attempt_public_id=attempt_public_id,

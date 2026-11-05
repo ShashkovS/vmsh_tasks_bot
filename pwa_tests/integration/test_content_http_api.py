@@ -1164,8 +1164,8 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
         "attempts": {
             "usedThisHour": 0,
             "remainingThisHour": 3,
-            "usedToday": 1,
-            "remainingToday": 4,
+            "usedToday": 0,
+            "remainingToday": 5,
             "unlimited": False,
         },
         "checkStatus": "checked",

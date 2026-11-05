@@ -26,6 +26,16 @@ msgstr " Срок свежести копии истёк."
 msgid "· сообщений: {0}"
 msgstr "· сообщений: {0}"
 
+#. placeholder {0}: attempts.remainingToday
+#: apps/student/src/student-test-answer.tsx
+msgid "{0} за день"
+msgstr "{0} за день"
+
+#. placeholder {0}: attempts.remainingThisHour
+#: apps/student/src/student-test-answer.tsx
+msgid "{0} за час"
+msgstr "{0} за час"
+
 #. placeholder {0}: attachments.length
 #: apps/student/src/student-written-submission.tsx
 msgid "{0} из 10 фотографий ·"
@@ -898,11 +908,10 @@ msgstr "Опубликованы решения"
 msgid "Осталось 4 попытки."
 msgstr "Осталось 4 попытки."
 
-#. placeholder {0}: receipt.attempts.remainingThisHour ?? '—'
-#. placeholder {1}: receipt.attempts.remainingToday ?? '—'
+#. placeholder {0}: parts.join(' · ')
 #: apps/student/src/student-test-answer.tsx
-msgid "Осталось попыток: {0} в этот час, {1} сегодня."
-msgstr "Осталось попыток: {0} в этот час, {1} сегодня."
+msgid "Осталось ошибок: {0}"
+msgstr "Осталось ошибок: {0}"
 
 #: apps/student/src/pages.tsx
 msgid "Ответ и пересдача — продолжение этого же обсуждения."
