@@ -2,7 +2,7 @@
 
 ## Персональные графики a21 — 9 ноября 2026
 
-- Готов локально: read-only `plot-data` под существующим токеном печати; история
+- Опубликован backend `c8e2a328`: read-only `plot-data` под существующим токеном печати; история
   последнего completed analytics run с индивидуальными и сглаженными значениями.
   Реализация: [маршрут](../../apps/pwa_api/legacy_print_routes.py),
   [домен](../../models/pwa/legacy_print.py), [контракт](legacy-api.md).
@@ -16,20 +16,35 @@
   события, двумя spawn-процессами и Python владельца `~/pyvenv/bin/python3`
   (3.14.7, matplotlib 3.10.8) создал два PNG. PNG осмотрен, заголовок разбит на
   две строки, чтобы не обрезаться. Данные smoke синтетические, под `.runtime`.
-- `make pwa-check-fast PWA_E2E_MODES="review"` остановился до suites: frontend
-  dependencies не соответствуют lockfile / не установлены в новом worktree.
-  `make pwa-i18n-extract` остановлен при зависшем запуске pnpm; backend extraction
-  выполнен напрямую, новый текст переведён, каталог синхронен. Frontend не менялся.
-- Владелец разрешил публикацию backend 9 ноября; начат production rollout.
-  Перед push сверены текущая origin/vmshpwa и HEAD (`3d12d4d8`). Frontend/Python
-  dependencies установлены в изолированном worktree; повторный общий fast gate
+- `make pwa-i18n-extract` завершён успешно после установки закреплённых
+  frontend/Python dependencies в изолированном worktree; все каталоги переведены,
+  frontend не менялся. Общий `make pwa-check-fast PWA_E2E_MODES="review"`
   прошёл dependency check, но остановился на Prettier в 14 существующих файлах.
   Все 14 побайтово совпадают с production HEAD, frontend не изменялся. Эти
   замечания не исправляются в backend-выпуске. Отчёт —
   `.runtime/vmshpwa/checks/20261109T145835.126946Z/summary.json`.
-- HTTPS runtime до публикации: 200; новый маршрут: 404. Штатный SSH alias
-  `vmshbegetagent` пока недоступен (тайм-аут TCP/22179). Публикация идёт обычным
-  Git push через существующий webhook; readiness подтверждается по HTTPS.
+- Владелец разрешил production rollout 9 ноября. Обычный Git push отправил
+  `c8e2a328` в `origin/vmshpwa`. Действующий сервер — `vmsh-2` на Timeweb,
+  найден по HTTPS DNS и существующему личному SSH alias `vmshtimeweb`.
+  Старый `ssh/config` указывает на недоступный Beget; на новом сервере нет
+  прежнего webhook deploy, а прямой Git fetch не настроен (host key GitHub).
+  Код доставлен проверенным Git bundle по SSH, применён fast-forward с autostash.
+  SSH-настройки и ключи сервера не менялись.
+- Перед обновлением проверен согласованный SQLite backup
+  `/web/vmsh_tasks_bot/backups/a21-before-20261109.sqlite3` (`quick_check=ok`).
+  Все три прежние production-правки в `metadata_generation.py`, `en.po` и
+  `vmsh_openrouter_contract.py` сохранены и проверены по SHA-256 (в `en.po`
+  дополнительно присутствует новый текст a21). Частные исходники/patch и receipt:
+  `/web/vmsh_tasks_bot/vmsh_tasks_bot/.runtime/a21-rollout-20261109/`.
+- Перезапущен только `vmshpwa.service`; он, Telegram service и analytics timer
+  active. Схема и static release `media-cache-20261107` не менялись. Student,
+  Family и Staff runtime отвечают 200, новый API без токена — 401.
+- Реальный API вернул 5512 строк истории занятия 9, 525 учеников проходят
+  стандартные фильтры; completed run `ar-709` от `2026-11-09T15:00:22.536568Z`.
+  Через `~/pyvenv/bin/python3` построен и осмотрен один приватный PNG.
+  Массовая генерация пользователю не запускалась. [Обезличенный proof](a21-rollout-20261109.json).
+- Отдельный инфраструктурный follow-up: синхронизировать штатный SSH alias и
+  webhook deploy с новой площадкой. Это не требуется для работы опубликованного API.
 
 ## Подтверждённый план повторно используется для печати — 21 сентября 2026
 

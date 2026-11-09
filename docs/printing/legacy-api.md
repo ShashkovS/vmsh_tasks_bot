@@ -62,6 +62,9 @@ ID, название, дату, статус, номера прикреплён�
 
 ### Персональные графики a21
 
+Маршрут опубликован 9 ноября 2026, backend `c8e2a328`;
+[проверка production](a21-rollout-20261109.json) и [статус](STATUS.md).
+
 `plot-data` читает последний **завершённый** analytics run курса, выбранного
 через confirmed plan события. Одним read-only snapshot возвращаются `runId`,
 `calculatedAt`, `courseId`, целевой `lesson` и `rows` с историей занятий 1…lesson.
