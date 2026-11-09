@@ -17,6 +17,7 @@ from models.pwa.classroom_assignments import ClassroomAssignmentNotFound
 from models.pwa.legacy_print import (
     LegacyPrintConflict,
     export_print_lesson_results,
+    export_print_plot_data,
     export_print_previous_results,
     export_print_pupils,
 )
@@ -35,6 +36,7 @@ _MESSAGES = {
     "mixed_room": N_("В одной аудитории оказались разные группы"),
     "missing_name": N_("Для печати нужны фамилия и имя каждого ученика"),
     "lesson_has_no_problems": N_("Для занятия не найдены задачи"),
+    "analytics_not_ready": N_("Сначала выполните расчёт аналитики курса в разделе статистики"),
 }
 
 
@@ -174,6 +176,22 @@ async def lesson_results(request):
     try:
         event, plan, payload = await factory.run_read_async(
             lambda connection: export_print_lesson_results(
+                connection, request.match_info["event_id"], int(lesson)
+            )
+        )
+    except (ClassroomAssignmentNotFound, LegacyPrintConflict) as error:
+        raise _export_error(error) from None
+    return _export_response(request, event, plan, lesson, payload)
+
+
+@routes.get(PREFIX + "/events/{event_id}/plot-data")
+async def plot_data(request):
+    """a21 history and smooth values; docs/printing/legacy-api.md."""
+    factory = _authorize(request)
+    lesson = _lesson(request)
+    try:
+        event, plan, payload = await factory.run_analytics_async(
+            lambda connection: export_print_plot_data(
                 connection, request.match_info["event_id"], int(lesson)
             )
         )

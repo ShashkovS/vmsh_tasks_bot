@@ -146,6 +146,55 @@ def headers(**extra):
     return {"Host": HOST, "Authorization": f"Bearer {TOKEN}", **extra}
 
 
+async def test_plot_data_uses_latest_completed_run_and_scoped_roster(print_api):
+    from db_methods.pwa.course_analytics import save_completed_course_metrics
+
+    client, factory, _, url = print_api
+    url = url.replace("/pupils", "/plot-data")
+    assert (await client.get(url, headers={"Host": HOST})).status == 401
+    missing = await client.get(url, headers=headers())
+    assert missing.status == 409
+    assert (await missing.json())["error"]["code"] == "legacy_print_analytics_not_ready"
+
+    def seed(connection):
+        course_id = connection.execute("SELECT id FROM courses WHERE public_id='c-1'").fetchone()["id"]
+        base = dict(student_user_id=1, lesson_number=40, group_id="assignment-n",
+                    simple_strength=6.0, complex_strength=4.0,
+                    max_complex_strength=8.0, solved_items=2, total_items=5)
+        options = dict(course_id=course_id, algorithm="a53-course",
+                       algorithm_version="1", input_through_result_id=1)
+        save_completed_course_metrics(connection, **options, completed_at="2030-01-01T00:00:00Z", metrics=[base])
+        run_id = save_completed_course_metrics(
+            connection, **options, completed_at="2030-01-02T00:00:00Z",
+            metrics=[{**base, "simple_strength": 7.0},
+                     {**base, "student_user_id": 98},
+                     {**base, "lesson_number": 42}],
+        )
+        connection.execute("UPDATE student_lesson_metrics SET simple_smooth=6.5, complex_smooth=3.5 WHERE run_id=?", (run_id,))
+        connection.execute(
+            "INSERT INTO analytics_runs(course_id,algorithm,algorithm_version,input_through_result_id,state,started_at,diagnostics_json) "
+            "VALUES (?, 'a53-course', '1', 1, 'running', '2030-01-03T00:00:00Z', '[]')", (course_id,)
+        )
+
+    factory.run_write(seed)
+    response = await client.get(url, headers=headers())
+    assert response.status == 200, await response.text()
+    payload = await response.json()
+    assert payload["lesson"] == 41
+    assert payload["calculatedAt"] == "2030-01-02T00:00:00Z"
+    assert payload["rows"] == [dict(
+        student_id=1, lesson=40, group_id="н", simple_prob_strength=7.0,
+        compl_prob_strength=4.0, max_compl_prob_strength=8.0,
+        simple_smooth=6.5, complex_smooth=3.5, solved=2, tot_problems=5,
+    )]
+    assert "no-store" in response.headers["Cache-Control"]
+    assert "old-token" not in await response.text()
+    stale = await client.get(url, headers=headers(**{"If-Match": '"outdated"'}))
+    assert stale.status == 412
+    invalid = await client.get(url + "&studentId=98", headers=headers())
+    assert invalid.status == 422
+
+
 async def test_round_trip_uses_login_not_secret_and_is_read_only(print_api):
     client, factory, _, url = print_api
     before = factory.run_read(

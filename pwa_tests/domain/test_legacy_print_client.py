@@ -7,6 +7,21 @@ import pytest
 from docs.printing import legacy_print_client as client
 
 
+def test_plot_data_validates_lesson_and_event(monkeypatch):
+    payload = {"schemaVersion": 1, "lesson": 3, "runId": "run-one", "rows": []}
+    seen = []
+
+    def fake_get(path, token=None):
+        seen.append((path, token))
+        return payload, {"X-Print-Event": "event-one", "X-Print-Lesson": "3"}
+
+    monkeypatch.setattr(client, "_get", fake_get)
+    assert client.get_portal_plot_data(3, "test-token", "event-one") == payload
+    assert seen == [("/events/event-one/plot-data?lesson=3", "test-token")]
+    with pytest.raises(RuntimeError, match="Некорректный ответ"):
+        client.get_portal_plot_data(4, "test-token", "event-one")
+
+
 def test_snapshot_reuse_and_a13_identity_adapter(tmp_path, monkeypatch):
     supplied_tokens = []
     requested_paths = []

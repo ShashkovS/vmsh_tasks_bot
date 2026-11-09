@@ -2762,6 +2762,10 @@ msgstr "Too many attempts. Try again later."
 msgid "Слишком много школьников"
 msgstr "Too many students"
 
+#: apps/pwa_api/legacy_print_routes.py
+msgid "Сначала выполните расчёт аналитики курса в разделе статистики"
+msgstr "First calculate the course analytics in the statistics section"
+
 #: apps/pwa_api/content_routes.py
 msgid "Сначала загрузите все рисунки из LaTeX-файла"
 msgstr "Upload all figures from the LaTeX file first"

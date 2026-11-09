@@ -52,6 +52,26 @@ def _get(path, token=None):
         raise RuntimeError("API печати: HTTP %s — %s" % (error.code, message)) from None
 
 
+def get_portal_plot_data(lesson, token=None, event_id=None):
+    """Fetch a21 history, including smooth values, in one completed-run snapshot."""
+    event_id = event_id or resolve_portal_print_event(lesson, token)
+    payload, headers = _get(
+        "/events/%s/plot-data?lesson=%d" % (quote(event_id, safe=""), lesson), token
+    )
+    metadata = {key.lower(): value for key, value in headers.items()}
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schemaVersion") != 1
+        or payload.get("lesson") != lesson
+        or not isinstance(payload.get("rows"), list)
+        or not payload.get("runId")
+        or metadata.get("x-print-event") != event_id
+        or metadata.get("x-print-lesson") != str(lesson)
+    ):
+        raise RuntimeError("Некорректный ответ API графиков")
+    return payload
+
+
 def download_portal_conduit(event_id, lesson, filename=DEFAULT_SNAPSHOT, token=None):
     pupils, headers = _get(
         "/events/%s/pupils?lesson=%d" % (quote(event_id, safe=""), lesson), token

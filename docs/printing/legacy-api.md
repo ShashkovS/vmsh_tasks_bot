@@ -4,6 +4,9 @@
 Excel как источник рассадки, сохранив a11–a14 и прежнюю печать. Внешняя папка
 не редактируется агентом; ниже точные изменения для переноса вручную.
 
+Уточнение от 9 ноября 2026: по прямому запросу владельца обновлены внешние
+`a21_create_plots.py` и `z_portal_print.py`; их копируемые версии хранятся здесь.
+
 Уточнение владельца от 21 сентября: уже подтверждённый план — неизменяемый
 источник для печати. Изменения живого состава, статуса аудитории или появление
 нового черновика не требуют пересчёта и не заменяют такой план.
@@ -47,6 +50,7 @@ GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events
 GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/pupils?lesson=4
 GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/previous-results?lesson=4
 GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/lesson-results?lesson=4
+GET https://vmsh.shashkovs.ru/staff/api/legacy-print/v1/events/EVENT_ID/plot-data?lesson=4
 ```
 
 Первый endpoint возвращает до 100 последних неотменённых событий активного сезона:
@@ -55,6 +59,58 @@ ID, название, дату, статус, номера прикреплён�
 а `lessonNumber: 2` — номер занятия. Это разные сущности. Второй endpoint
 возвращает **JSON-массив строк напрямую**, соответствующий результату
 `parse_xls_conduit`, а не `{pupils: ...}`.
+
+### Персональные графики a21
+
+`plot-data` читает последний **завершённый** analytics run курса, выбранного
+через confirmed plan события. Одним read-only snapshot возвращаются `runId`,
+`calculatedAt`, `courseId`, целевой `lesson` и `rows` с историей занятий 1…lesson.
+Получатели — активные ученики курса в уровнях подтверждённого плана, включая
+дистанционных; строки истории ограничены группами события. Номер `lesson` должен
+совпадать с номером занятия confirmed plan. Произвольные student ID не принимаются.
+Никакого пересчёта или изменения результатов запрос не выполняет.
+
+У строки есть `student_id` (внутренний ID для имени PNG), `lesson`, `group_id`
+(короткий код уровня), `simple_prob_strength`, `compl_prob_strength`,
+`max_compl_prob_strength`, `simple_smooth`, `complex_smooth`, `solved`,
+`tot_problems`. Показатели уже имеют шкалу 0–10; сглаживание берётся из того же
+run ([описание аналитики](../../vmshpwa/docs/lesson-statistics.md)). Nullable
+сглаживание оставляет пробел на соответствующей линии. Если completed run ещё
+нет, API возвращает 409 `legacy_print_analytics_not_ready`; сначала нужно
+рассчитать курс в Staff → статистика. Дата расчёта печатается скриптом, чтобы
+оператор мог заметить устаревшую аналитику.
+
+[Копируемая версия a21](a21_create_plots.py) устанавливается рядом с обновлённым
+[z_portal_print.py](legacy_print_client.py). Она использует существующий
+`PORTAL_PRINT_API_TOKEN` из приватного `z_CREDENTIALS.py` или переменную окружения
+`VMSH_PRINT_API_TOKEN`, а также matplotlib из legacy requirements.
+Встроенная `.venv` проекта не требуется: можно использовать любое личное
+окружение с matplotlib (Python 3.9+). Например, запуск владельца из каталога
+`/Users/sergeyshashkov/repos/vmsh_tasks_bot/Py_VMSH_5-7_2026`:
+
+```sh
+~/pyvenv/bin/python3 a21_create_plots.py --lesson 9
+```
+
+```sh
+python a21_create_plots.py --lesson 9
+python a21_create_plots.py --lesson 9 --event-id ipe-9 --processes 1
+```
+
+Без `--lesson` сохранено прежнее `use_lesson = 3`; опорное событие выбирается
+автоматически тем же способом, что у a11. PNG сохраняются относительно папки
+скрипта в `shashkov_mail_sender/Рез 09/stat/<student_id>.png`; `--output` меняет
+каталог. По умолчанию нужны минимум три занятия и данные целевого занятия.
+`--min-lessons 1` и `--include-absent` меняют эти фильтры. Импорт модуля не
+создаёт файлов, не открывает SQLite и не обращается к сети. Backend-маршрут
+должен быть опубликован перед рабочим запуском обновлённого скрипта.
+
+Реализация: [маршрут](../../apps/pwa_api/legacy_print_routes.py),
+[export_print_plot_data](../../models/pwa/legacy_print.py),
+[чтение completed run](../../db_methods/pwa/course_analytics.py).
+Проверки: [HTTP](../../pwa_tests/integration/test_legacy_print_api.py),
+[клиент](../../pwa_tests/domain/test_legacy_print_client.py),
+[история и PNG](../../pwa_tests/domain/test_legacy_plots.py).
 
 ```json
 [

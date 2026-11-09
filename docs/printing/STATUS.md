@@ -1,5 +1,36 @@
 # Печать из админки — статус
 
+## Персональные графики a21 — 9 ноября 2026
+
+- Готов локально: read-only `plot-data` под существующим токеном печати; история
+  последнего completed analytics run с индивидуальными и сглаженными значениями.
+  Реализация: [маршрут](../../apps/pwa_api/legacy_print_routes.py),
+  [домен](../../models/pwa/legacy_print.py), [контракт](legacy-api.md).
+- [Копируемая версия a21](a21_create_plots.py) и
+  [клиент](legacy_print_client.py) установлены в указанную владельцем папку
+  `repos/vmsh_tasks_bot/Py_VMSH_5-7_2026` (symlink в Dropbox). Только два файла,
+  конфигурация и секреты сохранены. Встроенная `.venv` не нужна: используется
+  любое личное окружение с matplotlib.
+- Целевые HTTP/client/plot suites: **26 PASS**; Ruff, `git diff --check` и backend
+  i18n check — PASS. Полный smoke с локальным HTTP API, автоматическим выбором
+  события, двумя spawn-процессами и Python владельца `~/pyvenv/bin/python3`
+  (3.14.7, matplotlib 3.10.8) создал два PNG. PNG осмотрен, заголовок разбит на
+  две строки, чтобы не обрезаться. Данные smoke синтетические, под `.runtime`.
+- `make pwa-check-fast PWA_E2E_MODES="review"` остановился до suites: frontend
+  dependencies не соответствуют lockfile / не установлены в новом worktree.
+  `make pwa-i18n-extract` остановлен при зависшем запуске pnpm; backend extraction
+  выполнен напрямую, новый текст переведён, каталог синхронен. Frontend не менялся.
+- Владелец разрешил публикацию backend 9 ноября; начат production rollout.
+  Перед push сверены текущая origin/vmshpwa и HEAD (`3d12d4d8`). Frontend/Python
+  dependencies установлены в изолированном worktree; повторный общий fast gate
+  прошёл dependency check, но остановился на Prettier в 14 существующих файлах.
+  Все 14 побайтово совпадают с production HEAD, frontend не изменялся. Эти
+  замечания не исправляются в backend-выпуске. Отчёт —
+  `.runtime/vmshpwa/checks/20261109T145835.126946Z/summary.json`.
+- HTTPS runtime до публикации: 200; новый маршрут: 404. Штатный SSH alias
+  `vmshbegetagent` пока недоступен (тайм-аут TCP/22179). Публикация идёт обычным
+  Git push через существующий webhook; readiness подтверждается по HTTPS.
+
 ## Подтверждённый план повторно используется для печати — 21 сентября 2026
 
 - По уточнению владельца export больше не сравнивает confirmed plan с текущим

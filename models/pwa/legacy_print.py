@@ -5,6 +5,8 @@ import sqlite3
 
 from db_methods.pwa.classroom_assignments import find_plan
 from db_methods.pwa.course_analytics import (
+    find_latest_completed_course_run,
+    list_course_run_metrics,
     list_course_group_access_rows,
     list_course_result_rows,
 )
@@ -29,6 +31,60 @@ from models.pwa.course_analytics import (
 
 class LegacyPrintConflict(Exception):
     """The operator must resolve a plan or compatibility problem first."""
+
+
+def export_print_plot_data(connection: sqlite3.Connection, event_id: str, lesson: int):
+    """Read a21 history from one completed run; docs/printing/legacy-api.md."""
+    connection.execute("BEGIN")
+    try:
+        event, plan, pupils = _validated_print_pupils(connection, event_id, lesson)
+        data = read_assignment_plan(connection, event_id)
+        course_id = int(data["groups"][0]["course_id"])
+        group_ids = {str(pupil["GroupID"]) for pupil in pupils}
+        roster = {
+            int(pupil["id"])
+            for pupil in list_print_course_pupils(connection, course_id)
+            if str(pupil["group_id"]) in group_ids
+        }
+        run = find_latest_completed_course_run(connection, course_id=course_id)
+        if run is None:
+            raise LegacyPrintConflict("analytics_not_ready")
+        metrics = list_course_run_metrics(
+            connection,
+            run_id=int(run["id"]),
+            allowed_group_public_ids=frozenset(
+                str(group["group_public_id"]) for group in data["groups"]
+                if str(group["group_id"]) in group_ids
+            ),
+        )
+        rows = [
+            {
+                "student_id": int(metric["student_user_id"]),
+                "lesson": int(metric["lesson_number"]),
+                "group_id": str(metric["group_code"]),
+                "simple_prob_strength": float(metric["simple_strength"]),
+                "compl_prob_strength": float(metric["complex_strength"]),
+                "max_compl_prob_strength": float(metric["max_complex_strength"]),
+                "simple_smooth": metric["simple_smooth"],
+                "complex_smooth": metric["complex_smooth"],
+                "solved": int(metric["solved_items"]),
+                "tot_problems": int(metric["total_items"]),
+            }
+            for metric in metrics
+            if int(metric["student_user_id"]) in roster
+            and 1 <= int(metric["lesson_number"]) <= lesson
+        ]
+        rows.sort(key=lambda row: (row["student_id"], row["lesson"]))
+        return event, plan, {
+            "schemaVersion": 1,
+            "courseId": str(data["groups"][0]["course_public_id"]),
+            "lesson": lesson,
+            "runId": str(run["public_id"]),
+            "calculatedAt": str(run["completed_at"]),
+            "rows": rows,
+        }
+    finally:
+        connection.execute("ROLLBACK")
 
 
 def _validated_print_pupils(connection: sqlite3.Connection, event_id: str, lesson: int):
