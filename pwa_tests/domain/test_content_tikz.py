@@ -266,6 +266,49 @@ def test_standalone_preparation_is_pure_and_keeps_security_boundary() -> None:
     assert captured.value.code == "asset.tikz_forbidden_command"
 
 
+def test_standalone_accepts_rendering_commands_and_ignores_comment_examples() -> None:
+    source = r"""
+% Examples only: \input{secret} \pdffiledump{secret} \end{document}
+\newcommand{\fileLabel}{A}
+\newcommand{\systemLabel}{B}
+\begin{tikzpicture}
+\node[font=\pdfrender{TextRenderingMode=FillStroke,LineWidth=0.3pt}]
+    {\fileLabel\systemLabel};
+\node {\textpdfrender{LineWidth=0.2pt}{C}};
+\end{tikzpicture}
+""".strip()
+    document = prepare_tikz_standalone_document(source)
+
+    assert r"\usepackage{pdfrender}" in document
+    assert source in document
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        r"\input{secret}",
+        r"\openin1=secret",
+        r"\write18{command}",
+        r"\directlua{code}",
+        r"\csname input\endcsname",
+        r"\pdffiledump{secret}",
+        r"\pdfobj stream file {secret}",
+        r"\pdfximage{secret}",
+        r"\pdfextension obj stream file {secret}",
+        r"\pdfprimitive\input",
+        r"\shellescape{command}",
+        r"\node {\% visible}; \input{secret}",
+    ],
+)
+def test_standalone_still_rejects_file_and_execution_operations(command: str) -> None:
+    with pytest.raises(AssetConversionError) as captured:
+        prepare_tikz_standalone_document(
+            "\\begin{tikzpicture}\n" + command + "\n\\end{tikzpicture}"
+        )
+
+    assert captured.value.code == "asset.tikz_forbidden_command"
+
+
 def test_corpus_report_uses_exact_masks_and_excludes_commented_tikz(
     tmp_path: Path,
 ) -> None:

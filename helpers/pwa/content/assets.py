@@ -44,11 +44,15 @@ _FORBIDDEN_TEX_COMMAND = re.compile(
     r"catcode|csname|directlua|documentclass|everyjob|include|includeonly|input|"
     r"immediate|newread|newwrite|openin|openout|read|requirepackage|special|"
     r"usepackage|write|write18"
-    r")\b",
+    r")(?![A-Za-z@])",
     flags=re.IGNORECASE,
 )
 _FORBIDDEN_TEX_PRIMITIVE = re.compile(
-    r"\\(?:pdf|luatex|shellescap|sys|file|primitive)[A-Za-z@]*",
+    # Exact operations, not namespace prefixes: pdfrender is ordinary styling.
+    # See content-compiler-support-matrix.md, Assets (usl-09-x-sol regression).
+    r"\\(?:pdffiledump|pdffilemoddate|pdffilesize|pdfmdfivesum|pdfobj|pdfximage|"
+    r"pdfextension|pdfprimitive|luatexprimitive|primitive|latelua|luafunction|"
+    r"luabytecode|shellescape)(?![A-Za-z@])",
     flags=re.IGNORECASE,
 )
 _SAFE_SVG_ELEMENTS = frozenset(
@@ -323,6 +327,18 @@ def _tikz_failure_debug(
     }
 
 
+def _without_tex_comments(source: str) -> str:
+    visible: list[str] = []
+    cursor = 0
+    while cursor < len(source):
+        if source[cursor] == "%" and not is_escaped(source, cursor):
+            cursor = skip_comment(source, cursor, len(source))
+        else:
+            visible.append(source[cursor])
+            cursor += 1
+    return "".join(visible)
+
+
 def _validate_tikz_source(source: str) -> str:
     if not isinstance(source, str):
         raise TypeError("TikZ source must be text")
@@ -337,15 +353,16 @@ def _validate_tikz_source(source: str) -> str:
             "latex-to-pdf",
             "TikZ source exceeds 250000 characters",
         )
-    if _FORBIDDEN_TEX_COMMAND.search(normalized) or _FORBIDDEN_TEX_PRIMITIVE.search(
-        normalized
+    visible_source = _without_tex_comments(normalized)
+    if _FORBIDDEN_TEX_COMMAND.search(visible_source) or _FORBIDDEN_TEX_PRIMITIVE.search(
+        visible_source
     ):
         raise AssetConversionError(
             "asset.tikz_forbidden_command",
             "latex-to-pdf",
             "TikZ source contains a file, dynamic or output primitive",
         )
-    if "\\begin{document}" in normalized or "\\end{document}" in normalized:
+    if "\\begin{document}" in visible_source or "\\end{document}" in visible_source:
         raise AssetConversionError(
             "asset.tikz_document_boundary",
             "latex-to-pdf",
@@ -357,19 +374,12 @@ def _validate_tikz_source(source: str) -> str:
 def _standalone_document(tikz_source: str) -> str:
     # Ignore TeX comments when selecting fonts; see the usl-09-x regression in
     # vmshpwa/docs/content-compiler-support-matrix.md (Assets).
-    visible_source: list[str] = []
-    cursor = 0
-    while cursor < len(tikz_source):
-        if tikz_source[cursor] == "%" and not is_escaped(tikz_source, cursor):
-            cursor = skip_comment(tikz_source, cursor, len(tikz_source))
-        else:
-            visible_source.append(tikz_source[cursor])
-            cursor += 1
+    visible_source = _without_tex_comments(tikz_source)
     cyrillic_preamble = (
         "\\usepackage[T1,T2A]{fontenc}\n"
         "\\usepackage[utf8]{inputenc}\n"
         "\\usepackage[russian,english]{babel}\n"
-        if _CYRILLIC_TEXT.search("".join(visible_source))
+        if _CYRILLIC_TEXT.search(visible_source)
         else ""
     )
     return (
@@ -378,6 +388,7 @@ def _standalone_document(tikz_source: str) -> str:
         # their TeX groups. See content-compiler-support-matrix.md, Assets.
         "\\documentclass[border=5pt]{standalone}\n"
         "\\usepackage{tikz}\n"
+        "\\usepackage{pdfrender}\n"
         f"{cyrillic_preamble}"
         "\\usepackage{amsmath}\n"
         "\\usepackage{tkz-euclide}\n"

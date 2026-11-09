@@ -1,5 +1,14 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+## 2026-11-09 — Совместимость оформления TikZ
+
+Реализовано уточнение фильтра команд и поддержка `pdfrender` для Staff uploads.
+60 профильных тестов PASS; текущий файл и восстановленный прежний стиль
+прошли реальный toolchain. Общий fast gate остановлен до тестов из-за
+отсутствующих frontend dependencies; production не менялся.
+[Контракт, реализация и regression tests](../../docs/content-compiler-support-matrix.md#assets-и-внешний-toolchain),
+[результаты и ограничения](../../../pwa_tests/reports/tikz-usl09-sol-20261109/README.md#исправление-валидации).
+
 ## 2026-10-13 — Адресные обновления и scoped SQL
 
 [Утверждённый план](../../../docs/performance/scoped-reads-20261013.md) реализован: адресные ресурсы и очередь refetch ≤4,

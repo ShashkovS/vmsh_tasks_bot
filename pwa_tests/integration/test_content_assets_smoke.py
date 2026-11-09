@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -163,6 +164,31 @@ async def test_real_content_asset_toolchain_produces_safe_svg_and_bounded_webp(
     assert raster.media_type == "image/webp"
     assert raster.data[:4] == b"RIFF" and raster.data[8:12] == b"WEBP"
     assert (raster.width, raster.height) == (4, 2)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.asyncio
+async def test_real_tikz_supports_pdfrender_text_stroke(tmp_path: Path) -> None:
+    """usl-09-x-sol label style; content-compiler-support-matrix.md, Assets."""
+    converter = ContentAssetConverter(
+        _local_tools(), temp_root=tmp_path, timeout_seconds=30
+    )
+    converted = await converter.tikz_to_svg(r"""
+\begin{tikzpicture}[
+    labelstyle/.style={font=\large\sffamily\bfseries
+        \pdfrender{TextRenderingMode=FillStroke,LineWidth=0.3pt}}
+]
+    \draw[fill=cyan!30!white] (0,0) rectangle (1,1);
+    \node[labelstyle] at (.5,.5) {2};
+\end{tikzpicture}
+""")
+
+    assert converted.media_type == "image/svg+xml"
+    assert b"<path" in converted.data
+    # TeX pt -> PDF bp changes 0.3pt to about 0.299; the grid stroke is 0.4.
+    stroke_widths = re.findall(rb'stroke-width(?:="|:)([0-9.]+)', converted.data)
+    assert any(abs(float(width) - 0.3) < 0.02 for width in stroke_widths)
+    assert converted.width > 0 and converted.height > 0
     assert list(tmp_path.iterdir()) == []
 
 

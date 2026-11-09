@@ -68,6 +68,15 @@ TeX-определения из `newlistok.sty` compiler не исполняет
 
 - TikZ converter использует фиксированный argv `pdflatex -no-shell-escape` →
   `pdf2svg`, isolated temporary files, timeout и redacted failures.
+- Для внутреннего Staff-импорта фильтр проверяет конкретные файловые и
+  execution-примитивы, а не все команды с префиксами `pdf`, `file`, `sys`.
+  TeX-комментарии не проверяются как исполняемый source. `\pdfrender` и
+  `\textpdfrender` поддерживаются штатным пакетом в фиксированной преамбуле:
+  регрессия `usl-09-x-sol.tex` с обводкой цифр. Запрет shell escape,
+  `openin_any=p`/`openout_any=p`, timeout и лимиты сохраняются; фильтр команд
+  не является полноценной песочницей ОС. Реализация: [`assets.py`](../../helpers/pwa/content/assets.py),
+  проверки: [`test_content_tikz.py`](../../pwa_tests/domain/test_content_tikz.py),
+  [`test_content_assets_smoke.py`](../../pwa_tests/integration/test_content_assets_smoke.py).
 - Standalone захватывает весь effective source одной страницей, включая
   `resizebox`/`tabular` с несколькими `tikzpicture`. Опция класса `tikz`
   обрезала вложенные рисунки отдельно и вызывала `Missing \endgroup inserted`
