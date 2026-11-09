@@ -91,8 +91,35 @@ Production code/config/DB/services не менялись, публикация �
 ## Выпуск на оба production
 
 Владелец разрешил commit/push и выпуск на ВМШ Timeweb и TLF.
-Начат backend-only rollout с online backups и плавной заменой workers;
+Выполнен backend-only rollout с online backups и плавной заменой workers;
 серверные локальные исправления метаданных, config/schema/static/NATS сохраняются.
 Source до выпуска на обоих: `7ee709141deddbf624d3034a9d092ef02e4bb2e2`.
 Исходный общий fast gate ограничен отсутствием frontend dependencies;
 профильные проверки выше приняты владельцем при разрешении выпуска.
+
+ВМШ выпущен: `7a8075484b1a6cc0302b3a812833d02961ef16e9`.
+[Квитанция](vmsh-production.json): 25 HTTP checks, 18 TikZ-конвертаций PASS
+(7 текущих, 4 из cr-183, 6 из cr-184 и восстановленный pdfrender-стиль).
+SSH-agent найден через macOS launchctl; прежний отказ доступа устранён без
+изменения ключей. Обе старые версии теперь проверены целиком по всем
+извлечённым TikZ-блокам.
+
+TLF выпущен тем же commit:
+[квитанция](tlf-production.json), 25 HTTP checks и 8 TikZ-конвертаций PASS
+(7 текущих и восстановленный pdfrender-стиль).
+На обоих production verified main/analytics backups предшествовали активации,
+проверка нового converter прошла до fast-forward, затем выполнены SIGHUP
+и подтверждена полная смена workers при сохранении master PID. На ВМШ
+обновлены PWA и Telegram workers; на TLF — только активные PWA workers.
+Все три локальных tracked исправления ВМШ и untracked TLF records сохранены
+по SHA-256. Schema hash совпадает до/после и между серверами, config/static
+и NATS PID неизменны, службы active, maintenance off. Исходные материалы и
+публикации не менялись; пользователь может повторить загрузку через Staff.
+
+Закрытые скрипты, backups и логи на каждом сервере:
+`/web/vmsh_tasks_bot/deploy/releases/tikz-validation-20261109-7a8075484b1a/`.
+Выпуск использовал обычный Git/SSH, `git merge --ff-only` сохранил unrelated
+правки. Prepared rollback: `git reset --keep` к sourceBefore и SIGHUP тех же
+workers; откат БД не нужен, миграций нет. Штатный webhook на текущем ВМШ
+Timeweb отсутствует; использован адаптированный backend-only rollout
+предыдущего выпуска TikZ от 4 ноября. Локальный общий fast gate не заявлен PASS.

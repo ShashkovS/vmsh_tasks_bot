@@ -1,6 +1,6 @@
 # Статус плана разработки
 
-## 2026-11-09 — Уточнение TikZ-валидации: локально проверено
+## 2026-11-09 — Уточнение TikZ-валидации: выпущено на обоих production
 
 По решению владельца общий запрет префиксов заменён проверкой конкретных
 файловых/execution-примитивов; комментарии исключены из проверки.
@@ -19,6 +19,15 @@ tests исключены как нерелевантные. Все 7 рисун�
 проверка текущих checkout, verified online backups, сохранение серверных
 исправлений метаданных, конфигурации/схемы/static/NATS и плавная замена workers.
 После выпуска обязательны реальная TikZ-конвертация и HTTP smoke обоих origin.
+
+ВМШ выпущен: `7a807548`, 25 HTTP checks и 18 реальных конвертаций PASS,
+включая все картинки исходных cr-183/cr-184. Verified backups, плавная замена
+PWA/Telegram workers, сохранность трёх серверных локальных правок,
+config/schema/static/NATS подтверждены. TLF выпущен тем же commit:
+25 HTTP checks и 8 TikZ-конвертаций PASS; backup integrity, плавная замена
+PWA workers и сохранность config/schema/static/NATS и untracked records подтверждены.
+[ВМШ](../../../pwa_tests/reports/tikz-usl09-sol-20261109/vmsh-production.json),
+[TLF](../../../pwa_tests/reports/tikz-usl09-sol-20261109/tlf-production.json).
 
 ## 2026-11-09 — Диагностика рисунков usl-09-x-sol.tex
 

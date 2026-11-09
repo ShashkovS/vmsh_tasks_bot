@@ -5,7 +5,9 @@
 Реализовано уточнение фильтра команд и поддержка `pdfrender` для Staff uploads.
 60 профильных тестов PASS; текущий файл и восстановленный прежний стиль
 прошли реальный toolchain. Общий fast gate остановлен до тестов из-за
-отсутствующих frontend dependencies; production не менялся.
+отсутствующих frontend dependencies. По разрешению владельца выпущен
+`7a807548` на ВМШ/TLF: по 25 HTTP checks, реальные TikZ-конвертации,
+backup integrity и сохранение config/schema/static/NATS PASS.
 [Контракт, реализация и regression tests](../../docs/content-compiler-support-matrix.md#assets-и-внешний-toolchain),
 [результаты и ограничения](../../../pwa_tests/reports/tikz-usl09-sol-20261109/README.md#исправление-валидации).
 
