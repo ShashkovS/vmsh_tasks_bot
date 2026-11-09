@@ -1,0 +1,55 @@
+{
+  "checked_at_utc": "2026-10-11T20:39:55.885488+00:00",
+  "origin": "https://prep.leaders.tech",
+  "static_release": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+  "html_sha256_matched": 4,
+  "staff_assets_sha256_matched": 116,
+  "production_provenance": {
+    "landing": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "landing"
+    },
+    "student": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "student"
+    },
+    "family": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "family"
+    },
+    "staff": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "staff"
+    }
+  },
+  "public_sourcemaps": false,
+  "maintenance": false
+}

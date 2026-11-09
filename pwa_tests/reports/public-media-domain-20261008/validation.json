@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-08",
+  "migration": "0114.vmsh_public_media_domain",
+  "schema": {
+    "product_object_count": 510,
+    "product_sha256": "aff0238ffb4a4350b672a6999f6e350f838ec4b1c48effd2d3c4f7bb88148b15",
+    "ddl_changed": false
+  },
+  "targeted_tests": {
+    "passed": 40,
+    "failed": 0
+  },
+  "full_python_attempt": {
+    "passed": 2827,
+    "failed": 17,
+    "skipped": 8
+  },
+  "restored_static_fixture_checks": {
+    "selected_tests": 14,
+    "exit_code": 0
+  },
+  "remaining_failures": [
+    "pwa_tests/integration/test_phase10_staff_access.py::test_admin_replaces_scope_and_teacher_sees_it_on_next_request",
+    "pwa_tests/test_auth_config.py::test_pwa_startup_production_markers_enable_secure_auth_policy[pwa-production-None]",
+    "pwa_tests/test_auth_config.py::test_pwa_startup_production_markers_enable_secure_auth_policy[pwa-agent-true]"
+  ],
+  "unchanged_head_reproduction": {
+    "revision": "55ed5e9c7e9c6b050a889e8e59a42dfe4c73e2d9",
+    "exit_code": 1,
+    "expected_baseline_failures_reproduced": true
+  },
+  "frontend": {
+    "passed": 1048,
+    "failed": 0
+  },
+  "storybook": {
+    "passed_initially": 362,
+    "failed_suite": "packages/content/src/golden-corpus.stories.tsx",
+    "retry_after_restoring_pdf_fixtures": {
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "chromium_content": {
+    "passed": 2,
+    "failed": 0
+  },
+  "build": "passed (verification profile)",
+  "completed_gate_steps": [
+    "python-dependencies",
+    "format",
+    "types",
+    "lint-js",
+    "lint-css",
+    "i18n-frontend",
+    "i18n-backend"
+  ],
+  "ruff": "passed",
+  "aggregate_gate": "not green: three failures reproduced on unchanged HEAD",
+  "production": {
+    "configuration_applied_by_owner": true,
+    "frontend_release": "55ed5e9c7e9c-20261008065457",
+    "migration_applied": false
+  }
+}

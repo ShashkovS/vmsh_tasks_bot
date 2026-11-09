@@ -1,10 +1,13 @@
 from fractions import Fraction
 import re
+from contextlib import contextmanager
+from threading import Condition, Lock
 from collections import Counter
 from helpers.consts import ANS_TYPE
 from helpers.config import logger
 from helpers.calc_ans_func_values import calc_first_10_values
-from mathsolvers import MathWorker, CompareVerdict
+from mathsolvers import CompareVerdict
+from helpers.math_worker import MathWorker
 
 __ALL__ = ['ANS_CHECKER']
 
@@ -14,7 +17,74 @@ re_frac = re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[
 re_frac_comma = re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[.,]\d+|\d+))')
 weekday = re.compile(r'.*(?:(п.?н|mon?)|(вт|tue?)|(ср|wed?)|(ч.?т|thu?)|(п.?т|fri?)|(с.?б|sat?)|(в.?с|sun?)).*', flags=re.IGNORECASE)
 
-worker = MathWorker()
+# vmshpwa/docs/graceful-shutdown.md: fork from an answer-checking thread
+# inherits Gunicorn sockets, signal handlers and SQLite lifecycle locks.
+worker = MathWorker(method='spawn')
+_worker_lock = Lock()
+_worker_condition = Condition()
+_active_checks = 0
+_stopping_worker = None
+
+
+def resume_worker() -> None:
+    """Enable a new app lifecycle without starting an unused SymPy child."""
+    global _stopping_worker
+    with _worker_condition:
+        _stopping_worker = None
+
+
+@contextmanager
+def _symbolic_worker():
+    global _active_checks
+    with _worker_condition:
+        selected = worker
+        if selected is _stopping_worker:
+            raise RuntimeError('SymPy worker is shutting down')
+        _active_checks += 1
+    try:
+        with _worker_lock:
+            yield selected
+    finally:
+        with _worker_condition:
+            _active_checks -= 1
+            _worker_condition.notify_all()
+
+
+def shutdown_worker() -> None:
+    """Finish the single pipe protocol, reap its child and close descriptors."""
+    global _stopping_worker
+    # Drain every accepted call, including callers queued on the pipe lock.
+    # No late default-executor operation may restart a child after cleanup.
+    with _worker_condition:
+        _stopping_worker = worker
+        _worker_condition.wait_for(lambda: _active_checks == 0)
+    with _worker_lock:
+        process = worker.process
+        pipes = (worker.pipe_worker, worker.pipe_manager)
+        try:
+            worker.shutdown()
+        except (BrokenPipeError, EOFError, ConnectionResetError):
+            # A child that already exited still needs its descriptors reaped.
+            pass
+        finally:
+            try:
+                if process is not None:
+                    process.join(timeout=1)
+                    if process.is_alive():
+                        process.kill()
+                        process.join(timeout=1)
+                    if process.is_alive():
+                        raise RuntimeError('SymPy worker did not stop')
+                    logger.warning('SymPy worker stopped pid=%s exitcode=%s',
+                                   process.pid, process.exitcode)
+                    process.close()
+            finally:
+                for pipe in pipes:
+                    if pipe is not None:
+                        pipe.close()
+                worker.process = None
+                worker.pipe_worker = None
+                worker.pipe_manager = None
 
 
 class Ne:
@@ -169,7 +239,8 @@ def frac_multiset_eq(x, y):
 
 def symb_eq(x, y):
     try:
-        res: CompareVerdict = worker.strict_compare_v2(x, y, timeout=1.0)
+        with _symbolic_worker() as checker:
+            res: CompareVerdict = checker.strict_compare_v2(x, y, timeout=1.0)
         return res == CompareVerdict.EQUAL
     except Exception as e:
         logger.exception(e)
@@ -178,7 +249,8 @@ def symb_eq(x, y):
 
 def symb_eq2(x, y):
     try:
-        res: CompareVerdict = worker.strict_compare_v2(x, y, timeout=1.0)
+        with _symbolic_worker() as checker:
+            res: CompareVerdict = checker.strict_compare_v2(x, y, timeout=1.0)
         return res == CompareVerdict.EQUAL or res == CompareVerdict.MAY_BE
     except Exception as e:
         logger.exception(e)
@@ -201,6 +273,10 @@ RU_TO_EN = str.maketrans('УКЕНХВАРОСМТукехаросЁё', 'YKEHXB
 
 
 def str_eq(x, y):
+    # vmshpwa/docs/answer-pattern-compatibility.md: compare case before the
+    # historical, case-asymmetric Cyrillic/Latin lookalike translation.
+    if x.strip().lower() == y.strip().lower():
+        return True
     return x.strip().translate(RU_TO_EN).lower() == y.strip().translate(RU_TO_EN).lower()
 
 

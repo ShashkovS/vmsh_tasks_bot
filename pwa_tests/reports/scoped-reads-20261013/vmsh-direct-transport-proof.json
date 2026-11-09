@@ -1,0 +1,21 @@
+{
+  "source": "direct unauthenticated HTTPS probes from VMSH",
+  "gzipGet": {
+    "status": 200,
+    "wireBytes": 8511,
+    "seconds": 0.176357
+  },
+  "smallMultipartPost": {
+    "wireBytes": 8441,
+    "status": 403,
+    "seconds": 0.148838
+  },
+  "largeMultipartPost": {
+    "wireBytes": 65801,
+    "httpResponse": false,
+    "timeoutSeconds": 8
+  },
+  "credentialsUsed": false,
+  "portalDataChanged": false,
+  "proxyUsed": false
+}

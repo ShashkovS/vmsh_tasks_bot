@@ -1,0 +1,15 @@
+{
+  "target": "f799f449e2ef4c1e6c76d6597cf8cf224e71e833",
+  "deployedRevision": "aae2743043ff0e781903eb412d3cb4c3378b1064",
+  "attempts": 2,
+  "failedStep": "private sourcemap upload before maintenance and migration",
+  "failure": "urllib URLError: The write operation timed out",
+  "directTlsConnectSeconds": 0.087756,
+  "directGetBytesReceived": 15849,
+  "directGetBytesExpected": 28671,
+  "temporaryMtuRouteRemoved": true,
+  "sshRemoteForwardingPermitted": false,
+  "temporaryProxyStarted": false,
+  "temporaryFirewallRuleCreated": false,
+  "approvalPending": true
+}

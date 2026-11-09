@@ -1,0 +1,49 @@
+{
+  "profile": "fast",
+  "modes": [
+    "content"
+  ],
+  "started_at": "2026-10-04T10:36:33.837509+00:00",
+  "steps": [
+    {
+      "name": "python",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-n4",
+        "--durations=20",
+        "tests",
+        "pwa_tests"
+      ],
+      "seconds": 124.338,
+      "exit_code": 0
+    },
+    {
+      "name": "frontend",
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "seconds": 153.741,
+      "exit_code": 0
+    },
+    {
+      "name": "storybook",
+      "command": [
+        "pnpm",
+        "storybook:test"
+      ],
+      "seconds": 274.101,
+      "exit_code": 1
+    }
+  ],
+  "exit_code": 1,
+  "revision": "c502cd4fa3b721e7de78b904f42bc6dca070f4b2",
+  "source_digest": "d43185f46d1251edb4a0dbdca8780f390f35ea6e391527bee474458dd123061b",
+  "source_changed": false,
+  "seconds": 554.066
+}

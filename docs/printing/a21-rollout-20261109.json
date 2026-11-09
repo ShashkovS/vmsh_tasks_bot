@@ -1,0 +1,44 @@
+{
+  "revision": "c8e2a32852c2bec3b26a0f8aac149c5b9d3c01e8",
+  "localChangesPreserved": true,
+  "schemaChanges": false,
+  "verifiedAt": "2026-11-09T15:06:47.524957+00:00",
+  "host": "vmsh-2",
+  "deploymentTransport": "verified-git-bundle-over-existing-vmshtimeweb-ssh-alias",
+  "backup": "/web/vmsh_tasks_bot/backups/a21-before-20261109.sqlite3",
+  "backupQuickCheck": "ok",
+  "staticRelease": "media-cache-20261107",
+  "services": {
+    "vmshpwa.service": "active",
+    "gunicorn.vmsh_tasks_bot.service": "active",
+    "vmsh-analytics.timer": "active"
+  },
+  "runtimeHttp": {
+    "student": 200,
+    "family": 200,
+    "staff": 200
+  },
+  "plotApiWithoutToken": 401,
+  "plotApiAuthorized": {
+    "status": 200,
+    "lesson": 9,
+    "runId": "ar-709",
+    "calculatedAt": "2026-11-09T15:00:22.536568Z",
+    "historyRows": 5512,
+    "eligibleStudents": 525
+  },
+  "personalPython": {
+    "version": "3.14.7",
+    "matplotlib": "3.10.8",
+    "realPngCreated": true
+  },
+  "targetedTests": {
+    "passed": 26
+  },
+  "fullGate": {
+    "status": "failed-before-suites",
+    "reason": "pre-existing Prettier failures in 14 unchanged frontend files",
+    "unchangedFromBaseVerified": true
+  },
+  "i18nExtraction": "passed"
+}

@@ -1,0 +1,9 @@
+
+ RUN  v4.1.10 /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa
+
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  15:48:32
+   Duration  4.45s (transform 3.11s, setup 1.78s, import 5.04s, tests 385ms, environment 1.11s)
+

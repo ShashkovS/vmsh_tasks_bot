@@ -1,0 +1,4082 @@
+{
+  "initial_issue_titles": [
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7766072159,
+      "count()": 8941,
+      "count_unique(user)": 558,
+      "issue": "VMSHPWA-52"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7766086402,
+      "count()": 2842,
+      "count_unique(user)": 415,
+      "issue": "VMSHPWA-53"
+    },
+    {
+      "title": "Ky",
+      "issue.id": 7766147292,
+      "count()": 1940,
+      "count_unique(user)": 245,
+      "issue": "VMSHPWA-55"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7768544802,
+      "count()": 1283,
+      "count_unique(user)": 128,
+      "issue": "VMSHPWA-5H"
+    },
+    {
+      "title": "Error: PWA query: API failure",
+      "issue.id": 7766072159,
+      "count()": 712,
+      "count_unique(user)": 70,
+      "issue": "VMSHPWA-52"
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "issue.id": 7766072159,
+      "count()": 626,
+      "count_unique(user)": 165,
+      "issue": "VMSHPWA-52"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7766115046,
+      "count()": 612,
+      "count_unique(user)": 47,
+      "issue": "VMSHPWA-54"
+    },
+    {
+      "title": "Error: PWA query: AuthNetworkError",
+      "issue.id": 7766072159,
+      "count()": 523,
+      "count_unique(user)": 103,
+      "issue": "VMSHPWA-52"
+    },
+    {
+      "title": "Error: PWA query: CourseNetworkError",
+      "issue.id": 7766072159,
+      "count()": 447,
+      "count_unique(user)": 153,
+      "issue": "VMSHPWA-52"
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "issue.id": 7768102541,
+      "count()": 351,
+      "count_unique(user)": 64,
+      "issue": "VMSHPWA-5D"
+    },
+    {
+      "title": "Error: PWA service recovery",
+      "issue.id": 7766292366,
+      "count()": 325,
+      "count_unique(user)": 57,
+      "issue": "VMSHPWA-58"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7757499778,
+      "count()": 284,
+      "count_unique(user)": 193,
+      "issue": "VMSHPWA-48"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7766168554,
+      "count()": 281,
+      "count_unique(user)": 133,
+      "issue": "VMSHPWA-56"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7766168636,
+      "count()": 250,
+      "count_unique(user)": 112,
+      "issue": "VMSHPWA-57"
+    },
+    {
+      "title": "Error: PWA query: API failure",
+      "issue.id": 7768544802,
+      "count()": 250,
+      "count_unique(user)": 20,
+      "issue": "VMSHPWA-5H"
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "issue.id": 7768481652,
+      "count()": 222,
+      "count_unique(user)": 63,
+      "issue": "VMSHPWA-5G"
+    },
+    {
+      "title": "Error: PWA query: AuthNetworkError",
+      "issue.id": 7768102541,
+      "count()": 148,
+      "count_unique(user)": 30,
+      "issue": "VMSHPWA-5D"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7766301188,
+      "count()": 120,
+      "count_unique(user)": 19,
+      "issue": "VMSHPWA-59"
+    },
+    {
+      "title": "Error: PWA query: ContentNetworkError",
+      "issue.id": 7766072159,
+      "count()": 118,
+      "count_unique(user)": 32,
+      "issue": "VMSHPWA-52"
+    },
+    {
+      "title": "AuthNetworkError: Authentication request could not reach the server",
+      "issue.id": 7757578964,
+      "count()": 115,
+      "count_unique(user)": 49,
+      "issue": "VMSHPWA-4F"
+    },
+    {
+      "title": "Error: PWA query: AuthNetworkError",
+      "issue.id": 7768481652,
+      "count()": 114,
+      "count_unique(user)": 53,
+      "issue": "VMSHPWA-5G"
+    },
+    {
+      "title": "Error: PWA query: API failure",
+      "issue.id": 7766168636,
+      "count()": 109,
+      "count_unique(user)": 14,
+      "issue": "VMSHPWA-57"
+    },
+    {
+      "title": "Error: PWA query: TypeError",
+      "issue.id": 7757511401,
+      "count()": 100,
+      "count_unique(user)": 67,
+      "issue": "VMSHPWA-4B"
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "issue.id": 7766301188,
+      "count()": 98,
+      "count_unique(user)": 8,
+      "issue": "VMSHPWA-59"
+    },
+    {
+      "title": "Error: PWA test.submit: API failure",
+      "issue.id": 7763301217,
+      "count()": 92,
+      "count_unique(user)": 67,
+      "issue": "VMSHPWA-4X"
+    },
+    {
+      "title": "Error: PWA query: API failure",
+      "issue.id": 7766115046,
+      "count()": 82,
+      "count_unique(user)": 8,
+      "issue": "VMSHPWA-54"
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "issue.id": 7766086402,
+      "count()": 81,
+      "count_unique(user)": 64,
+      "issue": "VMSHPWA-53"
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "issue.id": 7766168636,
+      "count()": 74,
+      "count_unique(user)": 23,
+      "issue": "VMSHPWA-57"
+    },
+    {
+      "title": "Error: PWA query: CourseNetworkError",
+      "issue.id": 7766086402,
+      "count()": 73,
+      "count_unique(user)": 67,
+      "issue": "VMSHPWA-53"
+    },
+    {
+      "title": "Error: PWA query: AuthNetworkError",
+      "issue.id": 7768544802,
+      "count()": 66,
+      "count_unique(user)": 23,
+      "issue": "VMSHPWA-5H"
+    }
+  ],
+  "backend_issue_titles": [
+    {
+      "title": "ConnectionResetError: Connection lost",
+      "issue.id": 7663857932,
+      "count()": 347,
+      "issue": "VMSH179BOT-28"
+    },
+    {
+      "title": "ConnectionResetError: Connection lost",
+      "issue.id": 7729674024,
+      "count()": 42,
+      "issue": "VMSH179BOT-2W"
+    },
+    {
+      "title": "BusyRetryExhausted: SQLite write lock was busy after 4 attempts",
+      "issue.id": 7760770873,
+      "count()": 1,
+      "issue": "VMSH179BOT-31"
+    }
+  ],
+  "totals": [
+    {
+      "count_unique(user)": 717,
+      "count()": 22929
+    }
+  ],
+  "titles": [
+    {
+      "title": "Error: PWA query: TypeError",
+      "count()": 14864
+    },
+    {
+      "title": "Ky",
+      "count()": 1944
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "count()": 1720
+    },
+    {
+      "title": "Error: PWA query: API failure",
+      "count()": 1410
+    },
+    {
+      "title": "Error: PWA query: AuthNetworkError",
+      "count()": 1038
+    },
+    {
+      "title": "Error: PWA query: CourseNetworkError",
+      "count()": 727
+    },
+    {
+      "title": "Error: PWA service recovery",
+      "count()": 343
+    },
+    {
+      "title": "Error: PWA query: ContentNetworkError",
+      "count()": 200
+    },
+    {
+      "title": "AuthNetworkError: Authentication request could not reach the server",
+      "count()": 154
+    },
+    {
+      "title": "Error: PWA test.submit: API failure",
+      "count()": 109
+    },
+    {
+      "title": "Error: PWA query: SupportNetworkError",
+      "count()": 55
+    },
+    {
+      "title": "Vy",
+      "count()": 41
+    },
+    {
+      "title": "ey",
+      "count()": 39
+    },
+    {
+      "title": "r",
+      "count()": 31
+    },
+    {
+      "title": "Error: PWA query: PublishedClassroomNetworkError",
+      "count()": 28
+    },
+    {
+      "title": "s_",
+      "count()": 26
+    },
+    {
+      "title": "AbortError: signal is aborted without reason",
+      "count()": 23
+    },
+    {
+      "title": "Error: PWA written.submit: API failure",
+      "count()": 16
+    },
+    {
+      "title": "oy",
+      "count()": 15
+    },
+    {
+      "title": "Hy",
+      "count()": 14
+    },
+    {
+      "title": "Error: PWA written.submit: WrittenSubmissionLocalEvidenceError",
+      "count()": 12
+    },
+    {
+      "title": "Error: PWA mutation: API failure",
+      "count()": 11
+    },
+    {
+      "title": "Error: PWA query: ContentProtocolError",
+      "count()": 11
+    },
+    {
+      "title": "Error: PWA query: CourseProtocolError",
+      "count()": 10
+    },
+    {
+      "title": "Error: PWA query: WrittenSubmissionNetworkError",
+      "count()": 9
+    },
+    {
+      "title": "Error: Error invoking post: Method not found",
+      "count()": 9
+    },
+    {
+      "title": "Error: PWA written.submit: WrittenSubmissionTimeoutError",
+      "count()": 8
+    },
+    {
+      "title": "Error: PWA query: TestSubmissionNetworkError",
+      "count()": 7
+    },
+    {
+      "title": "AbortError: Fetch is aborted",
+      "count()": 7
+    },
+    {
+      "title": "Yv",
+      "count()": 5
+    },
+    {
+      "title": "Error: PWA written.image-processing: NotReadableError",
+      "count()": 5
+    },
+    {
+      "title": "Error: PWA test.submit: TestSubmissionNetworkError",
+      "count()": 5
+    },
+    {
+      "title": "Jv",
+      "count()": 5
+    },
+    {
+      "title": "Error: Error invoking postEvent: Method not found",
+      "count()": 4
+    },
+    {
+      "title": "Error: PWA written.submit: TypeError",
+      "count()": 4
+    },
+    {
+      "title": "Error: PWA query: UnknownError",
+      "count()": 4
+    },
+    {
+      "title": "Error: PWA query: AuthProtocolError",
+      "count()": 3
+    },
+    {
+      "title": "Error: PWA query: PublishedClassroomProtocolError",
+      "count()": 2
+    },
+    {
+      "title": "AbortError: The operation was aborted. ",
+      "count()": 2
+    },
+    {
+      "title": "n_",
+      "count()": 2
+    },
+    {
+      "title": "Error: PWA test.submit: TestSubmissionTimeoutError",
+      "count()": 1
+    },
+    {
+      "title": "Error: PWA mutation: ZodError",
+      "count()": 1
+    },
+    {
+      "title": "Error: PWA written.submit: AuthNetworkError",
+      "count()": 1
+    },
+    {
+      "title": "Error: PWA test.submit: AuthNetworkError",
+      "count()": 1
+    },
+    {
+      "title": "Ug",
+      "count()": 1
+    },
+    {
+      "title": "Error: PWA written.image-processing: TypeError",
+      "count()": 1
+    },
+    {
+      "title": "asyncFunctionResume",
+      "count()": 1
+    }
+  ],
+  "environment": [
+    {
+      "environment": "production",
+      "count()": 22929
+    }
+  ],
+  "api_codes": [
+    {
+      "http_status": "",
+      "api_code": "",
+      "count()": 21383
+    },
+    {
+      "http_status": "404",
+      "api_code": "oral_window_not_found",
+      "count()": 577
+    },
+    {
+      "http_status": "401",
+      "api_code": "authentication_required",
+      "count()": 527
+    },
+    {
+      "http_status": "401",
+      "api_code": "session_revoked",
+      "count()": 299
+    },
+    {
+      "http_status": "422",
+      "api_code": "test_attempt_hour_limit",
+      "count()": 95
+    },
+    {
+      "http_status": "422",
+      "api_code": "test_attempt_day_limit",
+      "count()": 12
+    },
+    {
+      "http_status": "503",
+      "api_code": "written_attachments_unavailable",
+      "count()": 9
+    },
+    {
+      "http_status": "404",
+      "api_code": "news_post_not_found",
+      "count()": 5
+    },
+    {
+      "http_status": "409",
+      "api_code": "submission_deadline_passed",
+      "count()": 4
+    },
+    {
+      "http_status": "409",
+      "api_code": "review_lease_lost",
+      "count()": 4
+    },
+    {
+      "http_status": "409",
+      "api_code": "review_thread_changed",
+      "count()": 3
+    },
+    {
+      "http_status": "409",
+      "api_code": "written_replacement_unavailable",
+      "count()": 2
+    },
+    {
+      "http_status": "422",
+      "api_code": "recompile_required",
+      "count()": 2
+    },
+    {
+      "http_status": "409",
+      "api_code": "version_conflict",
+      "count()": 2
+    },
+    {
+      "http_status": "422",
+      "api_code": "invalid_classroom_assignment",
+      "count()": 2
+    },
+    {
+      "http_status": "409",
+      "api_code": "written_problem_revision_changed",
+      "count()": 1
+    },
+    {
+      "http_status": "409",
+      "api_code": "test_problem_revision_changed",
+      "count()": 1
+    },
+    {
+      "http_status": "409",
+      "api_code": "written_submission_version_conflict",
+      "count()": 1
+    }
+  ],
+  "start": "2026-10-02T21:00:00Z",
+  "end": "2026-10-08T07:05:00Z",
+  "dropped_events_hourly": {
+    "dataset": "errors",
+    "interval": 3600000,
+    "droppedEvents": [
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791324000000,
+        "end": 1791327600000,
+        "count": 102
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791403200000,
+        "end": 1791406800000,
+        "count": 38
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791255600000,
+        "end": 1791259200000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791392400000,
+        "end": 1791396000000,
+        "count": 179
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791093600000,
+        "end": 1791097200000,
+        "count": 27
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791028800000,
+        "end": 1791032400000,
+        "count": 246
+      },
+      {
+        "outcome": "rate_limited",
+        "reason": "spike_protection",
+        "category": "error",
+        "start": 1791111600000,
+        "end": 1791115200000,
+        "count": 789
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791039600000,
+        "end": 1791043200000,
+        "count": 13
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791291600000,
+        "end": 1791295200000,
+        "count": 11
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791352800000,
+        "end": 1791356400000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791097200000,
+        "end": 1791100800000,
+        "count": 335
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791270000000,
+        "end": 1791273600000,
+        "count": 86
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791169200000,
+        "end": 1791172800000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791320400000,
+        "end": 1791324000000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791226800000,
+        "end": 1791230400000,
+        "count": 39
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791399600000,
+        "end": 1791403200000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791183600000,
+        "end": 1791187200000,
+        "count": 51
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791306000000,
+        "end": 1791309600000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791345600000,
+        "end": 1791349200000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791439200000,
+        "end": 1791442800000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791388800000,
+        "end": 1791392400000,
+        "count": 12
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791126000000,
+        "end": 1791129600000,
+        "count": 30
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791277200000,
+        "end": 1791280800000,
+        "count": 5
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791201600000,
+        "end": 1791205200000,
+        "count": 40
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791014400000,
+        "end": 1791018000000,
+        "count": 238
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791046800000,
+        "end": 1791050400000,
+        "count": 10
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791118800000,
+        "end": 1791122400000,
+        "count": 55
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791223200000,
+        "end": 1791226800000,
+        "count": 184
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791122400000,
+        "end": 1791126000000,
+        "count": 125
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791432000000,
+        "end": 1791435600000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791334800000,
+        "end": 1791338400000,
+        "count": 15
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791309600000,
+        "end": 1791313200000,
+        "count": 140
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791219600000,
+        "end": 1791223200000,
+        "count": 12
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791036000000,
+        "end": 1791039600000,
+        "count": 240
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791057600000,
+        "end": 1791061200000,
+        "count": 146
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791054000000,
+        "end": 1791057600000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791442800000,
+        "end": 1791446400000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791100800000,
+        "end": 1791104400000,
+        "count": 363
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791291600000,
+        "end": 1791295200000,
+        "count": 309
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791306000000,
+        "end": 1791309600000,
+        "count": 203
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791147600000,
+        "end": 1791151200000,
+        "count": 26
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791381600000,
+        "end": 1791385200000,
+        "count": 434
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791104400000,
+        "end": 1791108000000,
+        "count": 398
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791208800000,
+        "end": 1791212400000,
+        "count": 753
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791298800000,
+        "end": 1791302400000,
+        "count": 14
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791140400000,
+        "end": 1791144000000,
+        "count": 30
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791288000000,
+        "end": 1791291600000,
+        "count": 137
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791050400000,
+        "end": 1791054000000,
+        "count": 347
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791241200000,
+        "end": 1791244800000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791316800000,
+        "end": 1791320400000,
+        "count": 32
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791129600000,
+        "end": 1791133200000,
+        "count": 22
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791309600000,
+        "end": 1791313200000,
+        "count": 13
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791108000000,
+        "end": 1791111600000,
+        "count": 13
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791205200000,
+        "end": 1791208800000,
+        "count": 30
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791118800000,
+        "end": 1791122400000,
+        "count": 406
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791212400000,
+        "end": 1791216000000,
+        "count": 24
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791352800000,
+        "end": 1791356400000,
+        "count": 27
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791284400000,
+        "end": 1791288000000,
+        "count": 79
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791000000000,
+        "end": 1791003600000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791010800000,
+        "end": 1791014400000,
+        "count": 449
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791100800000,
+        "end": 1791104400000,
+        "count": 34
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791252000000,
+        "end": 1791255600000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791003600000,
+        "end": 1791007200000,
+        "count": 12
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791237600000,
+        "end": 1791241200000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791086400000,
+        "end": 1791090000000,
+        "count": 30
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791313200000,
+        "end": 1791316800000,
+        "count": 77
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791043200000,
+        "end": 1791046800000,
+        "count": 11
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791018000000,
+        "end": 1791021600000,
+        "count": 280
+      },
+      {
+        "outcome": "rate_limited",
+        "reason": "spike_protection",
+        "category": "error",
+        "start": 1791100800000,
+        "end": 1791104400000,
+        "count": 467
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791136800000,
+        "end": 1791140400000,
+        "count": 56
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791392400000,
+        "end": 1791396000000,
+        "count": 22
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791180000000,
+        "end": 1791183600000,
+        "count": 55
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791216000000,
+        "end": 1791219600000,
+        "count": 285
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791295200000,
+        "end": 1791298800000,
+        "count": 11
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791061200000,
+        "end": 1791064800000,
+        "count": 25
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791298800000,
+        "end": 1791302400000,
+        "count": 5
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791068400000,
+        "end": 1791072000000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791349200000,
+        "end": 1791352800000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791342000000,
+        "end": 1791345600000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791324000000,
+        "end": 1791327600000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791273600000,
+        "end": 1791277200000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791302400000,
+        "end": 1791306000000,
+        "count": 184
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791223200000,
+        "end": 1791226800000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791356400000,
+        "end": 1791360000000,
+        "count": 39
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791370800000,
+        "end": 1791374400000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791288000000,
+        "end": 1791291600000,
+        "count": 19
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791036000000,
+        "end": 1791039600000,
+        "count": 13
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791385200000,
+        "end": 1791388800000,
+        "count": 265
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791219600000,
+        "end": 1791223200000,
+        "count": 199
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791129600000,
+        "end": 1791133200000,
+        "count": 208
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791367200000,
+        "end": 1791370800000,
+        "count": 117
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791046800000,
+        "end": 1791050400000,
+        "count": 434
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791439200000,
+        "end": 1791442800000,
+        "count": 18
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791277200000,
+        "end": 1791280800000,
+        "count": 87
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791151200000,
+        "end": 1791154800000,
+        "count": 8
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791320400000,
+        "end": 1791324000000,
+        "count": 103
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791374400000,
+        "end": 1791378000000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791190800000,
+        "end": 1791194400000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791144000000,
+        "end": 1791147600000,
+        "count": 13
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791072000000,
+        "end": 1791075600000,
+        "count": 5
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791205200000,
+        "end": 1791208800000,
+        "count": 307
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791349200000,
+        "end": 1791352800000,
+        "count": 42
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791108000000,
+        "end": 1791111600000,
+        "count": 394
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791381600000,
+        "end": 1791385200000,
+        "count": 32
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791104400000,
+        "end": 1791108000000,
+        "count": 20
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791208800000,
+        "end": 1791212400000,
+        "count": 18
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791172800000,
+        "end": 1791176400000,
+        "count": 14
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791111600000,
+        "end": 1791115200000,
+        "count": 105
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791136800000,
+        "end": 1791140400000,
+        "count": 15
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791115200000,
+        "end": 1791118800000,
+        "count": 685
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791190800000,
+        "end": 1791194400000,
+        "count": 38
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791230400000,
+        "end": 1791234000000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791111600000,
+        "end": 1791115200000,
+        "count": 4000
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791198000000,
+        "end": 1791201600000,
+        "count": 19
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791003600000,
+        "end": 1791007200000,
+        "count": 73
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791252000000,
+        "end": 1791255600000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791414000000,
+        "end": 1791417600000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791126000000,
+        "end": 1791129600000,
+        "count": 136
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791147600000,
+        "end": 1791151200000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791018000000,
+        "end": 1791021600000,
+        "count": 20
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791360000000,
+        "end": 1791363600000,
+        "count": 82
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791259200000,
+        "end": 1791262800000,
+        "count": 30
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791187200000,
+        "end": 1791190800000,
+        "count": 8
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791367200000,
+        "end": 1791370800000,
+        "count": 33
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791050400000,
+        "end": 1791054000000,
+        "count": 17
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791025200000,
+        "end": 1791028800000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791295200000,
+        "end": 1791298800000,
+        "count": 269
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791180000000,
+        "end": 1791183600000,
+        "count": 10
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791054000000,
+        "end": 1791057600000,
+        "count": 238
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791212400000,
+        "end": 1791216000000,
+        "count": 570
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791100800000,
+        "end": 1791104400000,
+        "count": 554
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791370800000,
+        "end": 1791374400000,
+        "count": 88
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791288000000,
+        "end": 1791291600000,
+        "count": 171
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791122400000,
+        "end": 1791126000000,
+        "count": 31
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791208800000,
+        "end": 1791212400000,
+        "count": 123
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791104400000,
+        "end": 1791108000000,
+        "count": 29
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791302400000,
+        "end": 1791306000000,
+        "count": 15
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791356400000,
+        "end": 1791360000000,
+        "count": 7
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1790996400000,
+        "end": 1791000000000,
+        "count": 17
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791118800000,
+        "end": 1791122400000,
+        "count": 758
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791280800000,
+        "end": 1791284400000,
+        "count": 74
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1790974800000,
+        "end": 1790978400000,
+        "count": 16
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791316800000,
+        "end": 1791320400000,
+        "count": 20
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791313200000,
+        "end": 1791316800000,
+        "count": 5
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791284400000,
+        "end": 1791288000000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791266400000,
+        "end": 1791270000000,
+        "count": 50
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791093600000,
+        "end": 1791097200000,
+        "count": 98
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791378000000,
+        "end": 1791381600000,
+        "count": 268
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791025200000,
+        "end": 1791028800000,
+        "count": 181
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791028800000,
+        "end": 1791032400000,
+        "count": 22
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791165600000,
+        "end": 1791169200000,
+        "count": 1
+      },
+      {
+        "outcome": "rate_limited",
+        "reason": "spike_protection",
+        "category": "error",
+        "start": 1791115200000,
+        "end": 1791118800000,
+        "count": 682
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791406800000,
+        "end": 1791410400000,
+        "count": 9
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791396000000,
+        "end": 1791399600000,
+        "count": 109
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791032400000,
+        "end": 1791036000000,
+        "count": 182
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791327600000,
+        "end": 1791331200000,
+        "count": 47
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791388800000,
+        "end": 1791392400000,
+        "count": 243
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791262800000,
+        "end": 1791266400000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791039600000,
+        "end": 1791043200000,
+        "count": 331
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791399600000,
+        "end": 1791403200000,
+        "count": 84
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791226800000,
+        "end": 1791230400000,
+        "count": 110
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791115200000,
+        "end": 1791118800000,
+        "count": 169
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791198000000,
+        "end": 1791201600000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791230400000,
+        "end": 1791234000000,
+        "count": 54
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791097200000,
+        "end": 1791100800000,
+        "count": 10
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791270000000,
+        "end": 1791273600000,
+        "count": 5
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791360000000,
+        "end": 1791363600000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791187200000,
+        "end": 1791190800000,
+        "count": 45
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791432000000,
+        "end": 1791435600000,
+        "count": 31
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791090000000,
+        "end": 1791093600000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791201600000,
+        "end": 1791205200000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791122400000,
+        "end": 1791126000000,
+        "count": 451
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791172800000,
+        "end": 1791176400000,
+        "count": 11
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791079200000,
+        "end": 1791082800000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791064800000,
+        "end": 1791068400000,
+        "count": 12
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791108000000,
+        "end": 1791111600000,
+        "count": 10
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1790982000000,
+        "end": 1790985600000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791424800000,
+        "end": 1791428400000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791176400000,
+        "end": 1791180000000,
+        "count": 8
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791280800000,
+        "end": 1791284400000,
+        "count": 8
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791194400000,
+        "end": 1791198000000,
+        "count": 20
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791111600000,
+        "end": 1791115200000,
+        "count": 635
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791133200000,
+        "end": 1791136800000,
+        "count": 76
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791115200000,
+        "end": 1791118800000,
+        "count": 5617
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791345600000,
+        "end": 1791349200000,
+        "count": 26
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791428400000,
+        "end": 1791432000000,
+        "count": 6
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791234000000,
+        "end": 1791237600000,
+        "count": 7
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791021600000,
+        "end": 1791025200000,
+        "count": 273
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791183600000,
+        "end": 1791187200000,
+        "count": 5
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791259200000,
+        "end": 1791262800000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791007200000,
+        "end": 1791010800000,
+        "count": 11
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791435600000,
+        "end": 1791439200000,
+        "count": 8
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791410400000,
+        "end": 1791414000000,
+        "count": 13
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791126000000,
+        "end": 1791129600000,
+        "count": 758
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791014400000,
+        "end": 1791018000000,
+        "count": 14
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791363600000,
+        "end": 1791367200000,
+        "count": 83
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791403200000,
+        "end": 1791406800000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791255600000,
+        "end": 1791259200000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791234000000,
+        "end": 1791237600000,
+        "count": 2
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791136800000,
+        "end": 1791140400000,
+        "count": 4
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791021600000,
+        "end": 1791025200000,
+        "count": 8
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791086400000,
+        "end": 1791090000000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791082800000,
+        "end": 1791086400000,
+        "count": 15
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791338400000,
+        "end": 1791342000000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791007200000,
+        "end": 1791010800000,
+        "count": 78
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791000000000,
+        "end": 1791003600000,
+        "count": 23
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791194400000,
+        "end": 1791198000000,
+        "count": 133
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791385200000,
+        "end": 1791388800000,
+        "count": 21
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791424800000,
+        "end": 1791428400000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1790992800000,
+        "end": 1790996400000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791176400000,
+        "end": 1791180000000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791090000000,
+        "end": 1791093600000,
+        "count": 52
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791363600000,
+        "end": 1791367200000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791298800000,
+        "end": 1791302400000,
+        "count": 258
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791093600000,
+        "end": 1791097200000,
+        "count": 19
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791266400000,
+        "end": 1791270000000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791129600000,
+        "end": 1791133200000,
+        "count": 140
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791216000000,
+        "end": 1791219600000,
+        "count": 31
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791378000000,
+        "end": 1791381600000,
+        "count": 17
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "ratelimit_backoff",
+        "category": "error",
+        "start": 1791180000000,
+        "end": 1791183600000,
+        "count": 32
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791154800000,
+        "end": 1791158400000,
+        "count": 1
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791273600000,
+        "end": 1791277200000,
+        "count": 65
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791140400000,
+        "end": 1791144000000,
+        "count": 3
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791057600000,
+        "end": 1791061200000,
+        "count": 9
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791043200000,
+        "end": 1791046800000,
+        "count": 296
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791262800000,
+        "end": 1791266400000,
+        "count": 16
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791133200000,
+        "end": 1791136800000,
+        "count": 10
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791396000000,
+        "end": 1791399600000,
+        "count": 9
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791010800000,
+        "end": 1791014400000,
+        "count": 10
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "event_processor",
+        "category": "error",
+        "start": 1791374400000,
+        "end": 1791378000000,
+        "count": 137
+      },
+      {
+        "outcome": "client_discard",
+        "reason": "network_error",
+        "category": "error",
+        "start": 1791032400000,
+        "end": 1791036000000,
+        "count": 3
+      }
+    ],
+    "acceptedEvents": [
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1790974800000,
+        "end": 1790978400000,
+        "count": 10
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1790978400000,
+        "end": 1790982000000,
+        "count": 11
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1790982000000,
+        "end": 1790985600000,
+        "count": 7
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1790985600000,
+        "end": 1790989200000,
+        "count": 13
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1790992800000,
+        "end": 1790996400000,
+        "count": 7
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1790996400000,
+        "end": 1791000000000,
+        "count": 17
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791000000000,
+        "end": 1791003600000,
+        "count": 49
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791003600000,
+        "end": 1791007200000,
+        "count": 78
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791007200000,
+        "end": 1791010800000,
+        "count": 162
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791010800000,
+        "end": 1791014400000,
+        "count": 225
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791014400000,
+        "end": 1791018000000,
+        "count": 212
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791018000000,
+        "end": 1791021600000,
+        "count": 319
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791021600000,
+        "end": 1791025200000,
+        "count": 346
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791025200000,
+        "end": 1791028800000,
+        "count": 238
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791028800000,
+        "end": 1791032400000,
+        "count": 224
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791032400000,
+        "end": 1791036000000,
+        "count": 189
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791036000000,
+        "end": 1791039600000,
+        "count": 349
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791039600000,
+        "end": 1791043200000,
+        "count": 312
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791043200000,
+        "end": 1791046800000,
+        "count": 308
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791046800000,
+        "end": 1791050400000,
+        "count": 418
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791050400000,
+        "end": 1791054000000,
+        "count": 379
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791054000000,
+        "end": 1791057600000,
+        "count": 270
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791057600000,
+        "end": 1791061200000,
+        "count": 135
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791061200000,
+        "end": 1791064800000,
+        "count": 47
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791064800000,
+        "end": 1791068400000,
+        "count": 25
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791068400000,
+        "end": 1791072000000,
+        "count": 14
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791072000000,
+        "end": 1791075600000,
+        "count": 17
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791075600000,
+        "end": 1791079200000,
+        "count": 1
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791079200000,
+        "end": 1791082800000,
+        "count": 11
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791082800000,
+        "end": 1791086400000,
+        "count": 11
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791086400000,
+        "end": 1791090000000,
+        "count": 50
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791090000000,
+        "end": 1791093600000,
+        "count": 74
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791093600000,
+        "end": 1791097200000,
+        "count": 210
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791097200000,
+        "end": 1791100800000,
+        "count": 458
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791100800000,
+        "end": 1791104400000,
+        "count": 826
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791104400000,
+        "end": 1791108000000,
+        "count": 691
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791108000000,
+        "end": 1791111600000,
+        "count": 560
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791111600000,
+        "end": 1791115200000,
+        "count": 1232
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791115200000,
+        "end": 1791118800000,
+        "count": 1308
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791118800000,
+        "end": 1791122400000,
+        "count": 465
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791122400000,
+        "end": 1791126000000,
+        "count": 676
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791126000000,
+        "end": 1791129600000,
+        "count": 805
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791129600000,
+        "end": 1791133200000,
+        "count": 735
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791133200000,
+        "end": 1791136800000,
+        "count": 190
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791136800000,
+        "end": 1791140400000,
+        "count": 154
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791140400000,
+        "end": 1791144000000,
+        "count": 85
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791144000000,
+        "end": 1791147600000,
+        "count": 36
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791147600000,
+        "end": 1791151200000,
+        "count": 54
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791151200000,
+        "end": 1791154800000,
+        "count": 10
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791154800000,
+        "end": 1791158400000,
+        "count": 13
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791158400000,
+        "end": 1791162000000,
+        "count": 10
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791162000000,
+        "end": 1791165600000,
+        "count": 2
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791165600000,
+        "end": 1791169200000,
+        "count": 8
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791169200000,
+        "end": 1791172800000,
+        "count": 19
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791172800000,
+        "end": 1791176400000,
+        "count": 91
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791176400000,
+        "end": 1791180000000,
+        "count": 90
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791180000000,
+        "end": 1791183600000,
+        "count": 83
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791183600000,
+        "end": 1791187200000,
+        "count": 88
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791187200000,
+        "end": 1791190800000,
+        "count": 110
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791190800000,
+        "end": 1791194400000,
+        "count": 66
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791194400000,
+        "end": 1791198000000,
+        "count": 76
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791198000000,
+        "end": 1791201600000,
+        "count": 121
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791201600000,
+        "end": 1791205200000,
+        "count": 149
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791205200000,
+        "end": 1791208800000,
+        "count": 555
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791208800000,
+        "end": 1791212400000,
+        "count": 646
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791212400000,
+        "end": 1791216000000,
+        "count": 501
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791216000000,
+        "end": 1791219600000,
+        "count": 379
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791219600000,
+        "end": 1791223200000,
+        "count": 261
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791223200000,
+        "end": 1791226800000,
+        "count": 227
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791226800000,
+        "end": 1791230400000,
+        "count": 146
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791230400000,
+        "end": 1791234000000,
+        "count": 93
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791234000000,
+        "end": 1791237600000,
+        "count": 57
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791237600000,
+        "end": 1791241200000,
+        "count": 23
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791241200000,
+        "end": 1791244800000,
+        "count": 10
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791244800000,
+        "end": 1791248400000,
+        "count": 7
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791248400000,
+        "end": 1791252000000,
+        "count": 6
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791252000000,
+        "end": 1791255600000,
+        "count": 23
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791255600000,
+        "end": 1791259200000,
+        "count": 14
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791259200000,
+        "end": 1791262800000,
+        "count": 86
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791262800000,
+        "end": 1791266400000,
+        "count": 53
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791266400000,
+        "end": 1791270000000,
+        "count": 96
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791270000000,
+        "end": 1791273600000,
+        "count": 88
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791273600000,
+        "end": 1791277200000,
+        "count": 94
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791277200000,
+        "end": 1791280800000,
+        "count": 102
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791280800000,
+        "end": 1791284400000,
+        "count": 102
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791284400000,
+        "end": 1791288000000,
+        "count": 118
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791288000000,
+        "end": 1791291600000,
+        "count": 195
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791291600000,
+        "end": 1791295200000,
+        "count": 374
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791295200000,
+        "end": 1791298800000,
+        "count": 371
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791298800000,
+        "end": 1791302400000,
+        "count": 365
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791302400000,
+        "end": 1791306000000,
+        "count": 248
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791306000000,
+        "end": 1791309600000,
+        "count": 214
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791309600000,
+        "end": 1791313200000,
+        "count": 183
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791313200000,
+        "end": 1791316800000,
+        "count": 94
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791316800000,
+        "end": 1791320400000,
+        "count": 38
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791320400000,
+        "end": 1791324000000,
+        "count": 30
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791324000000,
+        "end": 1791327600000,
+        "count": 31
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791327600000,
+        "end": 1791331200000,
+        "count": 99
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791331200000,
+        "end": 1791334800000,
+        "count": 4
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791334800000,
+        "end": 1791338400000,
+        "count": 11
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791338400000,
+        "end": 1791342000000,
+        "count": 9
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791342000000,
+        "end": 1791345600000,
+        "count": 9
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791345600000,
+        "end": 1791349200000,
+        "count": 31
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791349200000,
+        "end": 1791352800000,
+        "count": 73
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791352800000,
+        "end": 1791356400000,
+        "count": 61
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791356400000,
+        "end": 1791360000000,
+        "count": 93
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791360000000,
+        "end": 1791363600000,
+        "count": 92
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791363600000,
+        "end": 1791367200000,
+        "count": 110
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791367200000,
+        "end": 1791370800000,
+        "count": 107
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791370800000,
+        "end": 1791374400000,
+        "count": 100
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791374400000,
+        "end": 1791378000000,
+        "count": 180
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791378000000,
+        "end": 1791381600000,
+        "count": 306
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791381600000,
+        "end": 1791385200000,
+        "count": 510
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791385200000,
+        "end": 1791388800000,
+        "count": 328
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791388800000,
+        "end": 1791392400000,
+        "count": 259
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791392400000,
+        "end": 1791396000000,
+        "count": 201
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791396000000,
+        "end": 1791399600000,
+        "count": 160
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791399600000,
+        "end": 1791403200000,
+        "count": 109
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791403200000,
+        "end": 1791406800000,
+        "count": 55
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791406800000,
+        "end": 1791410400000,
+        "count": 34
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791410400000,
+        "end": 1791414000000,
+        "count": 18
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791414000000,
+        "end": 1791417600000,
+        "count": 4
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791417600000,
+        "end": 1791421200000,
+        "count": 1
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791421200000,
+        "end": 1791424800000,
+        "count": 6
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791424800000,
+        "end": 1791428400000,
+        "count": 1
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791428400000,
+        "end": 1791432000000,
+        "count": 13
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791432000000,
+        "end": 1791435600000,
+        "count": 50
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791435600000,
+        "end": 1791439200000,
+        "count": 26
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791439200000,
+        "end": 1791442800000,
+        "count": 76
+      },
+      {
+        "outcome": "accepted",
+        "reason": "accepted",
+        "category": "error",
+        "start": 1791442800000,
+        "end": 1791446400000,
+        "count": 4
+      }
+    ]
+  },
+  "backend_transactions": [
+    {
+      "transaction": "apps.pwa_app.realtime",
+      "count()": 347
+    },
+    {
+      "transaction": "apps.pwa_api.push_subscription_routes._post_subscription",
+      "count()": 42
+    },
+    {
+      "transaction": "",
+      "count()": 1
+    }
+  ],
+  "days": {
+    "2026-10-03": [
+      {
+        "title": "Error: PWA query: TypeError",
+        "count()": 3453
+      },
+      {
+        "title": "Error: PWA query: API failure",
+        "count()": 326
+      },
+      {
+        "title": "Error: PWA query: AuthNetworkError",
+        "count()": 101
+      },
+      {
+        "title": "Ky",
+        "count()": 100
+      },
+      {
+        "title": "Error: PWA query: AbortError",
+        "count()": 84
+      },
+      {
+        "title": "Error: PWA query: CourseNetworkError",
+        "count()": 58
+      },
+      {
+        "title": "Error: PWA service recovery",
+        "count()": 57
+      },
+      {
+        "title": "Error: PWA test.submit: API failure",
+        "count()": 30
+      },
+      {
+        "title": "Error: PWA query: ContentNetworkError",
+        "count()": 8
+      },
+      {
+        "title": "AuthNetworkError: Authentication request could not reach the server",
+        "count()": 8
+      },
+      {
+        "title": "Error: PWA written.submit: WrittenSubmissionLocalEvidenceError",
+        "count()": 7
+      },
+      {
+        "title": "r",
+        "count()": 6
+      },
+      {
+        "title": "Error: PWA query: ContentProtocolError",
+        "count()": 5
+      },
+      {
+        "title": "Vy",
+        "count()": 5
+      },
+      {
+        "title": "ey",
+        "count()": 4
+      },
+      {
+        "title": "Hy",
+        "count()": 4
+      },
+      {
+        "title": "Jv",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA mutation: API failure",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA written.image-processing: NotReadableError",
+        "count()": 3
+      },
+      {
+        "title": "oy",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA written.submit: TypeError",
+        "count()": 2
+      },
+      {
+        "title": "s_",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA query: PublishedClassroomNetworkError",
+        "count()": 1
+      },
+      {
+        "title": "n_",
+        "count()": 1
+      },
+      {
+        "title": "Ug",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA written.submit: API failure",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA written.submit: AuthNetworkError",
+        "count()": 1
+      }
+    ],
+    "2026-10-04": [
+      {
+        "title": "Error: PWA query: TypeError",
+        "count()": 4036
+      },
+      {
+        "title": "Error: PWA query: AbortError",
+        "count()": 1290
+      },
+      {
+        "title": "Ky",
+        "count()": 1255
+      },
+      {
+        "title": "Error: PWA query: API failure",
+        "count()": 535
+      },
+      {
+        "title": "Error: PWA query: CourseNetworkError",
+        "count()": 482
+      },
+      {
+        "title": "Error: PWA query: AuthNetworkError",
+        "count()": 396
+      },
+      {
+        "title": "Error: PWA service recovery",
+        "count()": 204
+      },
+      {
+        "title": "Error: PWA query: ContentNetworkError",
+        "count()": 166
+      },
+      {
+        "title": "AuthNetworkError: Authentication request could not reach the server",
+        "count()": 112
+      },
+      {
+        "title": "Error: PWA test.submit: API failure",
+        "count()": 32
+      },
+      {
+        "title": "AbortError: signal is aborted without reason",
+        "count()": 23
+      },
+      {
+        "title": "Error: PWA query: SupportNetworkError",
+        "count()": 20
+      },
+      {
+        "title": "Error: PWA query: PublishedClassroomNetworkError",
+        "count()": 15
+      },
+      {
+        "title": "Error: PWA written.submit: API failure",
+        "count()": 14
+      },
+      {
+        "title": "r",
+        "count()": 13
+      },
+      {
+        "title": "Vy",
+        "count()": 13
+      },
+      {
+        "title": "s_",
+        "count()": 10
+      },
+      {
+        "title": "Error: PWA written.submit: WrittenSubmissionTimeoutError",
+        "count()": 8
+      },
+      {
+        "title": "oy",
+        "count()": 7
+      },
+      {
+        "title": "AbortError: Fetch is aborted",
+        "count()": 6
+      },
+      {
+        "title": "ey",
+        "count()": 6
+      },
+      {
+        "title": "Error: PWA query: ContentProtocolError",
+        "count()": 4
+      },
+      {
+        "title": "Hy",
+        "count()": 4
+      },
+      {
+        "title": "Error: PWA written.submit: WrittenSubmissionLocalEvidenceError",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: CourseProtocolError",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: UnknownError",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: WrittenSubmissionNetworkError",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: TestSubmissionNetworkError",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA mutation: API failure",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA query: AuthProtocolError",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA written.image-processing: NotReadableError",
+        "count()": 2
+      },
+      {
+        "title": "AbortError: The operation was aborted. ",
+        "count()": 2
+      },
+      {
+        "title": "Error: Error invoking post: Method not found",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA query: PublishedClassroomProtocolError",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA written.submit: TypeError",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA mutation: ZodError",
+        "count()": 1
+      },
+      {
+        "title": "Yv",
+        "count()": 1
+      },
+      {
+        "title": "n_",
+        "count()": 1
+      }
+    ],
+    "2026-10-05": [
+      {
+        "title": "Error: PWA query: TypeError",
+        "count()": 2835
+      },
+      {
+        "title": "Error: PWA query: API failure",
+        "count()": 247
+      },
+      {
+        "title": "Error: PWA query: AuthNetworkError",
+        "count()": 196
+      },
+      {
+        "title": "Ky",
+        "count()": 196
+      },
+      {
+        "title": "Error: PWA query: AbortError",
+        "count()": 114
+      },
+      {
+        "title": "Error: PWA query: CourseNetworkError",
+        "count()": 63
+      },
+      {
+        "title": "AuthNetworkError: Authentication request could not reach the server",
+        "count()": 23
+      },
+      {
+        "title": "Vy",
+        "count()": 21
+      },
+      {
+        "title": "Error: PWA service recovery",
+        "count()": 20
+      },
+      {
+        "title": "Error: PWA test.submit: API failure",
+        "count()": 19
+      },
+      {
+        "title": "Error: PWA query: ContentNetworkError",
+        "count()": 12
+      },
+      {
+        "title": "ey",
+        "count()": 10
+      },
+      {
+        "title": "Error: Error invoking post: Method not found",
+        "count()": 7
+      },
+      {
+        "title": "Error: PWA query: PublishedClassroomNetworkError",
+        "count()": 7
+      },
+      {
+        "title": "Error: PWA query: SupportNetworkError",
+        "count()": 5
+      },
+      {
+        "title": "Error: PWA mutation: API failure",
+        "count()": 4
+      },
+      {
+        "title": "s_",
+        "count()": 3
+      },
+      {
+        "title": "Hy",
+        "count()": 3
+      },
+      {
+        "title": "oy",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: CourseProtocolError",
+        "count()": 3
+      },
+      {
+        "title": "Error: Error invoking postEvent: Method not found",
+        "count()": 2
+      },
+      {
+        "title": "Jv",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA test.submit: TestSubmissionTimeoutError",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA query: AuthProtocolError",
+        "count()": 1
+      },
+      {
+        "title": "r",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA written.submit: TypeError",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA query: ContentProtocolError",
+        "count()": 1
+      }
+    ],
+    "2026-10-06": [
+      {
+        "title": "Error: PWA query: TypeError",
+        "count()": 2253
+      },
+      {
+        "title": "Ky",
+        "count()": 174
+      },
+      {
+        "title": "Error: PWA query: API failure",
+        "count()": 161
+      },
+      {
+        "title": "Error: PWA query: AuthNetworkError",
+        "count()": 123
+      },
+      {
+        "title": "Error: PWA query: AbortError",
+        "count()": 95
+      },
+      {
+        "title": "Error: PWA query: CourseNetworkError",
+        "count()": 58
+      },
+      {
+        "title": "Error: PWA service recovery",
+        "count()": 28
+      },
+      {
+        "title": "Error: PWA test.submit: API failure",
+        "count()": 15
+      },
+      {
+        "title": "Error: PWA query: SupportNetworkError",
+        "count()": 9
+      },
+      {
+        "title": "ey",
+        "count()": 8
+      },
+      {
+        "title": "AuthNetworkError: Authentication request could not reach the server",
+        "count()": 6
+      },
+      {
+        "title": "Yv",
+        "count()": 4
+      },
+      {
+        "title": "s_",
+        "count()": 4
+      },
+      {
+        "title": "Error: PWA test.submit: TestSubmissionNetworkError",
+        "count()": 4
+      },
+      {
+        "title": "Error: PWA query: ContentNetworkError",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: CourseProtocolError",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA query: TestSubmissionNetworkError",
+        "count()": 3
+      },
+      {
+        "title": "r",
+        "count()": 3
+      },
+      {
+        "title": "Error: PWA written.submit: WrittenSubmissionLocalEvidenceError",
+        "count()": 2
+      },
+      {
+        "title": "Hy",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA query: ContentProtocolError",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA query: PublishedClassroomNetworkError",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA written.submit: API failure",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA written.image-processing: TypeError",
+        "count()": 1
+      },
+      {
+        "title": "Vy",
+        "count()": 1
+      },
+      {
+        "title": "Jv",
+        "count()": 1
+      },
+      {
+        "title": "asyncFunctionResume",
+        "count()": 1
+      }
+    ],
+    "2026-10-07": [
+      {
+        "title": "Error: PWA query: TypeError",
+        "count()": 2132
+      },
+      {
+        "title": "Error: PWA query: AuthNetworkError",
+        "count()": 200
+      },
+      {
+        "title": "Ky",
+        "count()": 198
+      },
+      {
+        "title": "Error: PWA query: API failure",
+        "count()": 130
+      },
+      {
+        "title": "Error: PWA query: AbortError",
+        "count()": 128
+      },
+      {
+        "title": "Error: PWA query: CourseNetworkError",
+        "count()": 63
+      },
+      {
+        "title": "Error: PWA service recovery",
+        "count()": 28
+      },
+      {
+        "title": "Error: PWA query: SupportNetworkError",
+        "count()": 21
+      },
+      {
+        "title": "Error: PWA test.submit: API failure",
+        "count()": 13
+      },
+      {
+        "title": "Error: PWA query: ContentNetworkError",
+        "count()": 11
+      },
+      {
+        "title": "ey",
+        "count()": 10
+      },
+      {
+        "title": "r",
+        "count()": 7
+      },
+      {
+        "title": "s_",
+        "count()": 6
+      },
+      {
+        "title": "Error: PWA query: WrittenSubmissionNetworkError",
+        "count()": 6
+      },
+      {
+        "title": "Error: PWA query: PublishedClassroomNetworkError",
+        "count()": 4
+      },
+      {
+        "title": "AuthNetworkError: Authentication request could not reach the server",
+        "count()": 4
+      },
+      {
+        "title": "Error: PWA mutation: API failure",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA query: TestSubmissionNetworkError",
+        "count()": 2
+      },
+      {
+        "title": "Error: Error invoking postEvent: Method not found",
+        "count()": 2
+      },
+      {
+        "title": "oy",
+        "count()": 2
+      },
+      {
+        "title": "Error: PWA query: UnknownError",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA query: CourseProtocolError",
+        "count()": 1
+      },
+      {
+        "title": "AbortError: Fetch is aborted",
+        "count()": 1
+      },
+      {
+        "title": "Hy",
+        "count()": 1
+      },
+      {
+        "title": "Vy",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA test.submit: TestSubmissionNetworkError",
+        "count()": 1
+      }
+    ],
+    "2026-10-08": [
+      {
+        "title": "Error: PWA query: TypeError",
+        "count()": 155
+      },
+      {
+        "title": "Error: PWA query: AuthNetworkError",
+        "count()": 22
+      },
+      {
+        "title": "Ky",
+        "count()": 21
+      },
+      {
+        "title": "Error: PWA query: API failure",
+        "count()": 11
+      },
+      {
+        "title": "Error: PWA query: AbortError",
+        "count()": 9
+      },
+      {
+        "title": "Error: PWA service recovery",
+        "count()": 6
+      },
+      {
+        "title": "Error: PWA query: CourseNetworkError",
+        "count()": 3
+      },
+      {
+        "title": "ey",
+        "count()": 1
+      },
+      {
+        "title": "s_",
+        "count()": 1
+      },
+      {
+        "title": "r",
+        "count()": 1
+      },
+      {
+        "title": "AuthNetworkError: Authentication request could not reach the server",
+        "count()": 1
+      },
+      {
+        "title": "Error: PWA test.submit: AuthNetworkError",
+        "count()": 1
+      }
+    ]
+  }
+}

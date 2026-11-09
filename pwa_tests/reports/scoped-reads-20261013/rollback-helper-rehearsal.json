@@ -1,0 +1,12 @@
+{
+  "vmsh": {
+    "businessTables": 168,
+    "businessRows": 825909,
+    "downTwiceUpBusinessHashesEqual": true
+  },
+  "tlf": {
+    "businessTables": 168,
+    "businessRows": 38246,
+    "downTwiceUpBusinessHashesEqual": true
+  }
+}

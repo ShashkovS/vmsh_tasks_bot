@@ -1,0 +1,40 @@
+{
+  "sourceBefore": "3ddb0a8e8d54184c1cacd032cfa77f3a7e2bbdd0",
+  "sourceAfter": "35c0a6ab81cfa5794a897227847f5cb43da56b57",
+  "origin": "https://vmsh.shashkovs.ru",
+  "static": "/web/vmsh_tasks_bot/vmshpwa/releases/vmsh-timeweb-20261102",
+  "schemaChanged": false,
+  "unrelatedFiles": [],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 935,
+      "workersBefore": [
+        1031,
+        1038
+      ],
+      "workersAfter": [
+        16782,
+        16783
+      ]
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "master": 883,
+      "workersBefore": [
+        1033,
+        1041
+      ],
+      "workersAfter": [
+        16798,
+        16799
+      ]
+    }
+  },
+  "status": "PASS",
+  "tikzChecks": [
+    "TikZ production conversion PASS 0 52fa6f5d8d036181 7578 148 148",
+    "TikZ production conversion PASS 1 3bc2038d9506b3ed 3562 52 25"
+  ],
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true
+}

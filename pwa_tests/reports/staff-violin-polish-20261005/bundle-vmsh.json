@@ -1,0 +1,17 @@
+{
+  "frontend_release": "0d2d88e3127e-20261004223309",
+  "graph_chunks": [
+    {
+      "path": "/staff/assets/src-ByR0yNR-.js",
+      "sha256": "40c0356939ddece9a17b003d5ca3d723ecb6365242214712ca126ef367e0e500",
+      "integer_axis": true,
+      "staff_075_callers": 0
+    },
+    {
+      "path": "/staff/assets/statistics-Bp893Hl5.js",
+      "sha256": "e929367fcf8fdeaf5b95a78c6f445e28fc264b7b623a33304499e74ab5b9f96f",
+      "integer_axis": false,
+      "staff_075_callers": 2
+    }
+  ]
+}

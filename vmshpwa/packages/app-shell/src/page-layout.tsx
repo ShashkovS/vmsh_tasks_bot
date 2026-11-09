@@ -1,0 +1,248 @@
+import { t } from '@lingui/core/macro'
+import { Trans } from '@lingui/react/macro'
+import { ChevronUp, CircleAlert, Inbox, LockKeyhole, Plus, RefreshCw, WifiOff } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+
+import { Button, Card, CardContent, Skeleton, cn } from '@vmsh/ui'
+import {
+  useBrowserOnline,
+  useServiceAvailability,
+  serviceAvailabilityTitle,
+} from './service-availability'
+
+/*
+ * Page composition contract for dev/design-system/05-pages-and-flows.md.
+ * Audience pages own their data and routes; PageLayout/PageStatePanel only keep
+ * headings, responsive measure, and loading/empty/error/offline/forbidden states
+ * consistent. Page stories in apps/{student,family,staff}/src/pages.stories.tsx
+ * are the proof.
+ */
+export interface PageLayoutProps {
+  eyebrow?: ReactNode
+  title: string
+  description?: ReactNode
+  actions?: ReactNode
+  children: ReactNode
+  width?: 'reading' | 'content' | 'wide'
+  className?: string
+}
+
+/**
+ * Shell-level notices (offline copy, push onboarding, staff testing) sit in the same column
+ * as the page content instead of spanning the whole main area at x=0
+ * (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1B item 13).
+ */
+export function ShellNoticeArea({ children }: { children: ReactNode }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-3 px-4 pt-4 empty:hidden sm:px-6 [&>*]:m-0">
+      {children}
+    </div>
+  )
+}
+
+const widthClass = {
+  reading: 'max-w-3xl',
+  content: 'max-w-5xl',
+  wide: 'max-w-[1500px]',
+} as const
+
+export function PageLayout({
+  eyebrow,
+  title,
+  description,
+  actions,
+  children,
+  width = 'content',
+  className,
+}: PageLayoutProps) {
+  return (
+    <div className={cn('mx-auto w-full px-4 py-5 sm:px-6 sm:py-7', widthClass[width], className)}>
+      {/* Actions wrap under the title instead of squeezing it into a narrow column
+          (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1B item 17). */}
+      <div className="mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-1 sm:min-w-72 sm:flex-1">
+          {eyebrow ? (
+            <div className="text-caption font-medium tracking-wide text-muted-foreground">
+              {eyebrow}
+            </div>
+          ) : null}
+          <h1 className="text-balance text-title font-semibold tracking-tight text-foreground">
+            {title}
+          </h1>
+          {description ? (
+            <div className="max-w-3xl text-small leading-relaxed text-muted-foreground">
+              {description}
+            </div>
+          ) : null}
+        </div>
+        {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+export function PageSection({
+  title,
+  description,
+  action,
+  children,
+  className,
+}: {
+  title: string
+  description?: ReactNode
+  action?: ReactNode
+  children: ReactNode
+  className?: string | undefined
+}) {
+  return (
+    <section className={cn('space-y-3', className)}>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-subtitle font-semibold text-foreground">{title}</h2>
+          {description ? (
+            <div className="mt-0.5 text-caption text-muted-foreground">{description}</div>
+          ) : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/**
+ * A creation form that does not push existing work below the fold
+ * (dev/ui-audit-20261104/BACKLOG.md, owner decision Q6). Closed it is one button;
+ * `initiallyOpen` keeps an unfinished draft visible after a reload.
+ */
+export function CollapsibleCreateSection({
+  openLabel,
+  title,
+  description,
+  initiallyOpen = false,
+  children,
+  className,
+}: {
+  openLabel: string
+  title: string
+  description?: ReactNode
+  initiallyOpen?: boolean
+  children: ReactNode
+  className?: string | undefined
+}) {
+  const [open, setOpen] = useState(initiallyOpen)
+  if (!open) {
+    return (
+      <div className={className}>
+        <Button onClick={() => setOpen(true)} variant="outline">
+          <Plus aria-hidden="true" />
+          {openLabel}
+        </Button>
+      </div>
+    )
+  }
+  return (
+    <PageSection
+      action={
+        <Button onClick={() => setOpen(false)} size="sm" variant="ghost">
+          <ChevronUp aria-hidden="true" />
+          <Trans>Свернуть форму</Trans>
+        </Button>
+      }
+      className={className}
+      description={description}
+      title={title}
+    >
+      {children}
+    </PageSection>
+  )
+}
+
+/**
+ * One look for section tabs across apps (dev/ui-audit-20261104/BACKLOG.md 2.2): an underline
+ * row, the same as the `line` variant of `TabsList` in @vmsh/ui.
+ */
+export const sectionTabsClassName = 'flex flex-wrap items-end gap-x-5 gap-y-1 border-b border-border'
+
+export function sectionTabClassName(active: boolean): string {
+  return cn(
+    '-mb-px inline-flex min-h-10 items-center gap-1.5 border-b-2 px-0.5 text-small font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+    active
+      ? 'border-foreground text-foreground'
+      : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+  )
+}
+
+export type PageDisplayState = 'ready' | 'loading' | 'empty' | 'error' | 'offline' | 'forbidden'
+
+const stateIcon = {
+  empty: Inbox,
+  error: CircleAlert,
+  offline: WifiOff,
+  forbidden: LockKeyhole,
+} as const
+
+export function PageStatePanel({
+  state,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  state: Exclude<PageDisplayState, 'ready'>
+  title?: string
+  description?: string
+  actionLabel?: string | undefined
+  onAction?: (() => void) | undefined
+}) {
+  const online = useBrowserOnline()
+  const availability = useServiceAvailability()
+  if (state === 'loading') {
+    return (
+      <Card aria-label={t`Загрузка`} role="status">
+        <CardContent className="space-y-3 pt-5">
+          <Skeleton className="h-5 w-2/5" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <span className="sr-only">
+            <Trans>Загружаем данные</Trans>
+          </span>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const Icon = state === 'offline' && online ? CircleAlert : stateIcon[state]
+  const defaults = {
+    empty: [t`Здесь пока ничего нет`, t`Новые материалы появятся здесь автоматически.`],
+    error: [t`Не удалось загрузить данные`, t`Проверьте соединение и попробуйте ещё раз.`],
+    offline: [
+      serviceAvailabilityTitle(availability, online),
+      t`Доступно всё, что уже сохранено на этом устройстве.`,
+    ],
+    forbidden: [t`Нет доступа`, t`У вашей учётной записи нет права открывать этот раздел.`],
+  } as const
+
+  return (
+    <Card role={state === 'error' ? 'alert' : 'status'}>
+      <CardContent className="flex gap-3 pt-5">
+        <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+        <div className="min-w-0 space-y-2">
+          <div>
+            <h2 className="font-medium text-foreground">{title ?? defaults[state][0]}</h2>
+            <p className="mt-1 text-small text-muted-foreground">
+              {description ?? defaults[state][1]}
+            </p>
+          </div>
+          {actionLabel && onAction ? (
+            <Button onClick={onAction} size="sm" variant="outline">
+              <RefreshCw aria-hidden="true" />
+              {actionLabel}
+            </Button>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

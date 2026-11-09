@@ -1,0 +1,76 @@
+{
+  "fixtureVersion": 1,
+  "response": {
+    "courseId": "course-fixture-alpha",
+    "groupId": "group-fixture-alpha-one",
+    "activeGroupId": "group-fixture-alpha-one",
+    "lessons": [
+      {
+        "groupLessonId": "group-lesson-fixture-42-alpha-one",
+        "courseLessonId": "course-lesson-fixture-42",
+        "courseId": "course-fixture-alpha",
+        "groupId": "group-fixture-alpha-one",
+        "lessonNumber": 42,
+        "title": "Занятие 42",
+        "cycleAnchorDate": "2026-09-21",
+        "businessTimezone": "Europe/Moscow",
+        "version": 2,
+        "problemCount": 12,
+        "window": {
+          "windowId": "lesson-window-fixture-42-alpha-one",
+          "opensAt": "2026-09-21T13:00:00.000000Z",
+          "submissionClosesAt": "2026-09-26T17:50:00.000000Z",
+          "hintScheduledAt": "2026-09-25T09:00:00.000000Z",
+          "solutionScheduledAt": "2026-09-26T18:00:00.000000Z",
+          "timezone": "Europe/Moscow",
+          "source": "native",
+          "version": 3
+        },
+        "materials": {
+          "condition": {
+            "status": "published",
+            "revisionId": "revision-fixture-condition-42",
+            "publishedAt": "2026-09-21T13:00:00.000000Z",
+            "publicationVersion": 1
+          },
+          "hint": { "status": "unavailable" },
+          "solution": { "status": "unavailable" }
+        }
+      },
+      {
+        "groupLessonId": "group-lesson-fixture-41-alpha-one",
+        "courseLessonId": "course-lesson-fixture-41",
+        "courseId": "course-fixture-alpha",
+        "groupId": "group-fixture-alpha-one",
+        "lessonNumber": 41,
+        "title": "Занятие 41",
+        "cycleAnchorDate": "2026-09-14",
+        "businessTimezone": "Europe/Moscow",
+        "version": 1,
+        "problemCount": 11,
+        "window": null,
+        "materials": {
+          "condition": {
+            "status": "published",
+            "revisionId": "revision-fixture-condition-41",
+            "publishedAt": "2026-09-14T13:00:00.000000Z",
+            "publicationVersion": 1
+          },
+          "hint": {
+            "status": "published",
+            "revisionId": "revision-fixture-hint-41",
+            "publishedAt": "2026-09-18T09:00:00.000000Z",
+            "publicationVersion": 1
+          },
+          "solution": {
+            "status": "published",
+            "revisionId": "revision-fixture-solution-41",
+            "publishedAt": "2026-09-19T18:00:00.000000Z",
+            "publicationVersion": 1
+          }
+        }
+      }
+    ],
+    "nextCursor": null
+  }
+}

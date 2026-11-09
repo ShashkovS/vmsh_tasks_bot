@@ -1,0 +1,11 @@
+{
+  "upDownUp": "passed",
+  "businessTablesPreserved": 168,
+  "newEmptyTables": [
+    "ai_review_events",
+    "ai_review_suggestions",
+    "ai_review_tokens"
+  ],
+  "performanceGuard": "passed",
+  "integrity": "ok"
+}

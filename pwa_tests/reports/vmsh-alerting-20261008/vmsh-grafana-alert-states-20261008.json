@@ -1,0 +1,93 @@
+[
+  {
+    "name": "VmshWebUnavailable",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:02:40Z",
+    "evaluationTime": 0.004326574
+  },
+  {
+    "name": "VmshMonitoringUnavailable",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:02:40Z",
+    "evaluationTime": 0.009200154
+  },
+  {
+    "name": "VmshExporterUnavailable",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.006268435
+  },
+  {
+    "name": "VmshCpuHigh",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.005570901
+  },
+  {
+    "name": "VmshCpuCritical",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.005160185
+  },
+  {
+    "name": "VmshApiErrors",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.011847073
+  },
+  {
+    "name": "VmshInteractiveSlow",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.016520155
+  },
+  {
+    "name": "VmshDbQueue",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.006522297
+  },
+  {
+    "name": "VmshEventLoopStalls",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.005086816
+  },
+  {
+    "name": "VmshMemoryLow",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:02:40Z",
+    "evaluationTime": 0.002410803
+  },
+  {
+    "name": "VmshOomKill",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:02:40Z",
+    "evaluationTime": 0.005570985
+  },
+  {
+    "name": "VmshDiskLow",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.004304697
+  },
+  {
+    "name": "VmshDiskCritical",
+    "state": "inactive",
+    "health": "ok",
+    "lastEvaluation": "2026-10-08T13:03:10Z",
+    "evaluationTime": 0.005781045
+  }
+]

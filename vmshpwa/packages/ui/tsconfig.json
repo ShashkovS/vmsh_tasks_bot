@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@vmsh/ui/*": ["./src/*"] }
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,63 @@
+{
+  "host": "tlf",
+  "source_revision": "9a14443fbc231617929536af3d5f17c3124eb7b9",
+  "release": "tlfprep-20261004-content-recovery-9a14443fbc23",
+  "backup_before": {
+    "backup": "20261004T093736.871407Z",
+    "createdAt": "2026-10-04T09:37:36.871407+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 1421
+  },
+  "backup_after": {
+    "backup": "20261004T093804.117638Z",
+    "createdAt": "2026-10-04T09:38:04.117638+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 1421
+  },
+  "rehearsal": {
+    "migration": "0112.scheduled_publication_lifecycle",
+    "seconds": 0.149,
+    "schema_current": true,
+    "changed_objects": [
+      "lesson_publications"
+    ],
+    "existing_fk_errors": 627,
+    "new_fk_errors": 0,
+    "integrity": "ok"
+  },
+  "credentials_unchanged": true,
+  "record": "/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261004-content-recovery-9a14443fbc23",
+  "product_tables": 158,
+  "product_rows_before": 18786,
+  "product_rows_after": 18786,
+  "product_rows_identical": true,
+  "changed_product_tables": {},
+  "schema_current": true,
+  "ddl_sha256": "060c7793ffb80ea8ea4b2f570c8d15107032230cfd1d02468bf29d00b7a12932",
+  "integrity": "ok",
+  "existing_fk_errors": 627,
+  "migration_ids": [
+    "0111.current_schema",
+    "0112.scheduled_publication_lifecycle"
+  ],
+  "production_build": {
+    "schemaVersion": 1,
+    "profile": "production",
+    "releaseId": "tlfprep-20261004-content-recovery-9a14443fbc23",
+    "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://o4508888104632320.ingest.de.sentry.io",
+    "msw": false,
+    "prototype": false,
+    "application": "staff"
+  },
+  "old_immutable_assets_retained": 588,
+  "services": {
+    "vmshpwa.service": "active",
+    "vmshzoom.service": "active",
+    "vmsh-analytics.timer": "active",
+    "nats.service": "active"
+  },
+  "maintenance_cleared": true,
+  "data_export": "Product rows stayed on server; only counts and digests exported."
+}

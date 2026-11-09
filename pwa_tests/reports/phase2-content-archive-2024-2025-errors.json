@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "compilerVersion": "vmsh-latex-compiler/3",
+  "archive": {
+    "name": "ВМШ 2024-2025 5-7 Чехлова Липинский Вербицкая",
+    "discoveredTexCount": 254,
+    "sourceCount": 218,
+    "aggregatePlaceholderCount": 36,
+    "zeroBytePlaceholderCount": 27,
+    "zeroByteSourceCount": 0,
+    "corpusSetSha256": "318d6a23979a3cc97891a1672abdb5f0df2c884e072f5e7ea3a94d8ba8763ee3"
+  },
+  "summary": {
+    "failedSourceCount": 14,
+    "errorCount": 25,
+    "problemCount": 2481,
+    "encodings": {
+      "utf-8": 7,
+      "windows-1251": 211
+    },
+    "errorsByCode": {
+      "latex.dangling_backslash": 2,
+      "latex.environment_unclosed": 1,
+      "latex.environment_unsupported": 3,
+      "latex.field_unclosed": 3,
+      "latex.no_problems": 8,
+      "latex.problem_unclosed": 1,
+      "source.replacement_character": 7
+    },
+    "warningsByCode": {
+      "latex.table_figure_layout_flattened": 1,
+      "latex.tikz_preamble_ignored": 4
+    }
+  },
+  "failedSources": [
+    {
+      "path": "usl-01-z-oral-sol.tex",
+      "role": "solution",
+      "sourceSha256": "c4f271531b6abdc2e76f8bdb646f27167cac5c1ac680359035f816684de4cd2d",
+      "sourceBytes": 941,
+      "encoding": "windows-1251",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "latex.no_problems",
+          "line": 10,
+          "column": 17,
+          "endLine": 63,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        },
+        {
+          "code": "latex.environment_unclosed",
+          "line": 17,
+          "column": 1,
+          "endLine": 63,
+          "endColumn": 1,
+          "message": "Environment 'document' не закрыт.",
+          "recovery": null
+        }
+      ]
+    },
+    {
+      "path": "usl-02-x-sol.tex",
+      "role": "solution",
+      "sourceSha256": "c25724ce170e209d5c8e46087bc5db661e08159219e97cc8360ffc91073cf5a9",
+      "sourceBytes": 27289,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 5,
+          "column": 2,
+          "endLine": 5,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (7158 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 23,
+          "column": 17,
+          "endLine": 299,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-02-x.tex",
+      "role": "condition",
+      "sourceSha256": "107a32d7e7e7b51ec70a1e653b09c6cffa6624533df22d91489730e210578a92",
+      "sourceBytes": 10485,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 7,
+          "column": 2,
+          "endLine": 7,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (2551 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 24,
+          "column": 17,
+          "endLine": 133,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-03-x-sol.tex",
+      "role": "solution",
+      "sourceSha256": "9c8131b477a5b0a946b8ae884247d79e71dd9409d0eb4fc76fc1ae47d3ba0c35",
+      "sourceBytes": 17629,
+      "encoding": "windows-1251",
+      "problemCount": 12,
+      "errors": [
+        {
+          "code": "latex.problem_unclosed",
+          "line": 395,
+          "column": 1,
+          "endLine": 416,
+          "endColumn": 1,
+          "message": "Задача не имеет явной завершающей команды.",
+          "recovery": "Добавьте \\кзадача или \\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-07-x-sol.tex",
+      "role": "solution",
+      "sourceSha256": "bcdfe16910d5337f1f52ca20673d7940f47758d4b083ffc866c75291a58f61ae",
+      "sourceBytes": 23878,
+      "encoding": "windows-1251",
+      "problemCount": 10,
+      "errors": [
+        {
+          "code": "latex.field_unclosed",
+          "line": 373,
+          "column": 1,
+          "endLine": 375,
+          "endColumn": 1,
+          "message": "Блок hint не имеет завершающей команды.",
+          "recovery": "Закройте блок соответствующей парной командой."
+        },
+        {
+          "code": "latex.field_unclosed",
+          "line": 378,
+          "column": 1,
+          "endLine": 434,
+          "endColumn": 1,
+          "message": "Блок solution не имеет завершающей команды.",
+          "recovery": "Закройте блок соответствующей парной командой."
+        }
+      ]
+    },
+    {
+      "path": "usl-08-n.tex",
+      "role": "condition",
+      "sourceSha256": "94c37ecfa1a6e6e3d581be519abe208f3b3a2a5806676036fb9cbf3fd2dde4b7",
+      "sourceBytes": 19082,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 9,
+          "column": 2,
+          "endLine": 9,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (4556 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 20,
+          "column": 17,
+          "endLine": 435,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-08-p.tex",
+      "role": "condition",
+      "sourceSha256": "1e1b6c2f26301828d1eea8f536ee7531b8224c0a2638ce3f62cfc80f828c5c54",
+      "sourceBytes": 16217,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 6,
+          "column": 2,
+          "endLine": 6,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (4429 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 17,
+          "column": 17,
+          "endLine": 274,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-08-x-sol.tex",
+      "role": "solution",
+      "sourceSha256": "510f62364da655ff891d3526187eb7dfafbeb9ee7af9edaeb5e149b1a1a693b7",
+      "sourceBytes": 33911,
+      "encoding": "windows-1251",
+      "problemCount": 12,
+      "errors": [
+        {
+          "code": "latex.environment_unsupported",
+          "line": 304,
+          "column": 5,
+          "endLine": 382,
+          "endColumn": 18,
+          "message": "Environment 'picture' не поддерживается compiler.",
+          "recovery": "Замените environment поддерживаемой структурой или добавьте parser fixture."
+        },
+        {
+          "code": "latex.environment_unsupported",
+          "line": 388,
+          "column": 5,
+          "endLine": 472,
+          "endColumn": 18,
+          "message": "Environment 'picture' не поддерживается compiler.",
+          "recovery": "Замените environment поддерживаемой структурой или добавьте parser fixture."
+        },
+        {
+          "code": "latex.environment_unsupported",
+          "line": 478,
+          "column": 5,
+          "endLine": 567,
+          "endColumn": 18,
+          "message": "Environment 'picture' не поддерживается compiler.",
+          "recovery": "Замените environment поддерживаемой структурой или добавьте parser fixture."
+        }
+      ]
+    },
+    {
+      "path": "usl-08-x.tex",
+      "role": "condition",
+      "sourceSha256": "36a34fbe9661ace6079094ce8542a40f25502f58433e36fff4a66b3c32a63671",
+      "sourceBytes": 25117,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 5,
+          "column": 2,
+          "endLine": 5,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (7060 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 23,
+          "column": 17,
+          "endLine": 198,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-10-x-sol.tex",
+      "role": "solution",
+      "sourceSha256": "6831358f1361f843f7631e2ffc1f931efc5928318767b82a58a74a23851452da",
+      "sourceBytes": 39788,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 5,
+          "column": 2,
+          "endLine": 5,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (10588 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 25,
+          "column": 17,
+          "endLine": 284,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-10-x.tex",
+      "role": "condition",
+      "sourceSha256": "1d8a5e04bc9d28b7807a24337b0ce59069639d4b964dd4416a881866695ece47",
+      "sourceBytes": 31688,
+      "encoding": "utf-8",
+      "problemCount": 0,
+      "errors": [
+        {
+          "code": "source.replacement_character",
+          "line": 5,
+          "column": 2,
+          "endLine": 5,
+          "endColumn": 3,
+          "message": "Source содержит символ замены U+FFFD (9139 вхождений) и уже повреждён до загрузки.",
+          "recovery": "Восстановите исходный файл из корректной UTF-8/Windows-1251 копии; перекодирование текущих байтов не вернёт утраченные буквы."
+        },
+        {
+          "code": "latex.no_problems",
+          "line": 23,
+          "column": 17,
+          "endLine": 191,
+          "endColumn": 1,
+          "message": "В источнике не найдено ни одной поддерживаемой команды задачи.",
+          "recovery": "Используйте \\задача…\\кзадача или \\problem…\\eproblem."
+        }
+      ]
+    },
+    {
+      "path": "usl-15-x-sol.tex",
+      "role": "solution",
+      "sourceSha256": "18a690333f251f5e6f4ad2445ca25ed5ed26580acb6db5bdc65339eeceedb34f",
+      "sourceBytes": 16515,
+      "encoding": "windows-1251",
+      "problemCount": 12,
+      "errors": [
+        {
+          "code": "latex.field_unclosed",
+          "line": 378,
+          "column": 1,
+          "endLine": 379,
+          "endColumn": 2,
+          "message": "Блок hint не имеет завершающей команды.",
+          "recovery": "Закройте блок соответствующей парной командой."
+        }
+      ]
+    },
+    {
+      "path": "usl-24-p.tex",
+      "role": "condition",
+      "sourceSha256": "7bc33823793cc74b37e27caf863053b1b66c1b34ef50dba9ff8d15f144f10d85",
+      "sourceBytes": 15063,
+      "encoding": "windows-1251",
+      "problemCount": 12,
+      "errors": [
+        {
+          "code": "latex.dangling_backslash",
+          "line": 152,
+          "column": 1,
+          "endLine": 152,
+          "endColumn": 2,
+          "message": "Одиночный обратный слеш не образует LaTeX-команду.",
+          "recovery": "Удалите слеш или используйте \\\\ для переноса строки."
+        }
+      ]
+    },
+    {
+      "path": "usl-27-p.tex",
+      "role": "condition",
+      "sourceSha256": "6fa60b5b4cc850267325babbe56b0882384e5727987c037a9a322a0e502d464b",
+      "sourceBytes": 14223,
+      "encoding": "windows-1251",
+      "problemCount": 12,
+      "errors": [
+        {
+          "code": "latex.dangling_backslash",
+          "line": 361,
+          "column": 76,
+          "endLine": 362,
+          "endColumn": 1,
+          "message": "Одиночный обратный слеш не образует LaTeX-команду.",
+          "recovery": "Удалите слеш или используйте \\\\ для переноса строки."
+        }
+      ]
+    }
+  ]
+}

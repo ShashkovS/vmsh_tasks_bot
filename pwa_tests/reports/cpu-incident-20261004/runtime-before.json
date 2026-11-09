@@ -1,0 +1,31 @@
+{
+  "samples": [
+    {
+      "time_utc": "2026-10-04T12:25:30.247225+00:00",
+      "cpu_busy_percent": 99.01,
+      "io_wait_percent": 0.0,
+      "read_waiting": 178.0,
+      "write_waiting": 0.0,
+      "http_requests_per_second": 27.0,
+      "websockets": 3.0
+    },
+    {
+      "time_utc": "2026-10-04T12:25:33.286532+00:00",
+      "cpu_busy_percent": 98.68,
+      "io_wait_percent": 0.0,
+      "read_waiting": 361.0,
+      "write_waiting": 0.0,
+      "http_requests_per_second": 47.67,
+      "websockets": 3.0
+    },
+    {
+      "time_utc": "2026-10-04T12:25:36.320984+00:00",
+      "cpu_busy_percent": 99.34,
+      "io_wait_percent": 0.0,
+      "read_waiting": 318.0,
+      "write_waiting": 0.0,
+      "http_requests_per_second": 55.33,
+      "websockets": 2.0
+    }
+  ]
+}

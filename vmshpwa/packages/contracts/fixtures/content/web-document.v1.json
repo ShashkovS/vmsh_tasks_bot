@@ -1,0 +1,71 @@
+{
+  "fixtureVersion": 1,
+  "document": {
+    "contractVersion": 1,
+    "revisionId": "revision:lesson-41-n-condition-v3",
+    "sourceSha256": "53a5d2ba55853ef588a45fb41ce1f1e02b094dc64cf6f7fb476354729d22e05f",
+    "materialKind": "condition",
+    "title": "Занятие 41 · Начинающие",
+    "introduction": [
+      {
+        "type": "paragraph",
+        "children": [{ "type": "text", "value": "Решите задачи и обоснуйте ответы." }]
+      }
+    ],
+    "problems": [
+      {
+        "ordinal": 1,
+        "sourceItem": "41н.1",
+        "title": "Загаданное число",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "children": [
+              { "type": "text", "value": "Найдите натуральное " },
+              { "type": "math", "latex": "n" },
+              { "type": "text", "value": ", если " },
+              { "type": "math", "latex": "n^2 + 179 = k^2" },
+              { "type": "text", "value": "." }
+            ]
+          },
+          {
+            "type": "table",
+            "caption": [{ "type": "text", "value": "Возможные разложения" }],
+            "rows": [
+              [
+                {
+                  "type": "header",
+                  "scope": "col",
+                  "children": [{ "type": "text", "value": "k−n" }]
+                },
+                {
+                  "type": "header",
+                  "scope": "col",
+                  "children": [{ "type": "text", "value": "k+n" }]
+                }
+              ],
+              [
+                { "type": "data", "children": [{ "type": "math", "latex": "1" }] },
+                { "type": "data", "children": [{ "type": "math", "latex": "179" }] }
+              ]
+            ]
+          },
+          {
+            "type": "figure",
+            "alt": "Схема разложения числа 179 на множители",
+            "caption": [{ "type": "text", "value": "Рис. 1. Схема рассуждения." }],
+            "asset": {
+              "status": "available",
+              "assetId": "asset:53a5d2ba",
+              "contentSha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+              "src": "/student/api/v1/content/assets/asset:53a5d2ba",
+              "mediaType": "image/svg+xml",
+              "width": 800,
+              "height": 480
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

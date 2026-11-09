@@ -1,0 +1,28 @@
+[
+  {
+    "event_id": "452def7490e2441baf269d3af9e9796d",
+    "organization": "vmsh",
+    "project": 1,
+    "frames": [
+      {
+        "filename": "../../../../packages/i18n/src/catalog-failure.ts",
+        "lineno": 7,
+        "colno": 1,
+        "function": "Lt"
+      }
+    ]
+  },
+  {
+    "event_id": "11faea0fa93d4b53861bb34f4b3b4830",
+    "organization": "tlf",
+    "project": 3,
+    "frames": [
+      {
+        "filename": "../../../../packages/i18n/src/catalog-failure.ts",
+        "lineno": 7,
+        "colno": 1,
+        "function": "Lt"
+      }
+    ]
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "modes": [
+    "review",
+    "submissions",
+    "student-results"
+  ],
+  "browser": "chromium",
+  "seconds": 64.815,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 8.172,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "e2e/test-submission.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 45.74,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": false,
+        "seconds": 0.668,
+        "key": "38a6c93464126645608c3f9322c2ee623d2a03ad63ba5ec28ab4cb31a6c39e62"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/student-results.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 10.301,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.026,
+        "key": "38a6c93464126645608c3f9322c2ee623d2a03ad63ba5ec28ab4cb31a6c39e62"
+      }
+    }
+  ]
+}

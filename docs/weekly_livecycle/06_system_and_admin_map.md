@@ -32,6 +32,16 @@ Implication:
 - it affects saved result types for oral interactions;
 - it matters operationally on Mondays in particular.
 
+### Classroom planning
+The system distinguishes a global classroom catalog, an inherited room-to-group layout, and a versioned student assignment plan for a lesson.
+
+Implication:
+- a classroom is not a per-student free-text field and is never hard-deleted;
+- a room belongs to no more than one group in one layout, while a group may use multiple rooms;
+- the latest confirmed layout is effective for later lessons until the first edit materializes a new draft;
+- plans become stale when their layout changes and must be recalculated and confirmed;
+- room counts are observations, not capacities or weights.
+
 ### Global student state
 The weekly lifecycle actively uses mass state changes:
 - active task state;
@@ -48,6 +58,7 @@ Typical admin tasks:
 - refresh problems;
 - refresh students and teachers;
 - ensure command sets are current.
+- check the classroom catalog, confirm the effective room-to-group layout, and resolve every in-person student in the assignment preview.
 
 ### During the active week
 Typical admin tasks:
@@ -104,3 +115,9 @@ The written-review conveyor and oral marking flow are operational tools, not jus
 
 ### Invariant 5. Weekly deadlines matter
 Hint publication, oral window close, submission cutoff, and solution publication are lifecycle boundaries that should become explicit configuration in the web product.
+
+### Invariant 6. Classroom history is versioned
+Renaming a room updates its global display name with audit history, but layout and assignment records for past lessons are not rewritten. Archiving a currently used room withdraws only current affected assignments, marks them for reassignment, and never silently restores them later.
+
+### Invariant 7. One classroom never mixes groups
+Confirmation is rejected if a room contains students from different groups, a student is assigned to a room mapped to another group, or an in-person student has no room. An active but unused classroom is valid.

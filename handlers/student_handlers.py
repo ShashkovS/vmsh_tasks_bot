@@ -1,10 +1,8 @@
 import datetime
 import os
-import re
 import io
 import asyncio
-import traceback
-from ast import literal_eval
+from dataclasses import dataclass
 from html import escape
 from operator import itemgetter
 from typing import Tuple, Optional
@@ -22,20 +20,29 @@ from helpers.msg_texts import msgs
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, router, reg_state, group_router
 from handlers import student_keyboards, common_keyboards
-from helpers.checkers import ANS_CHECKER, ANS_REGEX
 from helpers.game_scoring import apply_group_weight, build_group_weight_map
+from helpers.pwa.test_checkers import (
+    TRUSTED_CHECKER_GLOBALS,
+    TRUSTED_CHECKER_PATTERN,
+    TrustedCheckerExecutor,
+    TrustedCheckerStatus,
+)
 from helpers.trace import emit_trace
+from models.pwa.submissions import (
+    SELECT_ONE_COMPATIBILITY_LIMIT,
+    SubmissionConfigurationError,
+    TestAnswerOutcome,
+    TestProblemAnswerConfig,
+    evaluate_test_answer,
+)
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
-GLOBALS_FOR_TEST_FUNCTION_CREATION = {
-    '__builtins__': None, 're': re,
-    'bool': bool, 'float': float, 'int': int, 'list': list, 'range': range, 'set': set, 'str': str, 'tuple': tuple,
-    'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
-    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map, 'literal_eval': literal_eval,
-}
-is_py_func = re.compile(r'^\s*def \w+\s*\(')
-MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
+# Historical import aliases now point at the single Phase-4 checker policy.
+GLOBALS_FOR_TEST_FUNCTION_CREATION = TRUSTED_CHECKER_GLOBALS
+is_py_func = TRUSTED_CHECKER_PATTERN
+MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = SELECT_ONE_COMPATIBILITY_LIMIT
+_TELEGRAM_TEST_CHECKER_EXECUTOR = TrustedCheckerExecutor()
 
 _registered_group_commands = set()
 
@@ -334,104 +341,140 @@ def check_test_ans_rate_limit(student_id: int, problem_id: int):
     return text_to_student
 
 
-def run_py_func_checker(problem: Problem, student_answer: str, *, check_functions_cache={}) -> Tuple[
-    bool, Optional[str], Optional[str]]:
-    func_code = problem.cor_ans_checker.strip()
-    if func_code in check_functions_cache:
-        test_func = check_functions_cache[func_code]
-    else:
-        locs = {}
-        # О-о-очень опасный кусок :)
-        exec(func_code, GLOBALS_FOR_TEST_FUNCTION_CREATION, locs)
-        func_name, test_func = locs.popitem()
-        check_functions_cache[func_code] = test_func
-    result = additional_message = answer_is_correct = error_text = None
-    try:
-        result = test_func(student_answer)
-        answer_is_correct, additional_message = result
-    except Exception as e:
-        error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code.replace(" ", "_")}\nENTRY:\n{student_answer}\nRESULT:\n{result!r}'
-        logger.error(f'PYCHECKER_ERROR: {e}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}')
-    return answer_is_correct, additional_message, error_text
-
-
 @unique
 class ANS_CHECK_VERDICT(IntEnum):
     INCORRECT_SELECT = -2
     VALIDATION_NOT_PASSED = -3
     RATE_LIMIT = -4
+    PENDING_CONFIGURATION = -5
     CORRECT = 1
     WRONG = -1
 
 
+@dataclass(frozen=True, slots=True)
+class TelegramTestAnswerDecision:
+    verdict: ANS_CHECK_VERDICT
+    display_answer: str
+    counts_as_attempt: bool
+    feedback: str
+    checker_message: Optional[str] = None
+    diagnostic_message: Optional[str] = None
+
+
+def _legacy_problem_answer_config(problem: Problem) -> TestProblemAnswerConfig:
+    return TestProblemAnswerConfig.from_revision(
+        answer_type=int(problem.ans_type),
+        answer_config={
+            "answerValidation": problem.ans_validation,
+            "validationError": problem.validation_error,
+            "correctAnswer": problem.cor_ans,
+            "correctAnswerChecker": problem.cor_ans_checker,
+            "wrongAnswer": problem.wrong_ans,
+            "congratulation": problem.congrat,
+        },
+    )
+
+
+def evaluate_telegram_test_problem_answer(
+    problem: Problem, student_answer: str | None
+) -> TelegramTestAnswerDecision:
+    """Evaluate Telegram input through the same policy as the Student PWA."""
+    display_answer = "" if student_answer is None else student_answer.strip()
+    try:
+        evaluation = evaluate_test_answer(
+            _legacy_problem_answer_config(problem),
+            display_answer,
+            trusted_executor=_TELEGRAM_TEST_CHECKER_EXECUTOR,
+        )
+    except (SubmissionConfigurationError, TypeError, ValueError):
+        return TelegramTestAnswerDecision(
+            verdict=ANS_CHECK_VERDICT.PENDING_CONFIGURATION,
+            display_answer=display_answer,
+            counts_as_attempt=True,
+            feedback="Ответ принят и ожидает настройки проверки.",
+            diagnostic_message=(
+                "TEST_CHECKER_CONFIGURATION_ERROR: "
+                f"problem_id={problem.id}; diagnostic=legacy_metadata_invalid"
+            ),
+        )
+
+    diagnostic_message = None
+    if evaluation.diagnostic_code:
+        diagnostic_message = (
+            "TEST_CHECKER_CONFIGURATION_ERROR: "
+            f"problem_id={problem.id}; diagnostic={evaluation.diagnostic_code}"
+        )
+    if evaluation.outcome is TestAnswerOutcome.CORRECT:
+        verdict = ANS_CHECK_VERDICT.CORRECT
+    elif evaluation.outcome is TestAnswerOutcome.WRONG:
+        verdict = ANS_CHECK_VERDICT.WRONG
+    elif evaluation.outcome is TestAnswerOutcome.INVALID_FORMAT:
+        verdict = (
+            ANS_CHECK_VERDICT.INCORRECT_SELECT
+            if problem.ans_type == ANS_TYPE.SELECT_ONE
+            else ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED
+        )
+    else:
+        verdict = ANS_CHECK_VERDICT.PENDING_CONFIGURATION
+    return TelegramTestAnswerDecision(
+        verdict=verdict,
+        display_answer=evaluation.display_answer,
+        counts_as_attempt=evaluation.counts_as_attempt,
+        feedback=evaluation.feedback or "Ответ принят и ожидает настройки проверки.",
+        checker_message=evaluation.checker_message,
+        diagnostic_message=diagnostic_message,
+    )
+
+
+def _telegram_test_rate_limit(
+    problem: Problem, student: Optional[User], decision: TelegramTestAnswerDecision
+) -> Optional[str]:
+    if (
+        RATE_LIMIT_MODE != FEATURES.RATE_LIMIT_3_AND_6
+        or student is None
+        or student.type != USER_TYPE.STUDENT
+        or not decision.counts_as_attempt
+    ):
+        return None
+    return check_test_ans_rate_limit(student.id, problem.id)
+
+
+def run_py_func_checker(
+    problem: Problem, student_answer: str, *, check_functions_cache=None
+) -> Tuple[bool, Optional[str], Optional[str]]:
+    """Historical callable wrapper over the shared trusted-checker executor."""
+    del check_functions_cache
+    execution = _TELEGRAM_TEST_CHECKER_EXECUTOR.execute(
+        problem.cor_ans_checker, student_answer.strip()
+    )
+    if execution.status is TrustedCheckerStatus.CHECKED:
+        return bool(execution.correct), execution.message, None
+    return (
+        False,
+        None,
+        "TEST_CHECKER_CONFIGURATION_ERROR: "
+        f"problem_id={problem.id}; diagnostic={execution.diagnostic_code}",
+    )
+
+
 def check_test_problem_answer(
-    problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}
+    problem: Problem,
+    student: Optional[User],
+    student_answer: str,
+    *,
+    check_functions_cache=None,
 ) -> Tuple[
     ANS_CHECK_VERDICT, Optional[str], Optional[str]]:
+    del check_functions_cache
     logger.debug('check_test_problem_answer')
-    answer_is_correct = additional_message = error_text = None
-    if student_answer is None:
-        student_answer = ''
-    else:
-        student_answer = student_answer.strip()  # strip spaces!!!
-
-    if RATE_LIMIT_MODE == FEATURES.RATE_LIMIT_3_AND_6:
-        # Проверяем на перебор
-        if student:  # При перепроверке данная проверка не выполняется
-            text_to_student = check_test_ans_rate_limit(
-                student.id, problem.id
-            ) if student.type == USER_TYPE.STUDENT else None
-            if text_to_student:
-                return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
-
-    # Если тип ответа — выбор из нескольких вариантов ответа, то это «простой» особый случай
-    if problem.ans_type == ANS_TYPE.SELECT_ONE:
-        student_answer_cut = student_answer[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower()
-        if student_answer_cut in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in
-                                  problem.cor_ans.split(';')]:
-            return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
-        if student_answer_cut not in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in
-                                      problem.ans_validation.split(';')]:
-            return ANS_CHECK_VERDICT.INCORRECT_SELECT, additional_message, error_text
-        return ANS_CHECK_VERDICT.WRONG, additional_message, error_text
-
-    # Сначала проверим, проходит ли ответ валидацию регуляркой (для стандартных типов или если она указана)
-    validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(
-        problem.ans_type, None
-    )
-    if validation_regex and not validation_regex.fullmatch(student_answer):
-        return ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED, additional_message, error_text
-    # Здесь мы проверяем ответ в зависимости от того, как проверять
-    if problem.cor_ans_checker and is_py_func.match(problem.cor_ans_checker):
-        answer_is_correct, additional_message, error_text = run_py_func_checker(problem, student_answer)
-    else:
-        # Здесь у нас сравнение при помощи чекера. Типа равенство чисел или дробей там, или последовательностей/множеств
-        checker = ANS_CHECKER[problem.ans_type]
-        correct_answer = problem.cor_ans
-        if problem.ans_type != ANS_TYPE.POLYNOMIAL:
-            if ';' not in correct_answer:
-                answer_is_correct = checker(student_answer, correct_answer)
-            else:
-                answer_is_correct = any(
-                    checker(student_answer, one_correct) for one_correct in correct_answer.split(';')
-                )
-        elif problem.ans_type == ANS_TYPE.POLYNOMIAL:
-            # Чтобы давать информативное сообщение об ошибке, мы выдаём вход, на котором ответы отличаются.
-            valid, func_values = checker(student_answer)
-            if not valid:
-                answer_is_correct = False
-                additional_message = func_values
-            else:
-                _, corr_func_values = checker(correct_answer)
-                answer_is_correct = True
-                for x, (stv, crv) in enumerate(zip(func_values, corr_func_values), start=1):
-                    if abs(float(stv) - float(crv)) > 1e-8:
-                        answer_is_correct = False
-                        additional_message = msgs.poly_check_error_hint.format_map({'x': x, 'stv': stv, 'crv': crv})
-                        break
-    if answer_is_correct:
-        return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
-    return ANS_CHECK_VERDICT.WRONG, additional_message, error_text
+    decision = evaluate_telegram_test_problem_answer(problem, student_answer)
+    rate_limit_message = _telegram_test_rate_limit(problem, student, decision)
+    if rate_limit_message:
+        return ANS_CHECK_VERDICT.RATE_LIMIT, rate_limit_message, None
+    student_message = decision.checker_message
+    if decision.verdict is ANS_CHECK_VERDICT.PENDING_CONFIGURATION:
+        student_message = decision.feedback
+    return decision.verdict, student_message, decision.diagnostic_message
 
 
 async def check_answer_and_react(chat_id: int, problem: Problem, student: User, student_answer: str):
@@ -446,30 +489,36 @@ async def check_answer_and_react(chat_id: int, problem: Problem, student: User, 
         answer_len=len(student_answer or ""),
         has_answer=bool(student_answer),
     )
-    check_verict, additional_message, error_text = check_test_problem_answer(problem, student, student_answer)
-    if error_text:
-        await bot.post_logging_message(error_text)
-    if additional_message:
-        await bot.send_message(chat_id=chat_id, text=additional_message)
-    if check_verict == ANS_CHECK_VERDICT.INCORRECT_SELECT:
+    decision = evaluate_telegram_test_problem_answer(problem, student_answer)
+    rate_limit_message = _telegram_test_rate_limit(problem, student, decision)
+    if decision.diagnostic_message:
+        await bot.post_logging_message(decision.diagnostic_message)
+    if rate_limit_message:
+        await bot.send_message(chat_id=chat_id, text=rate_limit_message)
+        logger.info(f'Ограничили студента: {student.id}')
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(chat_id, student))
+        return
+    if decision.checker_message:
+        await bot.send_message(chat_id=chat_id, text=decision.checker_message)
+    if decision.verdict == ANS_CHECK_VERDICT.INCORRECT_SELECT:
         variants = ', '.join(problem.ans_validation.split(';'))
         await bot.send_message(
             chat_id=chat_id, text=msgs.error_select_one_of.format_map({'variants': variants})
         )
-    elif check_verict == ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED:
-        await bot.send_message(chat_id=chat_id, text=f"❌ {problem.validation_error}")
-    elif check_verict == ANS_CHECK_VERDICT.RATE_LIMIT:
-        logger.info(f'Ограничили студента: {student.id}')
+    elif decision.verdict == ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED:
+        await bot.send_message(chat_id=chat_id, text=f"❌ {decision.feedback}")
+    elif decision.verdict == ANS_CHECK_VERDICT.PENDING_CONFIGURATION:
+        await bot.send_message(chat_id=chat_id, text=decision.feedback)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(chat_id, student))
     else:
-        if check_verict == ANS_CHECK_VERDICT.CORRECT:
-            Result.add(student, problem, None, VERDICT.SOLVED, student_answer, RES_TYPE.TEST)
-            text_to_student = f"✔️ {problem.congrat}"
-        # elif check_verict == ANS_CHECK_VERDICT.WRONG:
+        if decision.verdict == ANS_CHECK_VERDICT.CORRECT:
+            Result.add(student, problem, None, VERDICT.SOLVED, decision.display_answer, RES_TYPE.TEST)
+            text_to_student = f"✔️ {decision.feedback}"
         else:
-            Result.add(student, problem, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
-            text_to_student = f"❌ {problem.wrong_ans}"
+            Result.add(student, problem, None, VERDICT.WRONG_ANSWER, decision.display_answer, RES_TYPE.TEST)
+            text_to_student = f"❌ {decision.feedback}"
         if RESULT_MODE == FEATURES.RESULT_AFTER:
             text_to_student = msgs.results_after_answer_accepted
         await bot.send_message(chat_id=chat_id, text=text_to_student)

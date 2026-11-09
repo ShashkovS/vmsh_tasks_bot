@@ -1,0 +1,33 @@
+{
+  "modes": [
+    "problem-release"
+  ],
+  "browser": "all",
+  "seconds": 169.928,
+  "exit_code": 1,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.302,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/problem-release.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 168.962,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

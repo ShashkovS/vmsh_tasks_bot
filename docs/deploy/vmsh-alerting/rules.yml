@@ -1,0 +1,120 @@
+# Decisions and measured baseline: docs/performance/STATUS.md, 2026-10-08 alerts.
+# Native Prometheus expressions are also rendered into Grafana 13.1 rules.
+groups:
+  - name: vmsh-production
+    interval: 30s
+    rules:
+      - alert: VmshWebUnavailable
+        expr: |
+          (max by(instance) ((1 - up{job="aiohttp",instance="vmsh.shashkovs.ru"}) or (1 - nginx_up{job="nginx",instance="vmsh.shashkovs.ru"})) > 0)
+          or absent(up{job="aiohttp",instance="vmsh.shashkovs.ru"})
+        for: 1m
+        labels: {severity: critical, component: availability}
+        annotations:
+          summary: "Backend или nginx недоступен больше минуты"
+          description: "Проверить vmsh service, nginx и последние ошибки; короткий перезапуск не вызывает алерт."
+      - alert: VmshMonitoringUnavailable
+        expr: |
+          (up{job="prometheus",instance="vmsh.shashkovs.ru"} == 0)
+          or absent(up{job="prometheus",instance="vmsh.shashkovs.ru"})
+        for: 1m
+        labels: {severity: critical, component: monitoring}
+        annotations:
+          summary: "Prometheus недоступен или перестал собирать собственные метрики"
+          description: "Проверить prometheus service и доступ Grafana к datasource; остальные правила сохраняют состояние при ошибке запроса."
+      - alert: VmshExporterUnavailable
+        expr: |
+          (up{job=~"node|nginx|nats",instance="vmsh.shashkovs.ru"} == 0)
+          or absent(up{job="node",instance="vmsh.shashkovs.ru"})
+          or absent(up{job="nginx",instance="vmsh.shashkovs.ru"})
+          or absent(up{job="nats",instance="vmsh.shashkovs.ru"})
+        for: 2m
+        labels: {severity: warning, component: monitoring}
+        annotations:
+          summary: "Источник метрик недоступен больше двух минут"
+          description: "Проверить указанный job; для NATS проверить также сам сервер, поскольку он нужен realtime."
+      - alert: VmshCpuHigh
+        expr: |
+          (100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job="node",instance="vmsh.shashkovs.ru",mode="idle"}[1m]))) > 80)
+          and on(instance) (100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job="node",instance="vmsh.shashkovs.ru",mode="idle"}[1m]))) <= 95)
+        for: 2m
+        labels: {severity: warning, component: cpu}
+        annotations:
+          summary: "CPU выше 80 процентов больше двух минут"
+          description: "Проверить процессы, очереди SQLite и задержки API. При CPU выше 95 действует отдельное критическое правило."
+      - alert: VmshCpuCritical
+        expr: 100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job="node",instance="vmsh.shashkovs.ru",mode="idle"}[1m]))) > 95
+        for: 2m
+        labels: {severity: critical, component: cpu}
+        annotations:
+          summary: "CPU выше 95 процентов больше двух минут"
+          description: "Найти потребителя CPU и проверить доступность форм и очереди; не перезапускать вслепую."
+      - alert: VmshApiErrors
+        expr: |
+          (sum by(instance,route) (increase(vmsh_http_requests_total{job="aiohttp",instance="vmsh.shashkovs.ru",route=~"/(student|family|staff)/api/v1/.*",status=~"5.."}[5m])) >= 5)
+          and on(instance,route)
+          (sum by(instance,route) (increase(vmsh_http_requests_total{job="aiohttp",instance="vmsh.shashkovs.ru",route=~"/(student|family|staff)/api/v1/.*",status=~"5.."}[5m])) / sum by(instance,route) (increase(vmsh_http_requests_total{job="aiohttp",instance="vmsh.shashkovs.ru",route=~"/(student|family|staff)/api/v1/.*"}[5m])) > 0.05)
+        for: 1m
+        labels: {severity: critical, component: api}
+        annotations:
+          summary: "Повторяются ошибки API: минимум пять 5xx и больше пяти процентов за пять минут"
+          description: "Проверить route и серверную причину. 401, ограничения попыток 422 и запросы сканеров вне PWA не учитываются."
+      - alert: VmshInteractiveSlow
+        expr: |
+          (histogram_quantile(0.95, sum by(instance,route,le) (rate(vmsh_http_request_duration_seconds_bucket{job="aiohttp",instance="vmsh.shashkovs.ru",method="GET",route=~"/(student|family|staff)/api/v1/.*",route!~".*(attachments|statistics|analytics|content/uploads|recheck|export|print|pdf).*"}[5m]))) > 1)
+          and on(instance,route) (sum by(instance,route) (increase(vmsh_http_request_duration_seconds_count{job="aiohttp",instance="vmsh.shashkovs.ru",method="GET"}[5m])) >= 30)
+        for: 3m
+        labels: {severity: warning, component: latency}
+        annotations:
+          summary: "Интерактивный API p95 дольше секунды в течение трёх минут"
+          description: "Не менее 30 GET за пять минут; тяжёлые файлы и отчёты исключены. Проверить read queue и SQL владельцев слотов."
+      - alert: VmshDbQueue
+        expr: |
+          (max by(instance,role) (vmsh_db_waiting{job="aiohttp",instance="vmsh.shashkovs.ru",role="read"}) > 20)
+          or (max by(instance,role) (vmsh_db_waiting{job="aiohttp",instance="vmsh.shashkovs.ru",role="write"}) > 5)
+        for: 30s
+        labels: {severity: warning, component: sqlite}
+        annotations:
+          summary: "Очередь SQLite держится 30 секунд: чтение больше 20 или запись больше пяти"
+          description: "PID агрегированы, чтобы смена worker не создавала отдельные уведомления. Найти callback, удерживающий слот."
+      - alert: VmshEventLoopStalls
+        expr: |
+          (sum by(instance) (increase(vmsh_event_loop_lag_seconds_count{job="aiohttp",instance="vmsh.shashkovs.ru"}[5m])) - sum by(instance) (increase(vmsh_event_loop_lag_seconds_bucket{job="aiohttp",instance="vmsh.shashkovs.ru",le="0.2"}[5m]))) >= 5
+        for: 1m
+        labels: {severity: warning, component: event-loop}
+        annotations:
+          summary: "Повторные зависания event loop: минимум пять дольше 200 мс за пять минут"
+          description: "Проверить синхронную работу в callbacks, writer и CPU. Единичный короткий скачок не вызывает алерт."
+      - alert: VmshMemoryLow
+        expr: 100 * node_memory_MemAvailable_bytes{job="node",instance="vmsh.shashkovs.ru"} / node_memory_MemTotal_bytes{job="node",instance="vmsh.shashkovs.ru"} < 10
+        for: 5m
+        labels: {severity: warning, component: memory}
+        annotations:
+          summary: "Доступно меньше десяти процентов RAM в течение пяти минут"
+          description: "Используется MemAvailable, включая освобождаемый cache. Проверить RSS процессов и рост памяти."
+      - alert: VmshOomKill
+        expr: increase(node_vmstat_oom_kill{job="node",instance="vmsh.shashkovs.ru"}[5m]) > 0
+        for: 0s
+        labels: {severity: critical, component: memory}
+        annotations:
+          summary: "OOM killer завершил процесс"
+          description: "Проверить kernel journal, какой процесс убит и восстановилась ли его работа."
+      - alert: VmshDiskLow
+        expr: |
+          (100 * node_filesystem_avail_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} / node_filesystem_size_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} < 15)
+          and on(instance,device,mountpoint) (100 * node_filesystem_avail_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} / node_filesystem_size_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} >= 5)
+        for: 10m
+        labels: {severity: warning, component: disk}
+        annotations:
+          summary: "Свободно меньше 15 процентов диска в течение десяти минут"
+          description: "Проверить backup и release retention, логи и временные файлы. Данные учеников автоматически не удалять."
+      - alert: VmshDiskCritical
+        expr: |
+          (100 * node_filesystem_avail_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} / node_filesystem_size_bytes{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} < 5)
+          or (100 * node_filesystem_files_free{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} / node_filesystem_files{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} < 5)
+          or (node_filesystem_readonly{job="node",instance="vmsh.shashkovs.ru",mountpoint="/"} == 1)
+        for: 2m
+        labels: {severity: critical, component: disk}
+        annotations:
+          summary: "Диск: меньше пяти процентов места или inode, либо файловая система read-only"
+          description: "Под угрозой запись ответов и SQLite. Проверить состояние файловой системы и безопасно освободить место."

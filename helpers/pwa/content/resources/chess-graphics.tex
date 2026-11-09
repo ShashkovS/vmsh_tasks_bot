@@ -1,0 +1,36 @@
+% Legacy includegraphics compatibility; vmshpwa/docs/tikz-chess.md.
+\newcommand{\vmshChessGraphic}[2][]{%
+  \begingroup
+  \def\vmshChessWidth{!}\def\vmshChessHeight{!}%
+  \def\vmshChessScale{1}\def\vmshChessAngle{0}%
+  \newif\ifvmshChessKeep
+  \pgfqkeys{/vmsh chess graphics}{%
+    width/.store in=\vmshChessWidth,
+    height/.store in=\vmshChessHeight,
+    scale/.store in=\vmshChessScale,
+    angle/.store in=\vmshChessAngle,
+    keepaspectratio/.is if=vmshChessKeep,
+    keepaspectratio/.default=true,
+    #1}%
+  \def\vmshChessAuto{!}%
+  \ifx\vmshChessWidth\vmshChessAuto
+    \ifx\vmshChessHeight\vmshChessAuto\def\vmshChessWidth{9mm}\fi
+  \else
+    \ifx\vmshChessHeight\vmshChessAuto\else
+      \ifvmshChessKeep
+        \ifdim\vmshChessWidth<\vmshChessHeight
+          \let\vmshChessHeight\vmshChessAuto
+        \else\let\vmshChessWidth\vmshChessAuto\fi
+      \fi
+    \fi
+  \fi
+  \edef\vmshChessResize{\noexpand\resizebox{\vmshChessWidth}{\vmshChessHeight}}%
+  \rotatebox{\vmshChessAngle}{\scalebox{\vmshChessScale}{%
+    \vmshChessResize{%
+      \tikz[x=9mm,y=9mm]{%
+        \path[use as bounding box] (-0.5,-0.5) rectangle (0.5,0.5);
+        \pic[overlay,transform shape] {vmsh chess #2};}%
+    }%
+  }}%
+  \endgroup
+}

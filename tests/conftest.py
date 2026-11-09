@@ -14,6 +14,7 @@ os.chdir(ROOT)
 import db_methods as db
 from handlers import admin_handlers, common_handlers, main_handlers, student_handlers, teacher_handlers, student_keyboards
 from helpers.features import FEATURES
+from pwa_tests.sqlite_template import create_test_database
 
 from tests.live_seed import LiveScenarioBuilder, load_live_seed
 from tests.telegram_harness import RecordingBot, TaskTracker
@@ -35,6 +36,7 @@ def _get_worker_id():
 def live_seed_db(tmp_path):
     db.sql.disconnect()
     db_file = tmp_path / f"live_seed_{_get_worker_id()}.db"
+    create_test_database(db_file)
     db.sql.setup(str(db_file))
     seed = load_live_seed()
     yield LiveScenarioBuilder(seed=seed)

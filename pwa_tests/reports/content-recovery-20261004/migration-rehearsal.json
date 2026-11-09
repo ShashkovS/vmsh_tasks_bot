@@ -1,0 +1,19 @@
+{
+  "host": "vmshbeget",
+  "migration": "0112.scheduled_publication_lifecycle",
+  "migration_sha256": "1a84c60c8ebd6b7145ef66298c5bf8e7e54b71b4e72b17af30015aa8a237a9bc",
+  "migration_seconds": 1.088,
+  "product_tables": 158,
+  "product_rows": 606819,
+  "product_rows_identical": true,
+  "changed_objects": [
+    "lesson_publications"
+  ],
+  "gl13_terminal_lifecycle": "superseded/hidden PASS; lineage retained",
+  "rollback_refuses_terminal_history": true,
+  "integrity": "ok",
+  "new_foreign_key_errors": 0,
+  "existing_legacy_fk_errors": 627,
+  "existing_fk_errors_identical": true,
+  "data_export": "Production row data stayed on server; temporary copy removed."
+}

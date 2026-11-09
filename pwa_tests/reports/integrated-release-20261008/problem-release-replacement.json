@@ -1,0 +1,38 @@
+{
+  "modes": [
+    "problem-release"
+  ],
+  "browser": "all",
+  "seconds": 159.909,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 26.979,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/problem-release.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 130.403,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.062,
+        "key": "26f3291001037efd965d96b6acbe2b2e7f7e21c60de95cd0c0a26c8ab32ac5f1"
+      }
+    }
+  ]
+}

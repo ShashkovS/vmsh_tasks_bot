@@ -1,0 +1,727 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__________ test_content_characterization_is_current_and_content_free ___________
+
+    def test_content_characterization_is_current_and_content_free() -> None:
+>       validate_reports()
+
+pwa_tests/domain/test_content_characterization.py:7:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+vmshpwa/scripts/content_characterization.py:235: in validate_reports
+    report = build_report()
+             ^^^^^^^^^^^^^^
+vmshpwa/scripts/content_characterization.py:70: in build_report
+    validate_manifest()
+vmshpwa/scripts/golden_corpus.py:202: in validate_manifest
+    expected = render_manifest()
+               ^^^^^^^^^^^^^^^^^
+vmshpwa/scripts/golden_corpus.py:186: in render_manifest
+    manifest if manifest is not None else build_manifest(),
+                                          ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def build_manifest() -> dict[str, Any]:
+        """Return a deterministic, schema-validated manifest for every corpus file."""
+
+        if not CORPUS_ROOT.is_dir():
+>           raise GoldenCorpusError(f"Golden corpus root does not exist: {CORPUS_ROOT}")
+E           vmshpwa.scripts.golden_corpus.GoldenCorpusError: Golden corpus root does not exist: /private/tmp/vmsh-live-baseline.iAtIdP/_vmsh_examples
+
+vmshpwa/scripts/golden_corpus.py:170: GoldenCorpusError
+---------------------------- Captured stdout setup -----------------------------
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+_________ test_preferences_use_product_defaults_and_store_one_override _________
+
+tmp_path = PosixPath('/private/var/folders/7y/0h0bzv8d10zf9z7tfy43qnmh0000gp/T/pytest-of-sergeyshashkov/pytest-440/test_preferences_use_product_d0')
+
+    def test_preferences_use_product_defaults_and_store_one_override(tmp_path):
+        database_path = tmp_path / "notification-preferences.sqlite3"
+        _apply(database_path, {item.id for item in _migrations()})
+        with sqlite3.connect(database_path) as connection:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            account_id, _session_id = _seed_account(connection)
+
+            defaults = read_preferences(connection, account_id)
+>           assert len(defaults) == 9
+E           AssertionError: assert 10 == 9
+E            +  where 10 = len([{'category': 'lesson_published', 'in_app_enabled': True, 'push_enabled': True, 'sound_enabled': True, ...}, {'categor...e, ...}, {'category': 'oral_window', 'in_app_enabled': False, 'push_enabled': False, 'sound_enabled': False, ...}, ...])
+
+pwa_tests/integration/test_phase8_notification_core.py:120: AssertionError
+----------------------------- Captured stdout call -----------------------------
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+________ test_admin_materializes_updates_and_confirms_classroom_layout _________
+
+classroom_http = ClassroomHttpFixture(client=<aiohttp.test_utils.TestClient object at 0x113fe0ec0>, factory=<db_methods.pwa.connection....е планируете прийти очно, пожалуйста, заранее измените режим занятия в личном кабинете.')], telegram_binding_checks=[])
+
+    @pytest.mark.asyncio
+    async def test_admin_materializes_updates_and_confirms_classroom_layout(classroom_http):
+        _seed_layout_scope(classroom_http.factory)
+        path = "/staff/api/v1/in-person-events/ipe-1/classroom-layout"
+
+        teacher = await classroom_http.client.get(
+            path,
+            headers=_headers(),
+            cookies=_cookies(classroom_http, "teacher"),
+        )
+        assert teacher.status == 403
+
+        inherited = await classroom_http.client.get(
+            path,
+            headers=_headers(),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert inherited.status == 200
+        inherited_layout = (await inherited.json())["layout"]
+        assert inherited_layout["state"] == "inherited"
+        assert inherited_layout["publicId"] is None
+        assert inherited_layout["groups"][0]["inPersonCount"] == 1
+
+        materialized = await classroom_http.client.post(
+            f"{path}/materialize",
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert materialized.status == 200, await materialized.text()
+        draft = (await materialized.json())["layout"]
+        assert (draft["state"], draft["version"]) == ("draft", 1)
+        layout_id = draft["publicId"]
+
+        updated = await classroom_http.client.put(
+            f"{path}/{layout_id}/rooms",
+            json={
+                "schemaVersion": 1,
+                "mappings": [
+                    {
+                        "classroomPublicId": "room-1",
+                        "groupLessonPublicId": "gl-1",
+                    },
+                    {
+                        "classroomPublicId": "room-2",
+                        "groupLessonPublicId": "gl-1",
+                    },
+                ],
+            },
+            headers=_headers(unsafe=True, if_match=f'"{layout_id}:v1"'),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert updated.status == 200, await updated.text()
+        updated_layout = (await updated.json())["layout"]
+        assert updated_layout["version"] == 2
+        assert [room["classroomName"] for room in updated_layout["rooms"]] == [
+            "201",
+            "202",
+        ]
+
+        stale = await classroom_http.client.put(
+            f"{path}/{layout_id}/rooms",
+            json={"schemaVersion": 1, "mappings": []},
+            headers=_headers(unsafe=True, if_match=f'"{layout_id}:v1"'),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert stale.status == 409
+        assert (await stale.json())["error"]["code"] == "version_conflict"
+
+        confirmed = await classroom_http.client.post(
+            f"{path}/{layout_id}/confirm",
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True, if_match=f'"{layout_id}:v2"'),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert confirmed.status == 200, await confirmed.text()
+        confirmed_payload = await confirmed.json()
+        assert confirmed_payload["layout"]["state"] == "confirmed"
+        assert confirmed_payload["layout"]["version"] == 3
+        assert confirmed.headers["ETag"] == f'"{layout_id}:v3"'
+
+        assignment_path = (
+            "/staff/api/v1/in-person-events/ipe-1/"
+            "classroom-assignment-plan"
+        )
+        teacher_assignment = await classroom_http.client.get(
+            assignment_path,
+            headers=_headers(),
+            cookies=_cookies(classroom_http, "teacher"),
+        )
+        assert teacher_assignment.status == 403
+
+        empty_plan = await classroom_http.client.get(
+            assignment_path,
+            headers=_headers(),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert empty_plan.status == 200
+        empty_payload = (await empty_plan.json())["assignmentPlan"]
+        assert empty_payload["plan"] is None
+        assert [room["name"] for room in empty_payload["rooms"]] == ["201", "202"]
+
+        recalculated = await classroom_http.client.post(
+            f"{assignment_path}/recalculate",
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert recalculated.status == 200, await recalculated.text()
+        plan_payload = (await recalculated.json())["assignmentPlan"]
+        plan = plan_payload["plan"]
+        assert (plan["state"], plan["version"]) == ("draft", 1)
+        assert plan_payload["students"][0]["classroomName"] == "201"
+        assert plan_payload["students"][0]["status"] == "assigned"
+        plan_etag = recalculated.headers["ETag"]
+
+        stale = await classroom_http.client.post(
+            f"{assignment_path}/recalculate",
+            json={"schemaVersion": 1},
+            headers=_headers(
+                unsafe=True,
+                if_match=f'"{plan["publicId"]}:v99"',
+            ),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert stale.status == 409
+        assert (await stale.json())["error"]["code"] == "version_conflict"
+
+        manually_moved = await classroom_http.client.put(
+            f"{assignment_path}/{plan['publicId']}/assignments",
+            json={
+                "schemaVersion": 1,
+                "assignments": [
+                    {
+                        "enrollmentPublicId": "en-1",
+                        "classroomPublicId": "room-2",
+                        "confirmGroupChange": False,
+                    }
+                ],
+            },
+            headers=_headers(unsafe=True, if_match=plan_etag),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert manually_moved.status == 200, await manually_moved.text()
+        moved_payload = (await manually_moved.json())["assignmentPlan"]
+        assert moved_payload["students"][0]["classroomName"] == "202"
+        assert moved_payload["students"][0]["source"] == "manual"
+        assert moved_payload["plan"]["version"] == 2
+
+        cursors_before_confirm = dict(
+            classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]
+        )
+        confirmed_plan = await classroom_http.client.post(
+            f"{assignment_path}/{plan['publicId']}/confirm",
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True, if_match=manually_moved.headers["ETag"]),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert confirmed_plan.status == 200, await confirmed_plan.text()
+        confirmed_assignment = (await confirmed_plan.json())["assignmentPlan"]
+        assert confirmed_assignment["plan"]["state"] == "confirmed"
+        assert confirmed_assignment["plan"]["version"] == 3
+        assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+            **cursors_before_confirm,
+            "student": cursors_before_confirm["student"] + 1,
+            "family": cursors_before_confirm["family"] + 1,
+        }
+
+        history = await classroom_http.client.get(
+            f"{assignment_path}/{plan['publicId']}/students/"
+            "en-1/history",
+            headers=_headers(),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert history.status == 200, await history.text()
+        history_items = (await history.json())["items"]
+        assert len(history_items) == 1
+        assert (
+            history_items[0]["eventName"],
+            history_items[0]["classroomName"],
+            history_items[0]["groupName"],
+        ) == ("Очное занятие", "202", "Начинающие")
+
+        student_response = await classroom_http.client.get(
+            "/student/api/v1/classroom-assignments",
+            headers=_headers(),
+            cookies={
+                COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                    classroom_http.student_cookie
+                )
+            },
+        )
+        assert student_response.status == 200, await student_response.text()
+        student_item = (await student_response.json())["items"][0]
+        assert (
+            student_item["status"],
+            student_item["classroomName"],
+            student_item["announcedAt"],
+        ) == ("assigned", "202", None)
+
+        family_response = await classroom_http.client.get(
+            "/family/api/v1/children/u-958003/classroom-assignments",
+            headers=_headers(),
+            cookies={
+                COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+            },
+        )
+        assert family_response.status == 200, await family_response.text()
+        family_item = (await family_response.json())["items"][0]
+        assert family_item == student_item
+
+        forbidden_child = await classroom_http.client.get(
+            "/family/api/v1/children/someone-else/classroom-assignments",
+            headers=_headers(),
+            cookies={
+                COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+            },
+        )
+        assert forbidden_child.status == 403
+
+        delivery_preview_path = (
+            f"/staff/api/v1/classroom-assignment-plans/{plan['publicId']}/delivery-preview"
+        )
+        teacher_delivery = await classroom_http.client.post(
+            delivery_preview_path,
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True),
+            cookies=_cookies(classroom_http, "teacher"),
+        )
+        assert teacher_delivery.status == 403
+
+        classroom_http.factory.run_write(
+            lambda connection: connection.execute(
+                "UPDATE users SET chat_id = 179179 WHERE id = ?", (STUDENT_ID,)
+            )
+        )
+        preview_response = await classroom_http.client.post(
+            delivery_preview_path,
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert preview_response.status == 200, await preview_response.text()
+        preview = (await preview_response.json())["preview"]
+        assert (
+            preview["recipientCount"],
+            preview["changedCount"],
+            preview["telegramUnavailableCount"],
+        ) == (1, 1, 0)
+        assert preview["recipients"][0]["telegramAvailable"] is True
+        assert "chatId" not in preview["recipients"][0]
+
+        cursors_before_delivery = dict(
+            classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]
+        )
+        delivery_response = await classroom_http.client.post(
+            delivery_preview_path.removesuffix("/delivery-preview") + "/delivery-batches",
+            json={
+                "schemaVersion": 1,
+                "channels": ["pwa", "telegram"],
+                "expectedPlanVersion": preview["planVersion"],
+                "previewHash": preview["previewHash"],
+                "idempotencyKey": "classroom-http-delivery-1",
+            },
+            headers=_headers(unsafe=True),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert delivery_response.status == 201, await delivery_response.text()
+        delivery = (await delivery_response.json())["batch"]
+        assert delivery["state"] == "completed"
+        assert delivery["channelCounts"] == {
+            "pwa": {"sent": 1},
+            "telegram": {"sent": 1},
+        }
+        assert delivery["deliveryReport"] == {
+            "channels": {
+                "pwa": {
+                    "selected": 1,
+                    "eligible": 1,
+                    "suppressed": 0,
+                    "queued": 0,
+                    "attempted": 1,
+                    "succeeded": 1,
+                    "failed": 0,
+                },
+                "telegram": {
+                    "selected": 1,
+                    "eligible": 1,
+                    "suppressed": 0,
+                    "queued": 0,
+                    "attempted": 1,
+                    "succeeded": 1,
+                    "failed": 0,
+                },
+            },
+            "deliveredAny": 1,
+            "deliveredAll": 1,
+            "partial": 0,
+        }
+        assert classroom_http.telegram_messages == [
+            (
+                179179,
+                "Очное занятие\nМатематика · Начинающие\n\n"
+                "Ваша аудитория: 202.\n\n"
+                "Если вы не планируете прийти очно, пожалуйста, заранее измените "
+                "режим занятия в личном кабинете.",
+            )
+        ]
+        assert "chatId" not in delivery["recipients"][0]
+        latest_delivery_response = await classroom_http.client.get(
+            delivery_preview_path.removesuffix("/delivery-preview") + "/delivery-latest",
+            headers=_headers(),
+            cookies=_cookies(classroom_http, "admin"),
+        )
+        assert latest_delivery_response.status == 200
+        assert (await latest_delivery_response.json())["batch"]["publicId"] == delivery[
+            "publicId"
+        ]
+
+        student_notifications = await classroom_http.client.get(
+            "/student/api/v1/notification-events?unreadOnly=true",
+            headers=_headers(),
+            cookies={
+                COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                    classroom_http.student_cookie
+                )
+            },
+        )
+        assert student_notifications.status == 200, await student_notifications.text()
+        notification = (await student_notifications.json())["items"][0]
+        assert notification["category"] == "classroom_assignment"
+        assert notification["payload"]["classroomName"] == "202"
+
+        family_notifications = await classroom_http.client.get(
+            "/family/api/v1/notification-events",
+            headers=_headers(),
+            cookies={
+                COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+            },
+        )
+        assert family_notifications.status == 200
+        assert (await family_notifications.json())["items"] == []
+
+        notification_read_path = (
+            f"/student/api/v1/notification-events/{notification['eventId']}/read"
+        )
+        read_notification = await classroom_http.client.post(
+            notification_read_path,
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True),
+            cookies={
+                COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                    classroom_http.student_cookie
+                )
+            },
+        )
+        assert read_notification.status == 200, await read_notification.text()
+        first_read_at = (await read_notification.json())["readAt"]
+        repeated_read = await classroom_http.client.post(
+            notification_read_path,
+            json={"schemaVersion": 1},
+            headers=_headers(unsafe=True),
+            cookies={
+                COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                    classroom_http.student_cookie
+                )
+            },
+        )
+        assert (await repeated_read.json())["readAt"] == first_read_at
+
+        preferences = await classroom_http.client.get(
+            "/student/api/v1/notifications/preferences",
+            headers=_headers(),
+            cookies={
+                COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                    classroom_http.student_cookie
+                )
+            },
+        )
+        assert preferences.status == 200
+        preference_items = (await preferences.json())["items"]
+>       assert len(preference_items) == 9
+E       AssertionError: assert 10 == 9
+E        +  where 10 = len([{'category': 'lesson_published', 'inAppEnabled': True, 'pushEnabled': True, 'soundEnabled': True, ...}, {'category': ... True, ...}, {'category': 'oral_window', 'inAppEnabled': False, 'pushEnabled': False, 'soundEnabled': False, ...}, ...])
+
+pwa_tests/integration/test_classroom_catalog_http_api.py:979: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+__________ test_course_analytics_handles_1500_students_and_38_lessons __________
+
+tmp_path = PosixPath('/private/var/folders/7y/0h0bzv8d10zf9z7tfy43qnmh0000gp/T/pytest-of-sergeyshashkov/pytest-440/test_course_analytics_handles_0')
+
+    def test_course_analytics_handles_1500_students_and_38_lessons(tmp_path):
+        database = tmp_path / "phase9-performance.sqlite3"
+        with sqlite3.connect(database) as connection:
+            connection.row_factory = sqlite3.Row
+            _create_schema(connection)
+            _seed_course(connection)
+
+            traced: list[str] = []
+            connection.set_trace_callback(traced.append)
+            started = perf_counter()
+            problem_rows = list_course_problem_rows(connection, course_id=1)
+            result_rows = list_course_result_rows(connection, course_id=1)
+            access_rows = list_course_group_access_rows(connection, course_id=1)
+            connection.set_trace_callback(None)
+            metrics = calculate_course_lesson_metrics(
+                problem_rows,
+                result_rows,
+                access_rows,
+            )
+            save_completed_course_metrics(
+                connection,
+                course_id=1,
+                algorithm="a53-course",
+                algorithm_version="1",
+                input_through_result_id=len(result_rows),
+                completed_at="2026-07-30T12:00:00Z",
+                metrics=metrics,
+            )
+            elapsed = perf_counter() - started
+
+            assert (
+                len(problem_rows) == LESSON_COUNT * len(GROUPS) * PROBLEMS_PER_GROUP_LESSON
+            )
+            assert len(result_rows) == STUDENT_COUNT * LESSON_COUNT
+            assert len(access_rows) == STUDENT_COUNT * len(GROUPS)
+            assert len(metrics) == STUDENT_COUNT * LESSON_COUNT
+            assert (
+                len(
+>                   latest_student_course_metrics(
+                        connection, course_id=1, student_user_id=1
+                    )
+                )
+                == 38
+            )
+
+pwa_tests/integration/test_phase9_course_performance.py:234:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+connection = <sqlite3.Connection object at 0x11476d5d0>, course_id = 1
+student_user_id = 1
+
+    def latest_student_course_metrics(
+        connection: sqlite3.Connection,
+        *,
+        course_id: int,
+        student_user_id: int,
+    ) -> list[dict[str, object]]:
+>       rows = connection.execute(
+            """
+            SELECT run.public_id AS run_public_id,
+                   run.algorithm,
+                   run.algorithm_version,
+                   run.completed_at,
+                   metric.lesson_number,
+                   group_record.public_id AS group_public_id,
+                   group_record.short_code AS group_short_code,
+                   metric.simple_strength,
+                   metric.complex_strength,
+                   metric.max_complex_strength,
+                   metric.solved_items,
+                   metric.total_items,
+                   metric.simple_smooth, metric.complex_smooth
+            FROM student_lesson_metrics AS metric
+            JOIN analytics_runs AS run ON run.id = metric.run_id
+            JOIN groups AS group_record ON group_record.group_id = metric.group_id
+            WHERE metric.student_user_id = ?
+              AND run.id = (
+                  SELECT id FROM analytics_runs
+                  WHERE course_id = ? AND state = 'completed'
+                  ORDER BY completed_at DESC, id DESC LIMIT 1
+              )
+            ORDER BY metric.lesson_number
+            """,
+            (student_user_id, course_id),
+        ).fetchall()
+E       sqlite3.OperationalError: no such column: metric.simple_smooth
+
+db_methods/pwa/course_analytics.py:158: OperationalError
+_________________ test_fixture_insert_is_atomic_and_idempotent _________________
+
+tmp_path = PosixPath('/private/var/folders/7y/0h0bzv8d10zf9z7tfy43qnmh0000gp/T/pytest-of-sergeyshashkov/pytest-440/test_fixture_insert_is_atomic_0')
+
+    def test_fixture_insert_is_atomic_and_idempotent(tmp_path):
+        database_path = tmp_path / "content-e2e.sqlite3"
+        apply_schema_migrations(database_path)
+        connection = sqlite3.connect(database_path, autocommit=False)
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        try:
+            _seed_owners(connection)
+            fixture = _load_fixture()
+            assert _insert_content_fixture(connection, fixture) == 6
+            assert _insert_content_fixture(connection, fixture) == 0
+            assert (
+                connection.execute("SELECT count(*) FROM course_lessons").fetchone()[0] == 6
+            )
+            assert (
+                connection.execute("SELECT count(*) FROM group_lessons").fetchone()[0] == 6
+            )
+>           assert (
+                connection.execute("SELECT count(*) FROM lesson_windows").fetchone()[0] == 3
+            )
+E           assert 6 == 3
+
+pwa_tests/test_e2e_content_seed.py:92: AssertionError
+----------------------------- Captured stdout call -----------------------------
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+ CASE WHEN quick_check GLOB 'CHECK*' THEN raise(ABORT,'CHECK constraint failed') WHEN quick_check GLOB 'non-* value in*' THEN raise(ABORT,'type mismatch on DEFAULT') ELSE raise(ABORT,'NOT NULL constraint failed') END
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(0 rows)
+=============================== warnings summary ===============================
+../../../Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327
+  /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning:
+
+  gcd is deprecated in Rational, use nsimplify instead
+
+  See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+  for details.
+
+  This has been deprecated since SymPy version 1.11. It
+  will be removed in a future version of SymPy.
+
+    dummy_two = sympy.core.Rational(2, 1, 1)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED pwa_tests/domain/test_content_characterization.py::test_content_characterization_is_current_and_content_free
+FAILED pwa_tests/integration/test_phase8_notification_core.py::test_preferences_use_product_defaults_and_store_one_override
+FAILED pwa_tests/integration/test_classroom_catalog_http_api.py::test_admin_materializes_updates_and_confirms_classroom_layout
+FAILED pwa_tests/integration/test_phase9_course_performance.py::test_course_analytics_handles_1500_students_and_38_lessons
+FAILED pwa_tests/test_e2e_content_seed.py::test_fixture_insert_is_atomic_and_idempotent
+5 failed, 1 warning in 9.13s

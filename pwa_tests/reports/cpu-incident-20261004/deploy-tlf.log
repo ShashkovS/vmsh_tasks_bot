@@ -1,0 +1,9 @@
+From https://github.com/ShashkovS/vmsh_tasks_bot
+ * branch              vmshpwa    -> FETCH_HEAD
+   cc60df33..bdfcf9a2  vmshpwa    -> origin/vmshpwa
+2026-10-04T12:31:09Z Backing up live SQLite; frontend, dependencies and schema are unchanged
+2026-10-04T12:31:10Z Restarting only PWA with the checked student-scoped result query
+2026-10-04T12:31:14Z Backend release passed: source=bdfcf9a2b523b37130af6fd11f3bb5070d568674 static_credentials_schema_unchanged=true NATS_Zoom_unchanged=true
+PASS: 25 read-only checks accepted https://prep.leaders.tech as production.
+{"backup": "20261004T123109.946082Z", "createdAt": "2026-10-04T12:31:09.946082+00:00", "integrity": "ok", "zoomReceipts": 1593}
+{"backup": "20261004T123114.110101Z", "createdAt": "2026-10-04T12:31:14.110101+00:00", "integrity": "ok", "zoomReceipts": 1593}

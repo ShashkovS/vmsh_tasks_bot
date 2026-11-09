@@ -1,0 +1,40 @@
+{
+  "modes": [
+    "teacher-work"
+  ],
+  "browser": "chromium",
+  "seconds": 9.312,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.218,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/teacher-work.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 8.755,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.084,
+        "key": "2edd3c6a41c97077a38bc35f6b077a6ddfb2f06172616dfd5e9f3aa997588338"
+      }
+    }
+  ]
+}

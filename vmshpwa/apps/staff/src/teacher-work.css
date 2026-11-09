@@ -1,0 +1,113 @@
+/* Dense Staff accounting: design-system/05-pages-and-flows.md; docs/teacher-work.md. */
+.teacher-work-scroll {
+  max-height: 65vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+}
+
+.teacher-work-table {
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.teacher-work-table th,
+.teacher-work-table td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0.25rem 0.4rem;
+  white-space: nowrap;
+  text-align: right;
+  background: var(--background);
+}
+
+.teacher-work-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--muted);
+  height: 1.7rem;
+}
+
+.teacher-work-table thead tr:nth-child(2) th {
+  top: 1.7rem;
+}
+
+.teacher-work-table thead tr:nth-child(3) th {
+  top: 3.4rem;
+}
+
+.teacher-work-table .tw-id {
+  position: sticky;
+  left: 0;
+  min-width: 4rem;
+  z-index: 3;
+}
+
+.teacher-work-table .tw-surname {
+  position: sticky;
+  left: 4rem;
+  min-width: 9rem;
+  text-align: left;
+  z-index: 3;
+}
+
+.teacher-work-table .tw-name {
+  position: sticky;
+  left: 13rem;
+  min-width: 7rem;
+  text-align: left;
+  z-index: 3;
+}
+
+.teacher-work-table thead .tw-id,
+.teacher-work-table thead .tw-surname,
+.teacher-work-table thead .tw-name {
+  z-index: 4;
+}
+
+.tw-cell {
+  min-width: 2.7rem;
+  min-height: 1.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.tw-cell:hover {
+  background: var(--accent);
+}
+
+.tw-cell:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.tw-manual {
+  text-decoration: underline;
+}
+
+.tw-stale {
+  color: var(--status-warning);
+}
+
+.teacher-work-inputs {
+  width: 100%;
+  font-size: var(--text-small);
+  border-collapse: collapse;
+}
+
+.teacher-work-inputs th,
+.teacher-work-inputs td {
+  padding: 0.5rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+@media (width <= 600px) {
+  .teacher-work-table .tw-surname,
+  .teacher-work-table .tw-name {
+    position: static;
+  }
+}

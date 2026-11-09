@@ -1,0 +1,42 @@
+{
+  "deployed_source": "31a65eb866b172b05fcbe231da98dc804da39713",
+  "backend_options": [
+    {
+      "organization": "vmsh",
+      "project": 2,
+      "source": "31a65eb866b172b05fcbe231da98dc804da39713",
+      "include_local_variables": false,
+      "send_default_pii": false,
+      "send_client_reports": false,
+      "traces_sample_rate": 0.0,
+      "probe": "options only; no event sent"
+    },
+    {
+      "organization": "tlf",
+      "project": 4,
+      "source": "31a65eb866b172b05fcbe231da98dc804da39713",
+      "include_local_variables": false,
+      "send_default_pii": false,
+      "send_client_reports": false,
+      "traces_sample_rate": 0.0,
+      "probe": "options only; no event sent"
+    }
+  ],
+  "read_only_http_checks": {
+    "vmsh": 25,
+    "tlf": 25
+  },
+  "tlf_configuration_and_nats": "unchanged",
+  "tlf_schema": "unchanged",
+  "tlf_verified_backups": [
+    "20261011T103552.227047Z",
+    "20261011T103556.381239Z"
+  ],
+  "telegram_delivered_projects": [
+    "vmsh-frontend",
+    "vmsh-backend",
+    "tlf-frontend",
+    "tlf-backend"
+  ],
+  "notes": "Frontend releases remain the verified 99552697 bundles; this final commit changes backend privacy and removes unused credential-export code."
+}

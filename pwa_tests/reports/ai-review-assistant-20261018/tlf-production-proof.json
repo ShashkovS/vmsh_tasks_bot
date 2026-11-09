@@ -1,0 +1,73 @@
+{
+  "ai_migration": "0122.ai_review_assistant",
+  "database_quick_check": "ok",
+  "mcp_anonymous_status": {
+    "/staff/api/ai-review/v1/tools/list_courses": 401,
+    "/staff/api/v1/ai-review/tokens": 401
+  },
+  "backend_only": false,
+  "checked_at_utc": "2026-10-18T16:11:24.287639+00:00",
+  "origin": "https://prep.leaders.tech",
+  "source": "9626315c7b4d1c0f9d76532fb339661a8778475a",
+  "static_release": "tlfprep-20261018-ai-perf-9626315c7b4d",
+  "staff_assets_sha256_matched": 119,
+  "production_provenance": {
+    "landing": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-ai-perf-9626315c7b4d",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "landing"
+    },
+    "student": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-ai-perf-9626315c7b4d",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "student"
+    },
+    "family": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-ai-perf-9626315c7b4d",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "family"
+    },
+    "staff": {
+      "schemaVersion": 1,
+      "profile": "production",
+      "releaseId": "tlfprep-20261018-ai-perf-9626315c7b4d",
+      "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+      "sentryConfigured": true,
+      "sentryOrigin": "https://glitch.leaders.tech",
+      "msw": false,
+      "prototype": false,
+      "application": "staff"
+    }
+  },
+  "html_sha256_matched": 4,
+  "media_anonymous_status": 401,
+  "public_sourcemaps": false,
+  "maintenance": false,
+  "services_active": [
+    "vmshpwa.service",
+    "vmshzoom.service",
+    "vmsh-analytics.timer",
+    "nats.service",
+    "vmsh-cross-backup.timer",
+    "vmsh-cross-backup-sync.timer",
+    "vmsh-cross-backup-verify.timer"
+  ]
+}
