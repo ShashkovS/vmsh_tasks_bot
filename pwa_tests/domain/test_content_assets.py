@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import stat
+import hashlib
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -338,6 +339,52 @@ async def test_converter_failure_does_not_echo_stderr_or_server_path(
     assert "code 9" in str(captured.value)
     assert "secret" not in str(captured.value)
     assert str(tmp_path) not in str(captured.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stage", ["image-normalization", "raster-to-webp"])
+async def test_raster_failure_has_bounded_private_diagnostics_and_removes_input(
+    tmp_path: Path, stage: str,
+) -> None:
+    failing = _executable(
+        tmp_path, "failing",
+        "import os,sys\n"
+        "print('x' * 5000, file=sys.stderr)\n"
+        "print(os.getcwd() + '/input.bin: decoder failure /private/service/config "
+        "token=hidden-value https://example.test/?secret=hidden-value', file=sys.stderr)\n"
+        "raise SystemExit(7)",
+    )
+    normalize = _executable(
+        tmp_path, "normalize",
+        "import pathlib,sys\npathlib.Path(sys.argv[-1]).write_bytes(b'normalized')",
+    )
+    work = tmp_path / "work"
+    work.mkdir()
+    converter = ContentAssetConverter(
+        ContentAssetTools("", "", str(failing if stage == "image-normalization" else normalize), str(failing)),
+        temp_root=work, timeout_seconds=5,
+    )
+    source = b"\x89PNG\r\n\x1a\nprivate-image-pixels"
+
+    with pytest.raises(AssetConversionError) as captured:
+        await converter.raster_to_webp(source)
+
+    error = captured.value
+    details = error.server_diagnostics
+    assert error.capability == stage
+    assert details["return_code"] == 7
+    assert details["source_format"] == "png"
+    assert details["source_bytes"] == len(source)
+    assert details["source_sha256"] == hashlib.sha256(source).hexdigest()
+    assert details["tool"] == "failing"
+    output = details["converter_output"]
+    assert len(output) <= 2048
+    assert "decoder failure" in output
+    assert "<workdir>" in output
+    assert all(value not in output for value in (str(tmp_path), "/private/service", "hidden-value", "https://"))
+    assert "private-image-pixels" not in str(details)
+    assert error.debug == {}
+    assert list(work.iterdir()) == []
 
 
 @pytest.mark.asyncio

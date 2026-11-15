@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import logging
 from types import ModuleType
 from types import SimpleNamespace
 
@@ -10,6 +11,31 @@ from helpers.pwa.sentry_safety import (
     sanitize_sentry_breadcrumb,
     sanitize_sentry_event,
 )
+
+
+def test_conversion_log_reaches_sentry_with_private_request_data_removed(monkeypatch):
+    import sentry_sdk
+    from sentry_sdk.integrations.logging import EventHandler
+
+    captured = []
+    monkeypatch.setattr(sentry_sdk, "get_client", lambda: SimpleNamespace(is_active=lambda: True, options={}))
+    monkeypatch.setattr(
+        sentry_sdk, "capture_event",
+        lambda event, hint: captured.append(sanitize_sentry_event(event, hint)),
+    )
+    record = logging.LogRecord(
+        "apps.pwa_api.written_submission_routes", logging.ERROR, __file__, 1,
+        "Written image conversion failed request_id=%s", ("request-photo-17",), None,
+    )
+    record.request_id = "request-photo-17"
+    record.conversion = {"source_format": "heif", "source_bytes": 123,
+                         "return_code": 1, "converter_output": "decoder failure"}
+    EventHandler().emit(record)
+
+    assert len(captured) == 1
+    assert captured[0]["extra"]["request_id"] == "request-photo-17"
+    assert captured[0]["extra"]["conversion"] == record.conversion
+    assert captured[0]["level"] == "error"
 
 
 def test_backend_sentry_event_removes_private_request_and_product_data() -> None:

@@ -6,6 +6,7 @@ from pwa_tests.auth_cache_support import miss_auth_cache
 
 import hashlib
 import json
+import logging
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
@@ -2392,6 +2393,66 @@ async def test_student_written_photo_upload_converts_persists_replays_and_submit
         [{"ordinal": 0, "upload_status": "stored"}],
         [{"state": "completed"}],
     )
+
+
+@pytest.mark.parametrize("failure_code", ["asset.converter_failed", "asset.converter_timeout"])
+async def test_written_photo_failure_logs_request_and_diagnostics_without_exposing_them(
+    content_http: ContentHttpFixture, monkeypatch, caplog, failure_code: str,
+):
+    fixture = content_http
+    problem, revision = await _prepare_published_test_problem(fixture, problem_type=2)
+    created = await fixture.client.post(
+        f"/student/api/v1/problems/{problem}/thread/entries",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "6ea1b2ad-7dc1-49db-b27a-909f8add9955",
+            "problemRevision": {"conditionRevisionId": revision, "configVersion": 1},
+            "text": None,
+            "pasteEvidence": {"pasteCount": 0, "pastedCharacterCount": 0, "lastPastedAt": None},
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"), headers=_headers(unsafe=True),
+    )
+    assert created.status == 201, await created.text()
+    draft = await created.json()
+    diagnostics = {"source_format": "heif", "source_bytes": 100,
+                   "return_code": 7, "converter_output": "decoder failure"}
+
+    async def fail(_converter, _source):
+        raise AssetConversionError(
+            failure_code, "image-normalization", "conversion failed",
+            server_diagnostics=diagnostics,
+        )
+
+    monkeypatch.setattr(SyntheticAssetConverter, "raster_to_webp", fail)
+    form = FormData()
+    for key, value in {
+        "schemaVersion": "1", "idempotencyKey": "ce55c871-d3fa-46ea-89f2-34f7e54cfa12",
+        "expectedEntryVersion": "1", "expectedThreadVersion": "1", "ordinal": "0",
+    }.items():
+        form.add_field(key, value)
+    form.add_field("asset", b"private-image-pixels", filename="private-student.heic", content_type="image/heic")
+    request_id = "94593a58ad0546c595c3511a024ecfb8"
+    with caplog.at_level(logging.ERROR, logger="apps.pwa_api.written_submission_routes"):
+        uploaded = await fixture.client.post(
+            f"/student/api/v1/thread-entries/{draft['entry']['entryId']}/attachments",
+            data=form, cookies=_cookie(fixture, "student"),
+            headers={**_headers(unsafe=True), "X-Request-ID": request_id},
+        )
+
+    assert uploaded.status == 422
+    payload = await uploaded.json()
+    assert payload["error"]["requestId"] == request_id
+    assert payload["error"]["details"] == {"reason": failure_code, "capability": "image-normalization"}
+    assert "decoder failure" not in await uploaded.text()
+    records = [r for r in caplog.records if r.msg.startswith("Written image conversion failed")]
+    assert len(records) == 1
+    assert records[0].levelno == logging.ERROR
+    assert records[0].request_id == request_id
+    assert records[0].conversion == diagnostics
+    assert records[0].conversion_reason == failure_code
+    assert all(value not in records[0].getMessage() for value in ("private-image-pixels", "private-student.heic"))
+    assert not [key for key in fixture.asset_storage.objects if key.startswith("sol_imgs/")]
 
 
 async def test_student_written_photo_order_delete_and_reload_contract(
