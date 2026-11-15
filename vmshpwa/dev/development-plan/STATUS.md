@@ -1,5 +1,21 @@
 # Статус плана разработки
 
+## 2026-11-15 — Диагностика отказов фотографий: проверено, выпуск
+
+Новый request ID не найден в server journal. GlitchTip VMSh issue 101
+подтверждает повторяющиеся `written_attachment_conversion_failed`, но frontend
+сохраняет только код/status/requestId; backend expected 422 не логируется.
+Добавлены backend-only diagnostics: stage/reason, exit code, bounded
+redacted tool output, формат/размер/hash входа и корреляция request ID.
+Оригиналы фото не сохраняются; diagnostics не входят в Student API response.
+Реализация: `helpers/pwa/content/assets.py`,
+`apps/pwa_api/written_submission_routes.py`; проверки — converter domain
+и реальный HTTP отказ с контролем приватности.
+27 профильных tests + 2 real-toolchain tests PASS, scoped Ruff и diff check
+PASS. Общий fast gate остановлен до тестов: отсутствуют frontend dependencies.
+Готовится backend-only выпуск; причина старых отказов пока не установлена.
+[Контракт и доказательства](../../docs/photo-conversion-diagnostics.md).
+
 ## 2026-11-13 — Отказ пользовательской фотографии: диагностика
 
 По request ID найдено обращение ВМШ и черновик без сохранённого вложения;

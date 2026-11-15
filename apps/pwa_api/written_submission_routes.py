@@ -745,6 +745,19 @@ def _translate_repository_errors(handler):
                 message="Письменная сдача временно недоступна",
             ) from error
         except AssetConversionError as error:
+            # LoggingIntegration forwards this bounded event to GlitchTip.
+            # See vmshpwa/docs/photo-conversion-diagnostics.md and HTTP regression.
+            logger.error(
+                "Written image conversion failed request_id=%s reason=%s capability=%s diagnostics=%s",
+                request.get("request_id"), error.code, error.capability,
+                json.dumps(error.server_diagnostics, ensure_ascii=True),
+                extra={
+                    "request_id": request.get("request_id"),
+                    "conversion_reason": error.code,
+                    "conversion_capability": error.capability,
+                    "conversion": error.server_diagnostics,
+                },
+            )
             unavailable = error.code in {
                 "asset.tool_unavailable",
                 "asset.converter_start_failed",

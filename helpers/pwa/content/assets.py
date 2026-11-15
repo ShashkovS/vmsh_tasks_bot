@@ -188,11 +188,13 @@ class AssetConversionError(RuntimeError):
         detail: str,
         *,
         debug: Mapping[str, str] | None = None,
+        server_diagnostics: Mapping[str, object] | None = None,
     ) -> None:
         self.code = code
         self.capability = capability
         self.detail = detail
         self.debug = dict(debug or {})
+        self.server_diagnostics = dict(server_diagnostics or {})
         super().__init__(f"{capability}: {detail}")
 
 
@@ -286,6 +288,7 @@ def _assert_command_succeeded(
     output_path: Path,
     maximum_bytes: int,
     debug: Mapping[str, str] | None = None,
+    server_diagnostics: Mapping[str, object] | None = None,
 ) -> bytes:
     if return_code != 0:
         raise AssetConversionError(
@@ -293,24 +296,69 @@ def _assert_command_succeeded(
             capability,
             f"converter exited with code {return_code}",
             debug=debug,
+            server_diagnostics=server_diagnostics,
         )
     try:
         data = output_path.read_bytes()
     except FileNotFoundError as error:
         raise AssetConversionError(
-            "asset.output_missing", capability, "converter did not create output"
+            "asset.output_missing", capability, "converter did not create output",
+            server_diagnostics=server_diagnostics,
         ) from error
     if not data:
         raise AssetConversionError(
-            "asset.output_empty", capability, "converter output is empty"
+            "asset.output_empty", capability, "converter output is empty",
+            server_diagnostics=server_diagnostics,
         )
     if len(data) > maximum_bytes:
         raise AssetConversionError(
             "asset.output_too_large",
             capability,
             "converter output exceeds the configured limit",
+            server_diagnostics=server_diagnostics,
         )
     return data
+
+
+def _raster_command_diagnostics(
+    result: CommandResult, *, workdir: Path, executable: str,
+) -> dict[str, object]:
+    """Server-only evidence; docs/photo-conversion-diagnostics.md and HTTP tests."""
+
+    output = "\n".join(part for part in (result.stdout, result.stderr) if part)
+    output = output.replace(str(workdir), "<workdir>")
+    output = re.sub(r"https?://[^\s<>]+", "[redacted-url]", output)
+    output = re.sub(r"(?<![\w<>])/[^\s'\"<>]+", "[redacted-path]", output)
+    output = re.sub(
+        r"(?i)\b(token|password|secret|authorization|cookie)\s*[:=]\s*[^\s,;]+",
+        r"\1=[redacted]", output,
+    )
+    output = "".join(char for char in output if char in "\n\t" or char.isprintable())
+    return {
+        "tool": Path(executable).name,
+        "return_code": result.return_code,
+        "converter_output": output[-2048:],
+    }
+
+
+def _raster_format(payload: bytes) -> str:
+    if payload.startswith(b"\xff\xd8\xff"):
+        return "jpeg"
+    if payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if payload[:4] == b"RIFF" and payload[8:12] == b"WEBP":
+        return "webp"
+    if payload[4:8] == b"ftyp":
+        brands = {payload[offset:offset + 4] for offset in range(8, min(64, len(payload)), 4)}
+        if brands & {b"avif", b"avis"}:
+            return "avif"
+        if brands & {b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"}:
+            return "heif"
+    if payload[:6] in {b"GIF87a", b"GIF89a"}:
+        return "gif"
+    if payload[:4] in {b"II*\x00", b"MM\x00*"}:
+        return "tiff"
+    return "unknown"
 
 
 def _tikz_failure_debug(
@@ -656,12 +704,14 @@ class ContentAssetConverter:
                 "asset.converter_timeout",
                 capability,
                 "converter exceeded the configured timeout",
+                server_diagnostics={"tool": Path(executable).name, "timeout_seconds": self.timeout_seconds},
             ) from error
         except OSError as error:
             raise AssetConversionError(
                 "asset.converter_start_failed",
                 capability,
                 "converter could not be started",
+                server_diagnostics={"tool": Path(executable).name, "os_errno": error.errno},
             ) from error
 
     async def tikz_to_svg(self, source: str) -> ConvertedAsset:
@@ -785,6 +835,17 @@ class ContentAssetConverter:
         )
 
     async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
+        try:
+            return await self._raster_to_webp(payload)
+        except AssetConversionError as error:
+            # No original bytes/filenames in logs or API; photo-conversion-diagnostics.md.
+            error.server_diagnostics.update(
+                source_bytes=len(payload), source_format=_raster_format(payload),
+                source_sha256=_sha256(payload),
+            )
+            raise
+
+    async def _raster_to_webp(self, payload: bytes) -> ConvertedAsset:
         if not isinstance(payload, bytes):
             raise TypeError("Raster payload must be bytes")
         if not payload or len(payload) > _MAX_RASTER_INPUT_BYTES:
@@ -828,6 +889,9 @@ class ContentAssetConverter:
                 return_code=normalize_result.return_code,
                 output_path=normalized_path,
                 maximum_bytes=64 * 1024 * 1024,
+                server_diagnostics=_raster_command_diagnostics(
+                    normalize_result, workdir=directory, executable=self.tools.magick,
+                ),
             )
             webp_result = await self._run(
                 capability="raster-to-webp",
@@ -850,6 +914,9 @@ class ContentAssetConverter:
                 return_code=webp_result.return_code,
                 output_path=webp_path,
                 maximum_bytes=_MAX_WEBP_BYTES,
+                server_diagnostics=_raster_command_diagnostics(
+                    webp_result, workdir=directory, executable=self.tools.cwebp,
+                ),
             )
         width, height = _webp_dimensions(webp)
         return ConvertedAsset(

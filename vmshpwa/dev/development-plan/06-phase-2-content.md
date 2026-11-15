@@ -1,5 +1,14 @@
 # Этап 2. LaTeX-контент, diagnostics, preview и публикация
 
+## 2026-11-15 — Диагностика пользовательских фотографий
+
+Backend-only diagnostics привязывает converter stderr/exit code и формат,
+размер/hash исходника к request ID в journal/GlitchTip. Оригинал фото не
+сохраняется и сведения не входят в Student API response.
+27 профильных + 2 real-toolchain tests PASS; общий gate остановлен на
+отсутствующих frontend dependencies. Подготовка выпуска.
+[Реализация, tests и ограничения](../../docs/photo-conversion-diagnostics.md).
+
 ## 2026-11-09 — Совместимость оформления TikZ
 
 Реализовано уточнение фильтра команд и поддержка `pdfrender` для Staff uploads.
