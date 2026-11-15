@@ -6,7 +6,9 @@ Backend-only diagnostics привязывает converter stderr/exit code и ф
 размер/hash исходника к request ID в journal/GlitchTip. Оригинал фото не
 сохраняется и сведения не входят в Student API response.
 27 профильных + 2 real-toolchain tests PASS; общий gate остановлен на
-отсутствующих frontend dependencies. Подготовка выпуска.
+отсутствующих frontend dependencies. Выпущено: ВМШ a20adbe0 / TLF d2e5dddc,
+по 25 HTTP checks и real JPEG/corrupt-input diagnostics PASS. Старые отказы
+не исправлены вслепую: следующий повтор фиксирует причину в journal/GlitchTip.
 [Реализация, tests и ограничения](../../docs/photo-conversion-diagnostics.md).
 
 ## 2026-11-09 — Совместимость оформления TikZ

@@ -1,6 +1,6 @@
 # Статус плана разработки
 
-## 2026-11-15 — Диагностика отказов фотографий: проверено, выпуск
+## 2026-11-15 — Диагностика отказов фотографий: выпущено на обоих
 
 Новый request ID не найден в server journal. GlitchTip VMSh issue 101
 подтверждает повторяющиеся `written_attachment_conversion_failed`, но frontend
@@ -15,6 +15,15 @@ redacted tool output, формат/размер/hash входа и коррел�
 PASS. Общий fast gate остановлен до тестов: отсутствуют frontend dependencies.
 Готовится backend-only выпуск; причина старых отказов пока не установлена.
 [Контракт и доказательства](../../docs/photo-conversion-diagnostics.md).
+ВМШ активирован: a20adbe0, 25 HTTP checks + real JPEG/corrupt-input diagnostics
+PASS, GlitchTip backend client configured. Verified online backups, schema,
+static/config/NATS и три локальных server repairs сохранены; workers плавно
+заменены. TLF выпущен diagnostics-only commit d2e5dddc поверх своей активной
+версии: те же 25 HTTP + real converter diagnostics PASS, GlitchTip project /4
+configured. Config/schema/static/NATS и untracked records сохранены.
+Причина прежних отказов не восстановлена; следующий повтор даст server diagnostics.
+[ВМШ](../../../pwa_tests/reports/photo-diagnostics-20261115/vmsh-production.json),
+[TLF](../../../pwa_tests/reports/photo-diagnostics-20261115/tlf-production.json).
 
 ## 2026-11-13 — Отказ пользовательской фотографии: диагностика
 

@@ -30,8 +30,29 @@ source format/bytes/SHA-256, basename инструмента, exit code либо
 - Первый isolated HTTP запуск не смог bind loopback в sandbox; повтор с
   разрешённым local bind прошёл. Посторонние suites не повторялись.
 
-Выпуск готовится. Текущая ВМШ версия — c8e2a328, TLF — 7a807548.
-TLF получит отдельный commit только diagnostics поверх своей активной версии,
+Исходные версии: ВМШ c8e2a328, TLF 7a807548.
+TLF получает отдельный commit только diagnostics поверх своей активной версии,
 чтобы не включать несвязанные изменения personal plots/printing.
 Синтетические ошибки в production GlitchTip не создаются; транспорт проверен
 изолированным EventHandler test без сети. Production data/публикации не меняются.
+
+ВМШ выпущен: `a20adbe009203bcacba08d26b755b8acce7b7f5e`.
+[Квитанция](vmsh-production.json): 25 HTTP checks, реальные JPEG и corrupt-input
+diagnostics PASS, GlitchTip project /2 client configured. Плавно заменены
+PWA/Telegram workers при сохранении master PID. Config/schema/static/NATS
+и все три unrelated tracked repairs сохранены; verified backups main/analytics.
+TLF выпущен: `d2e5dddc2b0211aa86a9f93063317a10a1ab2a82`.
+[Квитанция](tlf-production.json): те же проверки PASS, GlitchTip project /4
+client configured. PWA workers плавно заменены, остальные функции остались
+на прежней базе 7a807548. Untracked records сохранены по hash. На обоих
+серверах schema/config/static/NATS сохранены, main/analytics backups прошли
+integrity check, services active / maintenance off. Исходные фотографии и
+отправки не менялись, синтетические события в GlitchTip не создавались.
+
+Закрытые записи выпуска на соответствующих хостах:
+`/web/vmsh_tasks_bot/deploy/releases/photo-diagnostics-20261115-a20adbe00920/`
+и `/web/vmsh_tasks_bot/deploy/releases/photo-diagnostics-20261115-d2e5dddc2b02/`.
+Обычный Git/SSH transport, fast-forward сохраняет unrelated edits;
+schema-compatible rollback: `git reset --keep` к sourceBefore и SIGHUP workers,
+без восстановления устаревшей БД. Нужен повтор проблемной отправки и свежий
+request ID; старые IDs не приобретают diagnostics задним числом.

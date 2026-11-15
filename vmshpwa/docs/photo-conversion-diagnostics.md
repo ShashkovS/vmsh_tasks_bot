@@ -35,3 +35,9 @@ GlitchTip с production release и request context. Stack locals и default PII
 [`test_content_http_api.py`](../../pwa_tests/integration/test_content_http_api.py)
 проверяет failure/timeout, корреляцию request ID, единственное ERROR-событие,
 неизменный 422 contract и отсутствие записи фото в storage.
+
+[Проверки и выпуск](../../pwa_tests/reports/photo-diagnostics-20261115/README.md):
+15 ноября ВМШ a20adbe0 / TLF d2e5dddc, 27 профильных + 2 real-toolchain
+tests и по 25 production HTTP checks PASS. Общий fast gate не прошёл
+dependency bootstrap в текущем checkout. Для определения причины старых
+отказов нужен новый повтор; originals и прежний stderr не восстановлены.
