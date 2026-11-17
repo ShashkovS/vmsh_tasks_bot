@@ -80,7 +80,14 @@ function ChannelBadge({ channel }: { channel: Exclude<ThreadChannel, 'staff'> })
   )
 }
 
-export function ThreadMessage({ message }: { message: ThreadMessageView }) {
+// docs/review-workflow.md: mobile review uses the available width for long solutions.
+export function ThreadMessage({
+  message,
+  layout = 'chat',
+}: {
+  message: ThreadMessageView
+  layout?: 'chat' | 'review'
+}) {
   const ai = message.author.kind === 'ai'
   const system = message.author.kind === 'system'
   const name = message.author.name ?? authorName[message.author.kind]
@@ -88,7 +95,8 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
     <li className={cn('flex', message.own && 'justify-end')}>
       <div
         className={cn(
-          'max-w-[85%] space-y-1 rounded-lg border px-3 py-2',
+          'min-w-0 space-y-1 rounded-lg border py-2',
+          layout === 'review' ? 'max-w-full px-2 sm:max-w-[85%] sm:px-3' : 'max-w-[85%] px-3',
           ai
             ? 'border-dashed border-provenance-ai-border bg-provenance-ai-surface'
             : system
@@ -123,9 +131,10 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
 export interface FeedbackThreadProps {
   messages: ThreadMessageView[]
   className?: string
+  layout?: 'chat' | 'review'
 }
 
-export function FeedbackThread({ messages, className }: FeedbackThreadProps) {
+export function FeedbackThread({ messages, className, layout = 'chat' }: FeedbackThreadProps) {
   if (messages.length === 0) {
     return (
       <p className={cn('text-small text-muted-foreground', className)}>
@@ -136,7 +145,7 @@ export function FeedbackThread({ messages, className }: FeedbackThreadProps) {
   return (
     <ol className={cn('space-y-2', className)}>
       {messages.map((message) => (
-        <ThreadMessage key={message.id} message={message} />
+        <ThreadMessage key={message.id} message={message} layout={layout} />
       ))}
     </ol>
   )

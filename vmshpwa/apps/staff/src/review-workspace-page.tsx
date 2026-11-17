@@ -345,6 +345,7 @@ export function LoadedReviewWorkspace({
 
   return (
     <PageLayout
+      className={embedded ? 'px-0 sm:px-0' : 'px-2 sm:px-6'}
       actions={
         <Button disabled={release.isPending} onClick={() => void abandon()} variant="outline">
           <Trans>Отказаться от проверки</Trans>
@@ -399,7 +400,7 @@ export function LoadedReviewWorkspace({
         <ThreePaneReview
           evidence={
             <PageSection title={t`Работа и переписка`}>
-              <Card>
+              <Card className="[--card-spacing:--spacing(2)] sm:[--card-spacing:--spacing(4)]">
                 <CardHeader className="flex-row items-center justify-between">
                   <CardTitle>
                     <Plural
@@ -415,7 +416,7 @@ export function LoadedReviewWorkspace({
                   </Badge>
                 </CardHeader>
                 <CardContent>
-                  <FeedbackThread messages={messages} />
+                  <FeedbackThread layout="review" messages={messages} />
                 </CardContent>
               </Card>
             </PageSection>
@@ -474,6 +475,7 @@ export function ReviewReadOnlyEvidence({
 }) {
   return (
     <FeedbackThread
+      layout="review"
       messages={reviewTimelineMessages(lease, mediaClient, annotations, () => undefined, true)}
     />
   )
@@ -606,7 +608,9 @@ function TimelineEntryBody({
 }) {
   return (
     <div className="space-y-2">
-      {entry.text ? <p className="whitespace-pre-wrap">{entry.text}</p> : null}
+      {entry.text ? (
+        <p className="hyphens-auto whitespace-pre-wrap break-words">{entry.text}</p>
+      ) : null}
       {entry.attachments.length ? (
         <div className="grid gap-2 sm:grid-cols-2">
           {entry.attachments.map((attachment) => (
@@ -768,6 +772,7 @@ export function ReviewedWorkSnapshot({
         {lease.student.displayName} · {verdict}
       </h2>
       <FeedbackThread
+        layout="review"
         messages={reviewTimelineMessages(
           lease,
           mediaClient,
@@ -778,7 +783,9 @@ export function ReviewedWorkSnapshot({
         )}
       />
       {comment && (
-        <p className="whitespace-pre-wrap rounded-lg border border-border p-3">{comment}</p>
+        <p className="hyphens-auto whitespace-pre-wrap break-words rounded-lg border border-border p-3">
+          {comment}
+        </p>
       )}
     </section>
   )

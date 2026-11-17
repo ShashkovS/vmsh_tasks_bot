@@ -44,7 +44,7 @@ export function ResultCondition({
       <p className="text-caption text-muted-foreground">
         <Trans>Сохранённый текст условия · версия неизвестна</Trans>
       </p>
-      <p className="whitespace-pre-wrap break-words">{legacyText}</p>
+      <p className="hyphens-auto whitespace-pre-wrap break-words">{legacyText}</p>
     </div>
   ) : (
     <p className="text-small text-muted-foreground">
@@ -218,6 +218,7 @@ export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: s
     <ol className="space-y-2 break-words">
       {events.map((e) => (
         <ThreadMessage
+          layout="review"
           key={e.id}
           message={{
             id: e.id,
@@ -252,14 +253,18 @@ export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: s
                     {e.textMaterials.map((material) => (
                       <div key={material.entryId}>
                         <PasteEvidenceBadge estimate={material.pasteEstimate} />
-                        <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+                        <p className="hyphens-auto whitespace-pre-wrap [overflow-wrap:anywhere]">
                           {material.text}
                         </p>
                       </div>
                     ))}
                   </>
                 ) : (
-                  e.text && <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{e.text}</p>
+                  e.text && (
+                    <p className="hyphens-auto whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {e.text}
+                    </p>
+                  )
                 )}
                 {e.checkStatus && (
                   <p className="text-caption text-muted-foreground">

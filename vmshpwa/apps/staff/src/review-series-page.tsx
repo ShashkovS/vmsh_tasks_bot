@@ -335,7 +335,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     return () => window.removeEventListener('keydown', key)
   })
   return (
-    <div className="mx-auto max-w-[1500px] px-4 py-3">
+    <div className="mx-auto max-w-[1500px] px-2 py-3 sm:px-4">
       <h1 className="text-subtitle font-semibold">{condition.data?.label ?? problemId}</h1>
       <details className="my-3 rounded-lg border border-border p-3">
         <summary className="cursor-pointer font-medium">
@@ -410,7 +410,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
             if (element) feedElements.current.set(item.materialKey, element)
             else feedElements.current.delete(item.materialKey)
           }}
-          className="my-4 space-y-3 rounded-xl border border-border bg-surface p-4"
+          className="my-4 space-y-3 rounded-xl border border-border bg-surface p-2 sm:p-4"
         >
           {correcting && editingId === item.reviewId ? (
             <CompletedReviewCard

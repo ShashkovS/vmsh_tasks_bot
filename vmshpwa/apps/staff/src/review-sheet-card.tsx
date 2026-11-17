@@ -111,7 +111,7 @@ export function ReviewSheetCard({
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) onDeactivate()
       }}
-      className="min-h-32 space-y-3 rounded-lg border border-border bg-surface p-4 focus-visible:outline-2 focus-visible:outline-focus-ring"
+      className="min-h-32 space-y-3 rounded-lg border border-border bg-surface p-2 sm:p-4 focus-visible:outline-2 focus-visible:outline-focus-ring"
     >
       <h3 className="font-semibold">{item.studentName}</h3>
       {!near || query.isPending ? (
@@ -534,7 +534,13 @@ function LoadedSheetCard({
                 onSubmit={(result) => void submit(result)}
                 submitLabel={changed ? t`Отправить мой результат` : undefined}
               />
-              <Button variant="outline" size="sm" className="w-fit" disabled={busy} onClick={() => setAbandoned(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                disabled={busy}
+                onClick={() => setAbandoned(true)}
+              >
                 <Trans>Отказаться от проверки</Trans>
               </Button>
             </div>

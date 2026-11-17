@@ -248,6 +248,7 @@ function WorkspaceHarness() {
         <section className="space-y-2" aria-label="Обсуждение работы">
           <h3 className="text-label font-medium text-foreground">Обсуждение</h3>
           <FeedbackThread
+            layout="review"
             messages={[
               {
                 id: 'student-1',
@@ -378,4 +379,31 @@ export const QueueWithExternalSummary: Story = {
     await expect(canvas.getAllByRole('row')).toHaveLength(5)
     await expect(canvas.getByText('Проверяет И. Соколов')).toBeInTheDocument()
   },
+}
+
+// docs/review-workflow.md: a long solution remains readable at phone widths.
+export const MobileReviewText: Story = {
+  name: 'Проверка: длинное решение на телефоне',
+  render: () => (
+    <div className="max-w-[390px] p-2" lang="ru">
+      <FeedbackThread
+        layout="review"
+        messages={[
+          {
+            id: 'long-solution',
+            author: { kind: 'student', name: 'Анна' },
+            at: '18:02',
+            channel: 'pwa',
+            body: (
+              <p className="hyphens-auto whitespace-pre-wrap break-words">
+                Сначала нужно высыпать все 24 килограмма гвоздей на обе чаши весов так, чтобы они
+                уравновесились, тогда на каждой чаше получится по 12 килограммов. Одну кучку мы
+                откладываем в сторону, а вторую делим пополам на тех же весах.
+              </p>
+            ),
+          },
+        ]}
+      />
+    </div>
+  ),
 }

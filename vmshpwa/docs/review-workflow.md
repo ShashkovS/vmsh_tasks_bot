@@ -100,3 +100,22 @@ backfill и dual-write нет: Telegram продолжает читать legacy
   отдельной массовой очереди и delivery dashboard в MVP.
 - Автоматические interaction/a11y и production E2E пройдены. Изменение visual
   snapshots разрешено только после ручного просмотра владельцем продукта.
+
+## 17 ноября 2026 — поля и переносы в мобильной проверке
+
+Решение владельца: текст решения занимает доступную ширину телефона; браузер
+может автоматически переносить слова. В Staff `ThreadMessage` / `FeedbackThread`
+используют `layout="review"`: до 640 px убрано ограничение сообщения 85%,
+внутренние поля уменьшены до 8 px. `LoadedReviewWorkspace` не добавляет повторные
+горизонтальные поля внутри серии; карточки работы, серии и простыни используют
+мобильные поля 8 px. На широком экране сохраняется прежняя плотность сообщения.
+
+Реализация: [feedback-thread.tsx](../packages/product/src/feedback-thread.tsx),
+[review-workspace-page.tsx](../apps/staff/src/review-workspace-page.tsx),
+[review-series-page.tsx](../apps/staff/src/review-series-page.tsx),
+[review-sheet-card.tsx](../apps/staff/src/review-sheet-card.tsx),
+[student-results-history.tsx](../apps/staff/src/student-results-history.tsx).
+`hyphens: auto` применяется к тексту решения и комментария; поддержка словаря
+зависит от браузера и языка документа. UI и поля ввода сохраняют обычный набор.
+Пример: `Product/Review/MobileReviewText` в
+[review.stories.tsx](../packages/product/src/review.stories.tsx).

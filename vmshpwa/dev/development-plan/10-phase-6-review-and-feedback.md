@@ -411,3 +411,11 @@ static/i18n/build, source unchanged. Обычный SSH push `450903b7` выпо
 разблокировки ключа владельцем. Выпуск на оба production завершён:
 25 HTTP / 119 Staff hashes на каждом, remote MCP auth boundary PASS,
 services active, maintenance off. [Доказательства](../../../pwa_tests/reports/remote-mcp-20261018/README.md).
+
+## 2026-11-17 — мобильные поля проверки
+
+В работе: [поля и переносы](../../docs/review-workflow.md#17-ноября-2026--поля-и-переносы-в-мобильной-проверке).
+Уменьшены вложенные поля Staff, сообщения на телефоне используют доступную ширину,
+для текста решения включены автоматические переносы. Добавлена мобильная story.
+Следующий gate: `make pwa-check-fast PWA_E2E_MODES="review submissions"`,
+визуальная проверка и выпуск только на vmshfirstvds.
