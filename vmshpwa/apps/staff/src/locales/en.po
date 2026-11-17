@@ -847,6 +847,10 @@ msgstr "There is no work in the selected mode"
 msgid "в день цикла"
 msgstr "per cycle day"
 
+#: apps/staff/src/review-transfer.tsx
+msgid "В другую задачу"
+msgstr "Another task"
+
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "В курсе есть очные занятия"
 msgstr "This course has in-person classes"
@@ -2757,8 +2761,8 @@ msgid "Клонировать"
 msgstr "Clone"
 
 #: apps/staff/src/review-transfer.tsx
-msgid "Клонировать в другую задачу"
-msgstr "Clone to another problem"
+msgid "Клонировать в…"
+msgstr "Clone to…"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Клонировать посылку"
@@ -4761,10 +4765,6 @@ msgstr "Move to {0}"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "перенести в архив"
 msgstr "move to archive"
-
-#: apps/staff/src/review-transfer.tsx
-msgid "Перенести в другую задачу"
-msgstr "Move to another problem"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Перенести посылку"

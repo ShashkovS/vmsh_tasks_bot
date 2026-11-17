@@ -128,7 +128,7 @@ export function ReactionPicker({
         <p className="text-caption leading-tight text-muted-foreground">
           {compact
             ? hotkeys
-              ? t`⌘/Ctrl + ⌥/Alt + 1–${options.length} · Работает и в комментарии; не видна ученику и родителю.`
+              ? t`⌘/Ctrl + ⌥/Alt + 1–${options.length} · Не видна ученику и родителю.`
               : t`Не видна ученику и родителю.`
             : t`Видно только преподавателям и администратору — ученик и родитель не увидят.`}
         </p>

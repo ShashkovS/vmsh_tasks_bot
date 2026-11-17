@@ -35,7 +35,7 @@ it('confirms one complete entry and retries the exact same idempotency request a
       onDone={onDone}
     />,
   )
-  fireEvent.click(screen.getByRole('button', { name: 'Клонировать в другую задачу' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Клонировать в…' }))
   await screen.findByText(/Анна Белова/)
   expect(preview).toHaveBeenCalledWith('wq-1', 'se-1', 'claim-1')
   fireEvent.change(screen.getByLabelText('Целевая задача'), { target: { value: 'p-2' } })

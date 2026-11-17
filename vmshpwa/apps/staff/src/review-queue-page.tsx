@@ -320,6 +320,8 @@ export function StaffReviewQueuePage() {
 
   return (
     <PageLayout
+      className="px-1"
+      headerClassName="px-3 sm:px-0"
       description={t`Выберите задачу для серийной проверки или откройте отдельную работу.`}
       eyebrow={t`Письменные задачи`}
       title={t`Очередь проверки`}

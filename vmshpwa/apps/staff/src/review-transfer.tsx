@@ -96,7 +96,7 @@ export function ReviewTransfer({
           disabled={disabled || busy}
           onClick={() => void open('move')}
         >
-          <Trans>Перенести в другую задачу</Trans>
+          <Trans>В другую задачу</Trans>
         </Button>
         <Button
           size="sm"
@@ -104,7 +104,7 @@ export function ReviewTransfer({
           disabled={disabled || busy}
           onClick={() => void open('clone')}
         >
-          <Trans>Клонировать в другую задачу</Trans>
+          <Trans>Клонировать в…</Trans>
         </Button>
       </div>
       {error && <p role="alert">{error}</p>}

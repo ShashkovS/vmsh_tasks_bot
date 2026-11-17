@@ -105,7 +105,11 @@ export function StaffReviewHistoryPage({
     requestAnimationFrame(() => window.scrollTo(0, scroll.current))
   }
   return (
-    <PageLayout title={translate`Завершённые проверки`}>
+    <PageLayout
+      className="px-1"
+      headerClassName="px-3 sm:px-0"
+      title={translate`Завершённые проверки`}
+    >
       {search.review ? (
         <CompletedReviewCard key={search.review} reviewId={search.review} onClose={close} />
       ) : (

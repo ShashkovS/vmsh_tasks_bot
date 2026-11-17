@@ -354,12 +354,12 @@ msgstr "<0>Telegram</0><1>Личное сообщение школьнику о�
 
 #. placeholder {0}: options.length
 #: packages/product/src/reaction-picker.tsx
-msgid "⌘/Ctrl + ⌥/Alt + 1–{0} · Работает и в комментарии; не видна ученику и родителю."
-msgstr "⌘/Ctrl + ⌥/Alt + 1–{0} · Работает и в комментарии; не видна ученику и родителю."
+msgid "⌘/Ctrl + ⌥/Alt + 1–{0} · Не видна ученику и родителю."
+msgstr "⌘/Ctrl + ⌥/Alt + 1–{0} · Не видна ученику и родителю."
 
 #: packages/product/src/review-feedback-form.tsx
-msgid "⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии."
-msgstr "⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии."
+msgid "⌘/Ctrl + Enter — отправить."
+msgstr "⌘/Ctrl + Enter — отправить."
 
 #: packages/product/src/lesson-video.ts
 msgid "Iframe должен содержать ровно один src"
@@ -1373,11 +1373,6 @@ msgstr "Категории можно настроить ниже."
 #: packages/product/src/staff-outreach.tsx
 msgid "Категория"
 msgstr "Категория"
-
-#. placeholder {0}: ordered.length
-#: packages/product/src/review-verdict-actions.tsx
-msgid "Клавиши 1–{0}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода."
-msgstr "Клавиши 1–{0}: от лучшего к худшему, 1 — «+». Не срабатывают в поле ввода."
 
 #: packages/product/src/classroom-planning.tsx
 msgid "класс"

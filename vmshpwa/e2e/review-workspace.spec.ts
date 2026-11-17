@@ -145,9 +145,7 @@ test('Sheet review: independent cards, foreign verdict conflict and explicit res
   })
   await expect(first.getByText('Второе решение для сравнения', { exact: true })).toHaveCount(1)
   await expect(first.getByText('Материалы оценки', { exact: true })).toHaveCount(0)
-  await expect(
-    first.getByRole('button', { name: 'Перенести в другую задачу', exact: true }),
-  ).toHaveCount(1)
+  await expect(first.getByRole('button', { name: 'В другую задачу', exact: true })).toHaveCount(1)
   const comment = first.getByRole('textbox', { name: 'Комментарий', exact: true })
   await comment.fill('Сохранённый комментарий простыни')
   await first.getByRole('button', { name: '1 Зачтено', exact: true }).click()
@@ -447,7 +445,7 @@ test.describe('Series feed', () => {
     ).toBeVisible()
     await page.getByText('Условие задачи', { exact: true }).click()
     await expect(page.getByText('Условие проверяемой версии недоступно.')).toBeVisible()
-    await page.getByRole('button', { name: 'Клонировать в другую задачу', exact: true }).click()
+    await page.getByRole('button', { name: 'Клонировать в…', exact: true }).click()
     await page.getByLabel('Целевая задача').selectOption(target)
     const clone = page.waitForResponse(
       (r) => r.url().endsWith('/transfer') && r.request().method() === 'POST',
@@ -472,7 +470,7 @@ test.describe('Series feed', () => {
     await comment.press('Control+Enter')
     await expect(comment).toHaveValue('Черновик второй работы')
     await expect(history.getByText('Уточнённый комментарий', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Перенести в другую задачу', exact: true }).click()
+    await page.getByRole('button', { name: 'В другую задачу', exact: true }).click()
     await page.getByLabel('Целевая задача').selectOption(target)
     const move = page.waitForResponse(
       (r) => r.url().endsWith('/transfer') && r.request().method() === 'POST',

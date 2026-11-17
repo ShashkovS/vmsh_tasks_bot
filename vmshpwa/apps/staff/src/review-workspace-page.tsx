@@ -345,7 +345,8 @@ export function LoadedReviewWorkspace({
 
   return (
     <PageLayout
-      className={embedded ? 'px-0 sm:px-0' : 'px-2 sm:px-6'}
+      headerClassName="px-3 sm:px-0"
+      className={embedded ? 'px-0 sm:px-0' : 'px-1 sm:px-6'}
       actions={
         <Button disabled={release.isPending} onClick={() => void abandon()} variant="outline">
           <Trans>Отказаться от проверки</Trans>

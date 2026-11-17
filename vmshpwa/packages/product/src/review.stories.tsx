@@ -8,7 +8,7 @@ import { ReviewLock } from './review-lock'
 import { ReviewQueue, type ReviewQueueItem, type ReviewSort } from './review-queue'
 import { ThreePaneReview } from './three-pane-review'
 import type { GroupView } from './types'
-import { fullVerdictScale } from './verdict-registry'
+import { fullVerdictScale, ternaryVerdictScale } from './verdict-registry'
 
 const meta = { title: 'Product/Review', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
@@ -403,6 +403,20 @@ export const MobileReviewText: Story = {
             ),
           },
         ]}
+      />
+    </div>
+  ),
+}
+
+export const MobileFeedback: Story = {
+  name: 'Мобильная проверка: компактная форма',
+  parameters: { layout: 'fullscreen', canvasPadding: false },
+  render: () => (
+    <div className="max-w-[390px] bg-surface p-3 text-foreground">
+      <ReviewFeedbackForm
+        verdicts={ternaryVerdictScale}
+        initialDraft={{ verdictValue: 'plus', comment: '', reactionId: null }}
+        onSubmit={() => undefined}
       />
     </div>
   ),

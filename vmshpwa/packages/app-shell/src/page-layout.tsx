@@ -25,6 +25,8 @@ export interface PageLayoutProps {
   children: ReactNode
   width?: 'reading' | 'content' | 'wide'
   className?: string
+  /** docs/review-workflow.md: retain heading gutters when mobile content widens. */
+  headerClassName?: string
 }
 
 /**
@@ -54,12 +56,18 @@ export function PageLayout({
   children,
   width = 'content',
   className,
+  headerClassName,
 }: PageLayoutProps) {
   return (
     <div className={cn('mx-auto w-full px-4 py-5 sm:px-6 sm:py-7', widthClass[width], className)}>
       {/* Actions wrap under the title instead of squeezing it into a narrow column
           (vmshpwa/dev/ui-audit-20261104/BACKLOG.md, phase 1B item 17). */}
-      <div className="mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+      <div
+        className={cn(
+          'mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between',
+          headerClassName,
+        )}
+      >
         <div className="min-w-0 space-y-1 sm:min-w-72 sm:flex-1">
           {eyebrow ? (
             <div className="text-caption font-medium tracking-wide text-muted-foreground">
@@ -163,7 +171,8 @@ export function CollapsibleCreateSection({
  * One look for section tabs across apps (dev/ui-audit-20261104/BACKLOG.md 2.2): an underline
  * row, the same as the `line` variant of `TabsList` in @vmsh/ui.
  */
-export const sectionTabsClassName = 'flex flex-wrap items-end gap-x-5 gap-y-1 border-b border-border'
+export const sectionTabsClassName =
+  'flex flex-wrap items-end gap-x-5 gap-y-1 border-b border-border'
 
 export function sectionTabClassName(active: boolean): string {
   return cn(

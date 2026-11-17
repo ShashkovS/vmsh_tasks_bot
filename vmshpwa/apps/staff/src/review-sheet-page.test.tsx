@@ -337,7 +337,7 @@ it('shows each submission once with transfer controls and keeps earlier replies 
   await within(anna).findByText('Предыдущее решение')
   expect(within(anna).getAllByText('Анна: решение')).toHaveLength(1)
   expect(within(anna).getAllByText('Вставлено ≈ 63%')).toHaveLength(1)
-  const move = within(anna).getByRole('button', { name: 'Перенести в другую задачу' })
+  const move = within(anna).getByRole('button', { name: 'В другую задачу' })
   expect(move.closest('li')?.textContent).toContain('Анна: решение')
   expect(within(anna).queryByText('Материалы оценки')).toBeNull()
   await act(async () => {
@@ -356,7 +356,7 @@ it('shows each submission once with transfer controls and keeps earlier replies 
     ),
   )
   expect(within(anna).getAllByText('Анна: решение')).toHaveLength(1)
-  expect(within(anna).getByRole('button', { name: 'Перенести в другую задачу' })).toBe(move)
+  expect(within(anna).getByRole('button', { name: 'В другую задачу' })).toBe(move)
   expect(within(anna).getAllByText('Вставлено ≈ 63%')).toHaveLength(1)
   expect(
     within(anna)

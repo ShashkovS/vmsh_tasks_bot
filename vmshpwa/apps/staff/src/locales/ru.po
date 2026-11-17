@@ -847,6 +847,10 @@ msgstr "В выбранном режиме работ нет"
 msgid "в день цикла"
 msgstr "в день цикла"
 
+#: apps/staff/src/review-transfer.tsx
+msgid "В другую задачу"
+msgstr "В другую задачу"
+
 #: apps/staff/src/course-catalog-editors.tsx
 msgid "В курсе есть очные занятия"
 msgstr "В курсе есть очные занятия"
@@ -2757,8 +2761,8 @@ msgid "Клонировать"
 msgstr "Клонировать"
 
 #: apps/staff/src/review-transfer.tsx
-msgid "Клонировать в другую задачу"
-msgstr "Клонировать в другую задачу"
+msgid "Клонировать в…"
+msgstr "Клонировать в…"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Клонировать посылку"
@@ -4761,10 +4765,6 @@ msgstr "Перенести в {0}"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "перенести в архив"
 msgstr "перенести в архив"
-
-#: apps/staff/src/review-transfer.tsx
-msgid "Перенести в другую задачу"
-msgstr "Перенести в другую задачу"
 
 #: apps/staff/src/review-transfer.tsx
 msgid "Перенести посылку"

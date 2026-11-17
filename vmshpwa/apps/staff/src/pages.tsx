@@ -371,6 +371,8 @@ export function ReviewQueuePage({ state = 'ready' }: { state?: PageDisplayState 
   return (
     <StatefulPage state={state} title={t`Очередь проверки`}>
       <PageLayout
+        className="px-1"
+        headerClassName="px-3 sm:px-0"
         description={t`Работа блокируется за одним учителем; очередь обновляется в реальном времени.`}
         eyebrow={t`Письменные задачи`}
         title={t`Очередь проверки`}
@@ -437,6 +439,8 @@ export function ReviewWorkspacePage({
   return (
     <StatefulPage state={state} title={t`Проверка работы`}>
       <PageLayout
+        className="px-1"
+        headerClassName="px-3 sm:px-0"
         description={t`${submissionId} · Анна Белова · Начинающие`}
         eyebrow={
           /* eslint-disable lingui/no-unlocalized-strings -- fixture domain content; docs/i18n.md */ '41н.6 · Расстановка ладей' /* eslint-enable lingui/no-unlocalized-strings */

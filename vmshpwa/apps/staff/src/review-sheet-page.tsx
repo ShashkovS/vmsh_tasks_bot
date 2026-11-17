@@ -81,7 +81,13 @@ export function StaffReviewSheetPage({
     opened && openedCollection?.identity === identity ? openedCollection.data : collection.data
   const tooLarge = data && !search.problem && !data.canOpenLesson
   return (
-    <PageLayout title={t`Проверка простынёй`} eyebrow={t`Письменные работы`} width="wide">
+    <PageLayout
+      className="px-1"
+      headerClassName="px-3 sm:px-0"
+      title={t`Проверка простынёй`}
+      eyebrow={t`Письменные работы`}
+      width="wide"
+    >
       <div className="space-y-4">
         <p className="text-small text-muted-foreground">
           <Trans>

@@ -119,3 +119,26 @@ backfill и dual-write нет: Telegram продолжает читать legacy
 зависит от браузера и языка документа. UI и поля ввода сохраняют обычный набор.
 Пример: `Product/Review/MobileReviewText` в
 [review.stories.tsx](../packages/product/src/review.stories.tsx).
+
+### Уточнение 17 ноября: компактные действия и внешние поля
+
+По повторной проверке владельца внешние мобильные поля страниц проверки
+([review-sheet-page.tsx](../apps/staff/src/review-sheet-page.tsx),
+[review-workspace-page.tsx](../apps/staff/src/review-workspace-page.tsx),
+[review-series-page.tsx](../apps/staff/src/review-series-page.tsx)) уменьшены до
+`px-1`; широкие экраны сохраняют прежние поля. Очередь и история используют
+тот же ритм. Шапка страницы (заголовок, описание и действия) сохраняет мобильное
+суммарное поле `px-4` через `headerClassName="px-3 sm:px-0"` в
+[PageLayout](../packages/app-shell/src/page-layout.tsx). Значения по умолчанию
+общего шаблона и глобальная шапка приложения сохраняются. Обновлены и
+[страничные stories](../apps/staff/src/pages.tsx).
+
+[VerdictActions](../packages/product/src/review-verdict-actions.tsx) показывает
+клавиши прямо на кнопках, без повторного поясняющего абзаца.
+[ReviewFeedbackForm](../packages/product/src/review-feedback-form.tsx) размещает
+«⌘/Ctrl + Enter — отправить.» справа от кнопки, в одной flex-строке.
+[ReactionPicker](../packages/product/src/reaction-picker.tsx) больше не повторяет
+пояснение о работе клавиш в комментарии.
+[ReviewTransfer](../apps/staff/src/review-transfer.tsx) использует короткие подписи
+«В другую задачу» и «Клонировать в…», чтобы обе помещались в мобильную строку.
+Story: `Product/Review/MobileFeedback` в [review.stories.tsx](../packages/product/src/review.stories.tsx).

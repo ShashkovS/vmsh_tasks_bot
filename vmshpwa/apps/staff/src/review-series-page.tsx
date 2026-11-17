@@ -335,8 +335,10 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
     return () => window.removeEventListener('keydown', key)
   })
   return (
-    <div className="mx-auto max-w-[1500px] px-2 py-3 sm:px-4">
-      <h1 className="text-subtitle font-semibold">{condition.data?.label ?? problemId}</h1>
+    <div className="mx-auto max-w-[1500px] px-1 py-3 sm:px-4">
+      <h1 className="px-3 text-subtitle font-semibold sm:px-0">
+        {condition.data?.label ?? problemId}
+      </h1>
       <details className="my-3 rounded-lg border border-border p-3">
         <summary className="cursor-pointer font-medium">
           <Trans>Условие задачи</Trans>

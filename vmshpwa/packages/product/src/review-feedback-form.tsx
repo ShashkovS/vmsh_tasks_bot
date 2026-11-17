@@ -178,13 +178,16 @@ export function ReviewFeedbackForm({
           </div>
         </div>
       ) : (
-        <Button disabled={disabled || !verdict} size="lg" type="submit">
-          {submitLabel ?? <Trans>Отправить вердикт</Trans>}
-        </Button>
+        // docs/review-workflow.md: keep the shortcut beside the submit action on mobile.
+        <div className="flex items-center gap-3">
+          <Button disabled={disabled || !verdict} size="lg" type="submit">
+            {submitLabel ?? <Trans>Отправить вердикт</Trans>}
+          </Button>
+          <p className="min-w-0 text-caption text-muted-foreground">
+            <Trans>⌘/Ctrl + Enter — отправить.</Trans>
+          </p>
+        </div>
       )}
-      <p className="text-caption text-muted-foreground">
-        <Trans>⌘/Ctrl + Enter — отправить вердикт. Работает и в комментарии.</Trans>
-      </p>
     </form>
   )
 }
