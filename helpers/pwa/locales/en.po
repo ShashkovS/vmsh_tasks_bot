@@ -1276,6 +1276,7 @@ msgstr "Invalid analytics filter"
 
 #: apps/pwa_api/auth_routes.py
 #: apps/pwa_api/group_banner_routes.py
+#: apps/pwa_api/review_routes.py
 msgid "Недостаточно прав"
 msgstr "Insufficient permissions"
 

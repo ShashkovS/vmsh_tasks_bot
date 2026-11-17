@@ -1,4 +1,5 @@
 import { liveDirectorySchema } from '../packages/contracts/src/live-marking'
+import { reviewContributionSchema } from '../packages/contracts/src/review-contribution'
 import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -132,6 +133,14 @@ test('Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile rea
   await expect(cell).toHaveAccessibleName(/\+, моя оценка, Сохранено/)
   await page.getByRole('button', { name: 'Отменить последнее действие' }).click()
   await expect(cell).toHaveAccessibleName(/не сдавал, Сохранено/)
+  // review-contribution.md: saved PWA oral marks contribute even after undo.
+  const personalResponse = await page.request.get(
+    `/staff/api/v1/review/my-contribution?course=c-1&lesson=${lesson}`,
+  )
+  expect(personalResponse.status()).toBe(200)
+  const personalCounts = reviewContributionSchema.parse(await personalResponse.json())
+  expect(personalCounts.lesson!.counts.byKind.zoom.total).toBeGreaterThan(0)
+  await expect(page.locator('summary').filter({ hasText: 'Ваш вклад' })).toBeVisible()
   await context.setOffline(true)
   await cell.click()
   await expect(page.getByRole('status').filter({ hasText: 'не отправлено' })).toBeVisible()

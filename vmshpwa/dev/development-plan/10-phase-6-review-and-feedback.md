@@ -438,3 +438,10 @@ Types/lint/i18n/build, 1152 frontend, 386 Storybook, 5 Chromium review E2E PASS;
 25 HTTP / 4 HTML / 120 Staff asset hashes PASS, конфигурация и службы сохранены.
 В полном gate остаются прежние замечания форматтера и 2 Python FAIL вне правки.
 [Квитанции и снимки](../../../pwa_tests/reports/mobile-review-actions-20261117/README.md).
+
+## 17 ноября 2026: личный вклад
+
+Реализован согласованный [личный вклад учителя](../../docs/review-contribution.md):
+PWA-only письменные/устные счётчики, спокойные достижения, дневная и недельная
+серии. Схема не меняется. 8 server / 8 focused frontend / 7 Storybook / 15 Chromium E2E PASS.
+Общие baseline-ограничения и снимки: [отчёт](../../../pwa_tests/reports/review-contribution-20261117/README.md).

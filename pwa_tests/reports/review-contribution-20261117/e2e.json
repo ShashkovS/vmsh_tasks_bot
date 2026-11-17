@@ -1,0 +1,79 @@
+{
+  "modes": ["review", "oral", "live-marking"],
+  "browser": "chromium",
+  "seconds": 122.881,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": ["pnpm", "build"],
+      "seconds": 19.331,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 35.325,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.191,
+        "key": "fd69106968992298aa20ed7fcfb5b8fb3cdad3d7a55cabc6ed7d08a42275d328"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/oral-admission.spec.ts",
+        "e2e/live-marking.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 30.957,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.03,
+        "key": "fd69106968992298aa20ed7fcfb5b8fb3cdad3d7a55cabc6ed7d08a42275d328"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/live-marking.spec.ts",
+        "e2e/live-marking-confirmation.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 36.382,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.026,
+        "key": "fd69106968992298aa20ed7fcfb5b8fb3cdad3d7a55cabc6ed7d08a42275d328"
+      }
+    }
+  ]
+}

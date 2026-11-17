@@ -1,6 +1,7 @@
 import { reviewSheetCollectionSchema } from '../packages/contracts/src/review-sheet'
 import { completeReviewResponseSchema } from '../packages/contracts/src/review-queue'
 import { authContextSchema } from '../packages/contracts/src/auth'
+import { reviewContributionSchema } from '../packages/contracts/src/review-contribution'
 import {
   familyWrittenThreadResponseSchema,
   writtenStudentReactionResponseSchema,
@@ -261,6 +262,69 @@ test('Sheet review: independent cards, foreign verdict conflict and explicit res
   expect(
     completeReviewResponseSchema.parse(await ownResponse.json()).review.annotations,
   ).toHaveLength(1)
+  // review-contribution.md: a confirmed written save appears in the personal
+  // lesson total; the disclosure stays compact and keyboard accessible.
+  const contributionResponse = await page.request.get(
+    `/staff/api/v1/review/my-contribution?course=c-1&lesson=${id}`,
+  )
+  expect(contributionResponse.status()).toBe(200)
+  const contribution = reviewContributionSchema.parse(await contributionResponse.json())
+  expect(contribution.lesson?.counts.byKind.written.total).toBe(1)
+  expect(contribution.lesson?.counts.byKind.zoom.total).toBe(1)
+  const personal = page
+    .locator('details')
+    .filter({ has: page.locator('summary', { hasText: 'Ваш вклад' }) })
+  await expect(personal).toBeVisible()
+  await expect(personal).not.toHaveAttribute('open')
+  await personal.locator('summary').focus()
+  await page.keyboard.press('Enter')
+  await expect(personal.getByRole('progressbar', { name: 'Ваш общий вклад' })).toBeVisible()
+  await personal.getByLabel('Курс статистики').selectOption('c-1')
+  await personal.getByLabel('Занятие статистики').selectOption(String(id))
+  await expect(personal.getByRole('progressbar', { name: 'Ваш вклад за занятие' })).toHaveAttribute(
+    'aria-valuenow',
+    '2',
+  )
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await personal.locator('summary').click()
+    const collapsedWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+    await personal.locator('summary').click()
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(
+        (dark) => document.documentElement.classList.toggle('dark', dark),
+        theme === 'dark',
+      )
+      const expandedWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+      console.log('Contribution layout', { width, collapsedWidth, expandedWidth })
+      expect(expandedWidth).toBeLessThanOrEqual(Math.max(width, collapsedWidth))
+      const panel = await personal.boundingBox()
+      expect(panel!.x + panel!.width).toBeLessThanOrEqual(width)
+      expect(await personal.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      )
+      await page.screenshot({
+        path: info.outputPath(`contribution-${width}-${theme}.png`),
+        animations: 'disabled',
+      })
+    }
+  }
+  await page.evaluate(() => {
+    document.documentElement.classList.remove('dark')
+    document.documentElement.style.zoom = '2'
+  })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  await page.screenshot({
+    path: info.outputPath('contribution-zoom.png'),
+    animations: 'disabled',
+  })
+  await page.evaluate(() => {
+    document.documentElement.style.zoom = ''
+  })
+  await personal.locator('summary').click()
   const student = await secondaryContext.newPage()
   const family = await secondaryContext.newPage()
   await loginThroughUi(student, AUTH_PERSONAS.student, `/student/tasks/math-5-7/н/${id}`)

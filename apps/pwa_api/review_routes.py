@@ -156,6 +156,88 @@ review_routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
 
 
+@review_routes.get("/staff/api/v1/review/my-contribution")
+async def my_review_contribution(request: web.Request) -> web.Response:
+    """Own PWA work only; vmshpwa/docs/review-contribution.md."""
+    from db_methods.pwa.review_contribution import (
+        contribution_lessons,
+        contribution_rows,
+    )
+    from models.pwa.review_contribution import calculate_contribution
+
+    teacher_id, scope = _staff_context(request)
+    principal = authenticated_session(request).principal
+    if not any(
+        principal.has_capability(capability)
+        for capability in (
+            Capability.REVIEW_WRITE,
+            Capability.ORAL_MANAGE,
+        )
+    ):
+        raise PwaApiError(status=403, code="forbidden", message="Недостаточно прав")
+    if set(request.query) - {"course", "lesson", "groupLesson"} or any(
+        len(request.query.getall(key)) != 1 for key in request.query
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте фильтры"
+        )
+    course = _optional_public_id(request.query.get("course"), field="course")
+    raw_lesson = request.query.get("lesson")
+    if raw_lesson is not None and re.fullmatch(r"[0-9]{1,6}", raw_lesson) is None:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте фильтры"
+        )
+    lesson = int(raw_lesson) if raw_lesson is not None else None
+    group_lesson = _optional_public_id(
+        request.query.get("groupLesson"), field="groupLesson"
+    )
+    if group_lesson is not None and (course is not None or lesson is not None):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте фильтры"
+        )
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    now = datetime.now(UTC)
+
+    def read(connection):
+        try:
+            lessons = contribution_lessons(connection, scope, _timestamp(now))
+            selected_course, selected_lesson = course, lesson
+            if group_lesson is not None:
+                selected = next(
+                    (
+                        item
+                        for item in lessons
+                        if item["group_lesson_id"] == group_lesson
+                    ),
+                    None,
+                )
+                if selected is None:
+                    raise PermissionError("lesson_not_available")
+                selected_course, selected_lesson = (
+                    selected["course_id"],
+                    selected["lesson"],
+                )
+            return calculate_contribution(
+                contribution_rows(connection, teacher_id),
+                lessons,
+                course=selected_course,
+                lesson=selected_lesson,
+                now=now,
+            )
+        except PermissionError as error:
+            raise PwaApiError(
+                status=403, code="forbidden", message="Недостаточно прав"
+            ) from error
+
+    payload = await database.factory.run_read_async(read)
+    return web.json_response({**payload, "requestId": request["request_id"]})
+
 def _repository(request: web.Request) -> PwaWrittenReviewQueueRepository:
     repository = request.app.get(PWA_REVIEW_QUEUE_REPOSITORY)
     if repository is None:

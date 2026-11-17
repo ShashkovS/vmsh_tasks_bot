@@ -244,3 +244,12 @@ cutover, 0107 → backend → frontend, по 25 HTTP checks. Старые соо
 [route](../../apps/staff/src/routes/users.tsx). Backend/миграция и интерфейс
 реализуются; domain/HTTP, Storybook, E2E и визуальная проверка в работе.
 Новая design phase не начинается, визуальная приёмка владельцем не заявляется.
+
+### Личный вклад учителя — 17 ноября 2026
+
+[ReviewContribution](../../apps/staff/src/review-contribution.tsx) добавляет
+свёрнутую строку в очередь, письменную проверку/историю, простыню, очный и
+Zoom-приём. Раскрытие показывает собственные итоги PWA, рубежи и два ритма
+без рейтинга и давления. [Согласованные правила, данные и API](../../docs/review-contribution.md),
+[stories состояний и клавиатуры](../../apps/staff/src/review-contribution.stories.tsx),
+браузерная приёмка — `e2e/review-workspace.spec.ts` и `e2e/live-marking.spec.ts`.

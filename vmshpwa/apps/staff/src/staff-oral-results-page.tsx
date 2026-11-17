@@ -1,4 +1,6 @@
 import { t } from '@lingui/core/macro'
+import { ReviewContribution } from './review-contribution'
+import { notifyContributionSaved } from './review-contribution-events'
 import { Trans } from '@lingui/react/macro'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -99,6 +101,7 @@ export function StaffOralResultsPage({ groupLessonId }: { groupLessonId: string 
   const mutation = useMutation({
     mutationFn: (input: RecordOralResultRequest) => client.record(groupLessonId, input),
     onSuccess: async () => {
+      notifyContributionSaved()
       setDraft(emptyDraft())
       try {
         globalThis.localStorage.removeItem(storageKey)
@@ -139,6 +142,7 @@ export function StaffOralResultsPage({ groupLessonId }: { groupLessonId: string 
       title={t`Результаты устного приёма`}
       width="wide"
     >
+      <ReviewContribution groupLesson={groupLessonId} />
       {query.isPending ? <PageStatePanel state="loading" /> : null}
       {query.error ? <PageStatePanel state="error" /> : null}
       {query.data && (query.data.students.length === 0 || query.data.problems.length === 0) ? (

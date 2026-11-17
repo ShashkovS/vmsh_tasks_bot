@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "productionDeployed": false,
+  "python": {
+    "focusedPassed": 8,
+    "broadBeforeFixtureSetup": {
+      "passed": 3126,
+      "failed": 17,
+      "skipped": 16
+    },
+    "recoveredFailures": 15,
+    "remainingUnrelatedFailures": [
+      "pwa_tests/test_database_performance_guard.py::test_guard_rejects_a_correlated_full_scan_and_accepts_indexed_lookup",
+      "pwa_tests/integration/test_tikz_chess_smoke.py::test_piece_scales_with_tikz_picture"
+    ]
+  },
+  "frontend": {
+    "broadPassedBeforeFocusedFixes": 1157,
+    "focusedPassed": 8
+  },
+  "storybook": {
+    "broadPassedBeforeFocusedFix": 392,
+    "focusedPassed": 7
+  },
+  "e2e": {
+    "browser": "chromium",
+    "passedExecutions": 15,
+    "uniqueScenarios": 11,
+    "retries": 0,
+    "modes": ["review", "oral", "live-marking"]
+  },
+  "responsive": {
+    "widths": [320, 390, 1440],
+    "themes": ["light", "dark"],
+    "cssZoom": 2,
+    "reducedMotion": true,
+    "panelFitsAllWidths": true,
+    "sheetScrollWidths": {
+      "320": {
+        "collapsed": 338,
+        "expanded": 338
+      },
+      "390": {
+        "collapsed": 390,
+        "expanded": 390
+      },
+      "1440": {
+        "collapsed": 1440,
+        "expanded": 1440
+      }
+    }
+  },
+  "baselineFormatFailures": 12,
+  "fullGatePassed": false,
+  "scopedFinalPipelinePassed": true,
+  "snapshotsVisuallyInspected": [
+    "contribution-1440-dark.png",
+    "contribution-1440-light.png",
+    "contribution-320-dark.png",
+    "contribution-320-light.png",
+    "contribution-390-dark.png",
+    "contribution-390-light.png",
+    "contribution-zoom.png"
+  ],
+  "toolchain": {
+    "node": "26.9.0",
+    "pnpm": "11.15.1",
+    "python": "3.14.8",
+    "sqlite": "3.53.1"
+  }
+}
