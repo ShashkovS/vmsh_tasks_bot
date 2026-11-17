@@ -414,8 +414,14 @@ services active, maintenance off. [Доказательства](../../../pwa_te
 
 ## 2026-11-17 — мобильные поля проверки
 
-В работе: [поля и переносы](../../docs/review-workflow.md#17-ноября-2026--поля-и-переносы-в-мобильной-проверке).
+Завершено: [поля и переносы](../../docs/review-workflow.md#17-ноября-2026--поля-и-переносы-в-мобильной-проверке).
 Уменьшены вложенные поля Staff, сообщения на телефоне используют доступную ширину,
-для текста решения включены автоматические переносы. Добавлена мобильная story.
-Следующий gate: `make pwa-check-fast PWA_E2E_MODES="review submissions"`,
-визуальная проверка и выпуск только на vmshfirstvds.
+для текста решения включены автоматические переносы. Мобильная story проверена
+в Chromium/Firefox/WebKit, светлой и тёмной темах; снимки простыни просмотрены.
+Types/lint/i18n/build, 1152 frontend, 385 Storybook и все 5 review E2E PASS.
+Полный fast gate ограничен 13 прежними замечаниями форматтера, двумя Python
+падениями вне правки и таймаутом Student login в одном submissions E2E.
+Выпущен `b2df728b` только на vmshfirstvds (`mobile-review-20261117`): 25 HTTP,
+4 HTML и 120 Staff JS/CSS hash checks PASS. FirstVDS media-policy/config,
+backend и службы сохранены; миграций нет.
+[Квитанция и ограничения](../../../pwa_tests/reports/mobile-review-20261117/README.md).

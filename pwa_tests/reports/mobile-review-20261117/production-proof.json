@@ -1,0 +1,36 @@
+{
+  "release": "mobile-review-20261117",
+  "previous": "/web/vmsh_tasks_bot/vmshpwa/releases/firstvds-20261117-media",
+  "mediaPolicySha256": "aa439d261cbebdff4c3326ae862ac36204ba43b8ef51774deb4609b6bc8b963b",
+  "configPreserved": true,
+  "servicesPreserved": {
+    "vmshpwa.service": "ActiveState=active\nMainPID=32798",
+    "gunicorn.vmsh_tasks_bot.service": "ActiveState=active\nMainPID=32917",
+    "vmsh-rehearsal-nats.service": "ActiveState=active\nMainPID=1057",
+    "vmsh-analytics.timer": "ActiveState=active"
+  },
+  "build": {
+    "profile": "production",
+    "releaseId": "mobile-review-20261117",
+    "publicMediaOrigin": "https://vmsh.shashkovs.ru",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://glitch.leaders.tech",
+    "msw": false,
+    "prototype": false
+  },
+  "status": "PASS",
+  "sourceCommit": "b2df728b837ad5b8450fa64ca5d6255433359595",
+  "htmlHashesMatched": 4,
+  "staffAssetHashesMatched": 120,
+  "httpChecksPassed": 25,
+  "frontendOnly": true,
+  "servicesRestarted": false,
+  "uiSourceHashes": {
+    "vmshpwa/apps/staff/src/review-series-page.tsx": "a38420b33d53ba9d6075dec9dd5c543f69f985acf1988a9e7189aef11afb0f8d",
+    "vmshpwa/apps/staff/src/review-sheet-card.tsx": "8aaebeda21d888ebe0b7c4274bac80b4c1c34333cf6e7ec0b02e04d324cadf42",
+    "vmshpwa/apps/staff/src/review-workspace-page.tsx": "caa6c774d461d574a27b6257cff4b47be1e116e4e1c57de1c4b48f21607a3fb4",
+    "vmshpwa/apps/staff/src/student-results-history.tsx": "7076ed8d351a4f19362872e1097aeb55c75390d152a205add7c9489cf9cb384f",
+    "vmshpwa/packages/product/src/feedback-thread.tsx": "c0848796158d108bd459a1c9013b676c7611bb35e1f39421ffb92378dcb41a7d",
+    "vmshpwa/packages/product/src/review.stories.tsx": "18073a874530d89f2abdb2b4a24e4b20edddfa60ea3ae82a080a784ea65c023c"
+  }
+}

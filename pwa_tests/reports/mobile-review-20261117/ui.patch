@@ -1,0 +1,254 @@
+diff --git a/vmshpwa/apps/staff/src/review-series-page.tsx b/vmshpwa/apps/staff/src/review-series-page.tsx
+index 87419161..59f34c18 100644
+--- a/vmshpwa/apps/staff/src/review-series-page.tsx
++++ b/vmshpwa/apps/staff/src/review-series-page.tsx
+@@ -335,7 +335,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
+     return () => window.removeEventListener('keydown', key)
+   })
+   return (
+-    <div className="mx-auto max-w-[1500px] px-4 py-3">
++    <div className="mx-auto max-w-[1500px] px-2 py-3 sm:px-4">
+       <h1 className="text-subtitle font-semibold">{condition.data?.label ?? problemId}</h1>
+       <details className="my-3 rounded-lg border border-border p-3">
+         <summary className="cursor-pointer font-medium">
+@@ -410,7 +410,7 @@ export function StaffReviewSeriesPage({ problemId }: { problemId: string }) {
+             if (element) feedElements.current.set(item.materialKey, element)
+             else feedElements.current.delete(item.materialKey)
+           }}
+-          className="my-4 space-y-3 rounded-xl border border-border bg-surface p-4"
++          className="my-4 space-y-3 rounded-xl border border-border bg-surface p-2 sm:p-4"
+         >
+           {correcting && editingId === item.reviewId ? (
+             <CompletedReviewCard
+diff --git a/vmshpwa/apps/staff/src/review-sheet-card.tsx b/vmshpwa/apps/staff/src/review-sheet-card.tsx
+index edd149cc..160b6a95 100644
+--- a/vmshpwa/apps/staff/src/review-sheet-card.tsx
++++ b/vmshpwa/apps/staff/src/review-sheet-card.tsx
+@@ -111,7 +111,7 @@ export function ReviewSheetCard({
+       onBlurCapture={(event) => {
+         if (!event.currentTarget.contains(event.relatedTarget)) onDeactivate()
+       }}
+-      className="min-h-32 space-y-3 rounded-lg border border-border bg-surface p-4 focus-visible:outline-2 focus-visible:outline-focus-ring"
++      className="min-h-32 space-y-3 rounded-lg border border-border bg-surface p-2 sm:p-4 focus-visible:outline-2 focus-visible:outline-focus-ring"
+     >
+       <h3 className="font-semibold">{item.studentName}</h3>
+       {!near || query.isPending ? (
+@@ -534,7 +534,13 @@ function LoadedSheetCard({
+                 onSubmit={(result) => void submit(result)}
+                 submitLabel={changed ? t`Отправить мой результат` : undefined}
+               />
+-              <Button variant="outline" size="sm" className="w-fit" disabled={busy} onClick={() => setAbandoned(true)}>
++              <Button
++                variant="outline"
++                size="sm"
++                className="w-fit"
++                disabled={busy}
++                onClick={() => setAbandoned(true)}
++              >
+                 <Trans>Отказаться от проверки</Trans>
+               </Button>
+             </div>
+diff --git a/vmshpwa/apps/staff/src/review-workspace-page.tsx b/vmshpwa/apps/staff/src/review-workspace-page.tsx
+index 01537adf..2ba41bd5 100644
+--- a/vmshpwa/apps/staff/src/review-workspace-page.tsx
++++ b/vmshpwa/apps/staff/src/review-workspace-page.tsx
+@@ -345,6 +345,7 @@ export function LoadedReviewWorkspace({
+ 
+   return (
+     <PageLayout
++      className={embedded ? 'px-0 sm:px-0' : 'px-2 sm:px-6'}
+       actions={
+         <Button disabled={release.isPending} onClick={() => void abandon()} variant="outline">
+           <Trans>Отказаться от проверки</Trans>
+@@ -399,7 +400,7 @@ export function LoadedReviewWorkspace({
+         <ThreePaneReview
+           evidence={
+             <PageSection title={t`Работа и переписка`}>
+-              <Card>
++              <Card className="[--card-spacing:--spacing(2)] sm:[--card-spacing:--spacing(4)]">
+                 <CardHeader className="flex-row items-center justify-between">
+                   <CardTitle>
+                     <Plural
+@@ -415,7 +416,7 @@ export function LoadedReviewWorkspace({
+                   </Badge>
+                 </CardHeader>
+                 <CardContent>
+-                  <FeedbackThread messages={messages} />
++                  <FeedbackThread layout="review" messages={messages} />
+                 </CardContent>
+               </Card>
+             </PageSection>
+@@ -474,6 +475,7 @@ export function ReviewReadOnlyEvidence({
+ }) {
+   return (
+     <FeedbackThread
++      layout="review"
+       messages={reviewTimelineMessages(lease, mediaClient, annotations, () => undefined, true)}
+     />
+   )
+@@ -606,7 +608,9 @@ function TimelineEntryBody({
+ }) {
+   return (
+     <div className="space-y-2">
+-      {entry.text ? <p className="whitespace-pre-wrap">{entry.text}</p> : null}
++      {entry.text ? (
++        <p className="hyphens-auto whitespace-pre-wrap break-words">{entry.text}</p>
++      ) : null}
+       {entry.attachments.length ? (
+         <div className="grid gap-2 sm:grid-cols-2">
+           {entry.attachments.map((attachment) => (
+@@ -768,6 +772,7 @@ export function ReviewedWorkSnapshot({
+         {lease.student.displayName} · {verdict}
+       </h2>
+       <FeedbackThread
++        layout="review"
+         messages={reviewTimelineMessages(
+           lease,
+           mediaClient,
+@@ -778,7 +783,9 @@ export function ReviewedWorkSnapshot({
+         )}
+       />
+       {comment && (
+-        <p className="whitespace-pre-wrap rounded-lg border border-border p-3">{comment}</p>
++        <p className="hyphens-auto whitespace-pre-wrap break-words rounded-lg border border-border p-3">
++          {comment}
++        </p>
+       )}
+     </section>
+   )
+diff --git a/vmshpwa/apps/staff/src/student-results-history.tsx b/vmshpwa/apps/staff/src/student-results-history.tsx
+index 3b87ecda..48dfa9d7 100644
+--- a/vmshpwa/apps/staff/src/student-results-history.tsx
++++ b/vmshpwa/apps/staff/src/student-results-history.tsx
+@@ -44,7 +44,7 @@ export function ResultCondition({
+       <p className="text-caption text-muted-foreground">
+         <Trans>Сохранённый текст условия · версия неизвестна</Trans>
+       </p>
+-      <p className="whitespace-pre-wrap break-words">{legacyText}</p>
++      <p className="hyphens-auto whitespace-pre-wrap break-words">{legacyText}</p>
+     </div>
+   ) : (
+     <p className="text-small text-muted-foreground">
+@@ -218,6 +218,7 @@ export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: s
+     <ol className="space-y-2 break-words">
+       {events.map((e) => (
+         <ThreadMessage
++          layout="review"
+           key={e.id}
+           message={{
+             id: e.id,
+@@ -252,14 +253,18 @@ export function HistoryEvents<T extends StudentResultEvent & { problemNumber?: s
+                     {e.textMaterials.map((material) => (
+                       <div key={material.entryId}>
+                         <PasteEvidenceBadge estimate={material.pasteEstimate} />
+-                        <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
++                        <p className="hyphens-auto whitespace-pre-wrap [overflow-wrap:anywhere]">
+                           {material.text}
+                         </p>
+                       </div>
+                     ))}
+                   </>
+                 ) : (
+-                  e.text && <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{e.text}</p>
++                  e.text && (
++                    <p className="hyphens-auto whitespace-pre-wrap [overflow-wrap:anywhere]">
++                      {e.text}
++                    </p>
++                  )
+                 )}
+                 {e.checkStatus && (
+                   <p className="text-caption text-muted-foreground">
+diff --git a/vmshpwa/packages/product/src/feedback-thread.tsx b/vmshpwa/packages/product/src/feedback-thread.tsx
+index aa5d464f..b7371550 100644
+--- a/vmshpwa/packages/product/src/feedback-thread.tsx
++++ b/vmshpwa/packages/product/src/feedback-thread.tsx
+@@ -80,7 +80,14 @@ function ChannelBadge({ channel }: { channel: Exclude<ThreadChannel, 'staff'> })
+   )
+ }
+ 
+-export function ThreadMessage({ message }: { message: ThreadMessageView }) {
++// docs/review-workflow.md: mobile review uses the available width for long solutions.
++export function ThreadMessage({
++  message,
++  layout = 'chat',
++}: {
++  message: ThreadMessageView
++  layout?: 'chat' | 'review'
++}) {
+   const ai = message.author.kind === 'ai'
+   const system = message.author.kind === 'system'
+   const name = message.author.name ?? authorName[message.author.kind]
+@@ -88,7 +95,8 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
+     <li className={cn('flex', message.own && 'justify-end')}>
+       <div
+         className={cn(
+-          'max-w-[85%] space-y-1 rounded-lg border px-3 py-2',
++          'min-w-0 space-y-1 rounded-lg border py-2',
++          layout === 'review' ? 'max-w-full px-2 sm:max-w-[85%] sm:px-3' : 'max-w-[85%] px-3',
+           ai
+             ? 'border-dashed border-provenance-ai-border bg-provenance-ai-surface'
+             : system
+@@ -123,9 +131,10 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
+ export interface FeedbackThreadProps {
+   messages: ThreadMessageView[]
+   className?: string
++  layout?: 'chat' | 'review'
+ }
+ 
+-export function FeedbackThread({ messages, className }: FeedbackThreadProps) {
++export function FeedbackThread({ messages, className, layout = 'chat' }: FeedbackThreadProps) {
+   if (messages.length === 0) {
+     return (
+       <p className={cn('text-small text-muted-foreground', className)}>
+@@ -136,7 +145,7 @@ export function FeedbackThread({ messages, className }: FeedbackThreadProps) {
+   return (
+     <ol className={cn('space-y-2', className)}>
+       {messages.map((message) => (
+-        <ThreadMessage key={message.id} message={message} />
++        <ThreadMessage key={message.id} message={message} layout={layout} />
+       ))}
+     </ol>
+   )
+diff --git a/vmshpwa/packages/product/src/review.stories.tsx b/vmshpwa/packages/product/src/review.stories.tsx
+index 68c2728f..9f56a391 100644
+--- a/vmshpwa/packages/product/src/review.stories.tsx
++++ b/vmshpwa/packages/product/src/review.stories.tsx
+@@ -248,6 +248,7 @@ function WorkspaceHarness() {
+         <section className="space-y-2" aria-label="Обсуждение работы">
+           <h3 className="text-label font-medium text-foreground">Обсуждение</h3>
+           <FeedbackThread
++            layout="review"
+             messages={[
+               {
+                 id: 'student-1',
+@@ -379,3 +380,30 @@ export const QueueWithExternalSummary: Story = {
+     await expect(canvas.getByText('Проверяет И. Соколов')).toBeInTheDocument()
+   },
+ }
++
++// docs/review-workflow.md: a long solution remains readable at phone widths.
++export const MobileReviewText: Story = {
++  name: 'Проверка: длинное решение на телефоне',
++  render: () => (
++    <div className="max-w-[390px] p-2" lang="ru">
++      <FeedbackThread
++        layout="review"
++        messages={[
++          {
++            id: 'long-solution',
++            author: { kind: 'student', name: 'Анна' },
++            at: '18:02',
++            channel: 'pwa',
++            body: (
++              <p className="hyphens-auto whitespace-pre-wrap break-words">
++                Сначала нужно высыпать все 24 килограмма гвоздей на обе чаши весов так, чтобы они
++                уравновесились, тогда на каждой чаше получится по 12 килограммов. Одну кучку мы
++                откладываем в сторону, а вторую делим пополам на тех же весах.
++              </p>
++            ),
++          },
++        ]}
++      />
++    </div>
++  ),
++}
