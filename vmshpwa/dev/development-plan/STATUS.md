@@ -1,12 +1,16 @@
 # Статус плана разработки
 
-## 2026-11-17 — Выпуск личного вклада и накопленной пачки: подготовка
+## 2026-11-17 — Выпуск личного вклада и накопленной пачки: production PASS
 
 Владелец разрешил rollout на `vmshfirstvds` и всей накопленной пачки на
-`prep.leaders.tech`. Подготавливаются отдельные production bundles с профилем
-каждого хоста, сохранением FirstVDS media/backend patches, резервными копиями
-и проверкой HTTP/assets/API. Миграций в выпускаемой пачке нет. Итоговые
-квитанции будут добавлены после фактического переключения.
+`prep.leaders.tech`. Выпущен `0f7ef0f9`, static `review-contribution-20261117`:
+на каждом сайте 25 HTTP PASS, 4 HTML/121 Staff assets совпали, два PWA workers
+плавно заменены. Main/analytics backups до/после прошли integrity; schema,
+config, Zoom/Telegram/NATS сохранены. FirstVDS media/backend patches сохранены.
+Действующая browser-сессия подтвердила «Ваш вклад» и подробности.
+Осталось отдельное подтверждение владельца новых каталогов отчётов/fixture:
+approval review отклонила chown; runtime не затронут.
+[Production receipts и точный остаток](../../../pwa_tests/reports/review-contribution-20261117/rollout/README.md).
 
 ## 2026-11-17 — Личный вклад проверяющего: реализован и проверен
 

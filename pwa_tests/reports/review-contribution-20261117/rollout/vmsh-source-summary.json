@@ -1,0 +1,18 @@
+{
+  "preservedServerRepairs": [
+    "helpers/object_storage.py",
+    "helpers/pwa/content/assets.py",
+    "helpers/pwa/content/metadata_generation.py",
+    "helpers/pwa/locales/en.po",
+    "vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py"
+  ],
+  "candidateFiles": 117,
+  "sourceBefore": "a20adbe009203bcacba08d26b755b8acce7b7f5e",
+  "sourceAfter": "0f7ef0f9f529dc641bada70c70204b6a61b3a1f2",
+  "schemaSha256": "d9ebb67caafda680400795989397a697a2ef2f5cd1da5445d5e49fcb0edd741c",
+  "firstvdsMediaFiles": {
+    "vmshpwa/apps/student/src/sw.ts": "d11afea84d754a59a8ffe315e694123dcf392b85992a39a7673ddc62194d0288",
+    "vmshpwa/apps/family/src/sw.ts": "72cbb7bdbce11848b3f74b2a2ceeff5d3de4db944dfb507520b9f032220bb21d",
+    "vmshpwa/packages/offline/src/recent-media-policy.ts": "aa439d261cbebdff4c3326ae862ac36204ba43b8ef51774deb4609b6bc8b963b"
+  }
+}

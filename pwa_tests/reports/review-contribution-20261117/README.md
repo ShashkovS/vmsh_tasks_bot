@@ -79,3 +79,10 @@ production не менялся.
 | 1440 px | [снимок](contribution-1440-light.png) | [снимок](contribution-1440-dark.png) |
 
 [CSS zoom 200%](contribution-zoom.png).
+
+## Production rollout
+
+2026-11-17 выпущен на `vmshfirstvds` и `prep.leaders.tech`, source `0f7ef0f9`,
+static `review-contribution-20261117`. По 25 HTTP checks PASS; schema/config
+сохранены, main/analytics backups до/после проверены. [Квитанции и оставшееся
+подтверждение владельца служебных каталогов](rollout/README.md).

@@ -77,7 +77,10 @@ E2E review/oral/live-marking, 320/390/1440 px, обе темы, клавиату
 Полный gate ограничен 12 прежними format failures и двумя прежними Python
 failures. У простыни на 320 px сохранилось переполнение на 18 px, новый блок
 его не увеличивает и сам помещается. [Доказательства и снимки](../../pwa_tests/reports/review-contribution-20261117/README.md).
-Production не менялся.
+2026-11-17 выпущен на FirstVDS и TLF: `review-contribution-20261117`,
+на каждом сайте 25 HTTP checks PASS и проверка опубликованных HTML/assets.
+Действующая teacher browser-сессия подтвердила блок и подробности.
+[Production receipts и служебный остаток](../../pwa_tests/reports/review-contribution-20261117/rollout/README.md).
 
 Read-only замер существующего production-снимка: собственные 5755 проверок,
 около 0.22 секунды на SQLite projection после оптимизации join corrections.
