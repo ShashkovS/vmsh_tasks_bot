@@ -1,0 +1,69 @@
+{
+  "sourceBefore": "c8e2a32852c2bec3b26a0f8aac149c5b9d3c01e8",
+  "sourceAfter": "a20adbe009203bcacba08d26b755b8acce7b7f5e",
+  "origin": "https://vmsh.shashkovs.ru",
+  "static": "releases/media-cache-20261107",
+  "schemaChanged": false,
+  "unrelatedFiles": [
+    "helpers/pwa/content/metadata_generation.py",
+    "helpers/pwa/locales/en.po",
+    "vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py"
+  ],
+  "preservedUntrackedFiles": [],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 34989,
+      "workersBefore": [
+        34993,
+        34995
+      ],
+      "workersAfter": [
+        190472,
+        190473
+      ]
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "master": 899,
+      "workersBefore": [
+        27991,
+        27992
+      ],
+      "workersAfter": [
+        190492,
+        190493
+      ]
+    }
+  },
+  "conversionChecks": [
+    {
+      "kind": "jpeg-conversion",
+      "status": "PASS",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "kind": "corrupt-input-diagnostics",
+      "status": "PASS",
+      "reason": "asset.converter_failed",
+      "capability": "image-normalization",
+      "diagnostics": {
+        "tool": "magick",
+        "return_code": 1,
+        "converter_output": "magick: no decode delegate for this image format `<workdir>/input.bin' @ error/constitute.c/ReadImage/752.",
+        "source_bytes": 37,
+        "source_format": "unknown",
+        "source_sha256": "9015e8cb7dc2f65afe1505672a36878c6f4c1d13c6bc406eaba57665038fffe0"
+      }
+    },
+    {
+      "kind": "glitchtip-client-configured",
+      "status": "PASS",
+      "project": "/2"
+    }
+  ],
+  "status": "PASS",
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true,
+  "schemaSha256": "bdc350e5483e056531cf7e131cea5089c29162deb6ff8fbf1b17c320571b51a9"
+}

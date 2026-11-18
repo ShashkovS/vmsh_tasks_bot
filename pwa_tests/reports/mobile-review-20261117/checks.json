@@ -1,0 +1,59 @@
+{
+  "source_digest": "d4b68c8fb5c944cf28ecbf4c1646c3611eed103ffdbfec9bb98675ca01538492",
+  "format": "13 pre-existing files fail; changed files formatted",
+  "steps": [
+    {
+      "name": "types",
+      "exit_code": 0,
+      "seconds": 10.78
+    },
+    {
+      "name": "python",
+      "exit_code": 1,
+      "seconds": 44.22
+    },
+    {
+      "name": "frontend",
+      "exit_code": 0,
+      "seconds": 51.74
+    },
+    {
+      "name": "storybook",
+      "exit_code": 0,
+      "seconds": 64.93
+    },
+    {
+      "name": "e2e",
+      "exit_code": 1,
+      "seconds": 52.99
+    }
+  ],
+  "source_unchanged": true,
+  "static_steps": [
+    {
+      "name": "lint-js",
+      "exit_code": 0,
+      "seconds": 33.72
+    },
+    {
+      "name": "lint-css",
+      "exit_code": 0,
+      "seconds": 1.15
+    },
+    {
+      "name": "i18n-frontend",
+      "exit_code": 0,
+      "seconds": 1.99
+    },
+    {
+      "name": "i18n-backend",
+      "exit_code": 0,
+      "seconds": 0.47
+    }
+  ],
+  "limitations": [
+    "13 pre-existing formatting failures outside changed files",
+    "2 Python failures outside changed code: correlated SQLite scan guard; TikZ piece scaling",
+    "1 Chromium submissions scenario timed out waiting for Student auth login response; all 5 review scenarios passed"
+  ]
+}

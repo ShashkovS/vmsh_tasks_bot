@@ -1,0 +1,13 @@
+From https://github.com/ShashkovS/vmsh_tasks_bot
+ * branch              vmshpwa    -> FETCH_HEAD
+2026-10-08T15:58:37Z Verified main and analytics backups before release
+2026-10-08T15:58:39Z Building isolated production bundles using frozen dependencies
+2026-10-08T15:58:57Z Checking production provenance and publishing immutable static assets
+2026-10-08T15:58:58Z Rehearsing all three migrations on a consistent online copy
+2026-10-08T15:59:01Z Stopping all SQLite writers for migration cutover
+2026-10-08T15:59:07Z Deployment passed: source=d4bf4a30ce9ddee3723fd13ed22eec95f9670ef0 release=tlfprep-20261008-integrated-d4bf4a30ce9d-r2 existing data/credentials/NATS unchanged
+Migrated production: /web/vmsh_tasks_bot/vmsh_tasks_bot/db/production_prep.db (6 migrations)
+Every existing product table preserved; new upload table empty
+PASS: 25 read-only checks accepted https://prep.leaders.tech as production.
+{"backup": "20261008T155837.940038Z", "createdAt": "2026-10-08T15:58:37.940038+00:00", "integrity": "ok", "zoomReceipts": 1956}
+{"backup": "20261008T155907.173917Z", "createdAt": "2026-10-08T15:59:07.173917+00:00", "integrity": "ok", "zoomReceipts": 1956}

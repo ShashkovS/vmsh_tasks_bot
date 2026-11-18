@@ -1,0 +1,21 @@
+{
+  "name": "@vmsh/offline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile ../../node_modules/.cache/typecheck/offline.tsbuildinfo"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@vmsh/contracts": "workspace:*",
+    "dexie": "catalog:",
+    "react": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "catalog:"
+  }
+}

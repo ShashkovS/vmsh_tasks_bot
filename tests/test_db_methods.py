@@ -1,3 +1,4 @@
+from pwa_tests.sqlite_template import create_test_database
 # Для работы по виндой нужны PYTHONUTF8=1
 import os
 from unittest import TestCase
@@ -24,6 +25,7 @@ class DatabaseMethodsTest(TestCase):
             except FileNotFoundError:
                 pass
         # create shiny new db instance from scratch and connect
+        create_test_database(test_db_filename)
         self.db.sql.setup(test_db_filename)
         # Making it blazing fast
         self.db.sql.conn.execute('''      PRAGMA journal_mode = OFF;       ''')

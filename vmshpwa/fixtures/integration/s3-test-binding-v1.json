@@ -1,0 +1,6 @@
+{
+  "format": "vmsh.s3-binding/v1",
+  "endpointHost": "s3.ru1.storage.beget.cloud",
+  "bucketNameSha256": "993fe1242fb77f8412ef265b972d22ac18266c1faac6ef11af36bdafc236964e",
+  "purpose": "owner-approved disposable Phase-0 integration bucket"
+}

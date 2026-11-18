@@ -1,0 +1,12 @@
+[Unit]
+Description=VMSH GitHub webhook FastCGI socket
+
+[Socket]
+ListenStream=/web/vmsh_tasks_bot/deploy/runtime/webhook/vmsh-webhook.sock
+SocketUser=vmsh_webhook
+SocketGroup=nginx
+SocketMode=0660
+DirectoryMode=0750
+
+[Install]
+WantedBy=sockets.target

@@ -1,0 +1,24 @@
+[
+  {
+    "organization": "vmsh",
+    "project": 1,
+    "event_id": "452def7490e2441baf269d3af9e9796d",
+    "release": "99552697e6d4-20261011094249",
+    "sdk": "sentry.javascript.react",
+    "ingestion": "PASS",
+    "onlyGlitchTip": true,
+    "expected_source": "../../../../packages/i18n/src/catalog-failure.ts",
+    "expected_line": 7
+  },
+  {
+    "organization": "tlf",
+    "project": 3,
+    "event_id": "11faea0fa93d4b53861bb34f4b3b4830",
+    "release": "tlfprep-20261011-glitchtip-99552697e6d4-093337",
+    "sdk": "sentry.javascript.react",
+    "ingestion": "PASS",
+    "onlyGlitchTip": true,
+    "expected_source": "../../../../packages/i18n/src/catalog-failure.ts",
+    "expected_line": 7
+  }
+]

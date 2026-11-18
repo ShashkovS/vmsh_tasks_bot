@@ -1,0 +1,477 @@
+{
+  "schemaVersion": 1,
+  "source": "Sentry MCP (read-only)",
+  "collectedOn": "2026-10-10",
+  "timezone": "Asia/Nicosia",
+  "organization": "shashkovs",
+  "project": "vmshpwa",
+  "rollingTotals": {
+    "sevenDays": {
+      "events": 27357,
+      "users": 733
+    },
+    "oneDay": {
+      "events": 3528,
+      "users": 327
+    }
+  },
+  "sevenDayTitles": [
+    {
+      "title": "Error: PWA query: TypeError",
+      "count()": 18171
+    },
+    {
+      "title": "Ky",
+      "count()": 2095
+    },
+    {
+      "title": "Error: PWA query: AbortError",
+      "count()": 1766
+    },
+    {
+      "title": "Error: PWA query: API failure",
+      "count()": 1671
+    },
+    {
+      "title": "Error: PWA query: AuthNetworkError",
+      "count()": 1257
+    },
+    {
+      "title": "Error: PWA query: CourseNetworkError",
+      "count()": 867
+    },
+    {
+      "title": "Error: PWA service recovery",
+      "count()": 380
+    },
+    {
+      "title": "Error: PWA query: ContentNetworkError",
+      "count()": 218
+    },
+    {
+      "title": "Uy",
+      "count()": 182
+    },
+    {
+      "title": "AuthNetworkError: Authentication request could not reach the server",
+      "count()": 156
+    },
+    {
+      "title": "Error: PWA test.submit: API failure",
+      "count()": 136
+    },
+    {
+      "title": "ey",
+      "count()": 59
+    },
+    {
+      "title": "Error: PWA query: SupportNetworkError",
+      "count()": 55
+    },
+    {
+      "title": "Vy",
+      "count()": 36
+    },
+    {
+      "title": "r",
+      "count()": 34
+    },
+    {
+      "title": "Error: PWA query: PublishedClassroomNetworkError",
+      "count()": 28
+    },
+    {
+      "title": "s_",
+      "count()": 27
+    },
+    {
+      "title": "AbortError: signal is aborted without reason",
+      "count()": 23
+    },
+    {
+      "title": "Error: PWA mutation: API failure",
+      "count()": 18
+    },
+    {
+      "title": "Error: PWA written.submit: API failure",
+      "count()": 17
+    }
+  ],
+  "oneDayDiagnostics": [
+    {
+      "api_code": "",
+      "title": "Error: PWA query: TypeError",
+      "operation": "query",
+      "transport_kind": "unknown",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "other",
+      "count()": 2595
+    },
+    {
+      "api_code": "oral_window_not_found",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "api",
+      "http_status": "404",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "other",
+      "count()": 163
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: TypeError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 128
+    },
+    {
+      "api_code": "",
+      "title": "Uy",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 106
+    },
+    {
+      "api_code": "authentication_required",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "api",
+      "http_status": "401",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "auth",
+      "count()": 62
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: AuthNetworkError",
+      "operation": "query",
+      "transport_kind": "deadline",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "auth",
+      "count()": 61
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: TypeError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "55ed5e9c7e9c-20261008065457",
+      "query_family": "",
+      "count()": 54
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: CourseNetworkError",
+      "operation": "query",
+      "transport_kind": "deadline",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "other",
+      "count()": 41
+    },
+    {
+      "api_code": "session_revoked",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "api",
+      "http_status": "401",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "auth",
+      "count()": 35
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA service recovery",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 32
+    },
+    {
+      "api_code": "",
+      "title": "Ky",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "55ed5e9c7e9c-20261008065457",
+      "query_family": "",
+      "count()": 22
+    },
+    {
+      "api_code": "test_attempt_hour_limit",
+      "title": "Error: PWA test.submit: API failure",
+      "operation": "test.submit",
+      "transport_kind": "",
+      "http_status": "422",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 22
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: TypeError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "09bc16f185de-20261004133650",
+      "query_family": "",
+      "count()": 14
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: AuthNetworkError",
+      "operation": "query",
+      "transport_kind": "network",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "auth",
+      "count()": 10
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: CourseNetworkError",
+      "operation": "query",
+      "transport_kind": "network",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "other",
+      "count()": 10
+    },
+    {
+      "api_code": "",
+      "title": "Ky",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 9
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: AbortError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "55ed5e9c7e9c-20261008065457",
+      "query_family": "",
+      "count()": 9
+    },
+    {
+      "api_code": "",
+      "title": "ey",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 8
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: TypeError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "9584efb7fd53-20261002153458",
+      "query_family": "",
+      "count()": 7
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: AuthNetworkError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 7
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: TypeError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "b5a7a6b347d8-20261004051229",
+      "query_family": "",
+      "count()": 7
+    },
+    {
+      "api_code": "authentication_required",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "401",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 6
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: CourseNetworkError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 6
+    },
+    {
+      "api_code": "",
+      "title": "d_",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 5
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: AbortError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 5
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: CourseNetworkError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "55ed5e9c7e9c-20261008065457",
+      "query_family": "",
+      "count()": 5
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: ContentNetworkError",
+      "operation": "query",
+      "transport_kind": "deadline",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "other",
+      "count()": 5
+    },
+    {
+      "api_code": "session_revoked",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "401",
+      "release": "55ed5e9c7e9c-20261008065457",
+      "query_family": "",
+      "count()": 5
+    },
+    {
+      "api_code": "test_attempt_day_limit",
+      "title": "Error: PWA test.submit: API failure",
+      "operation": "test.submit",
+      "transport_kind": "",
+      "http_status": "422",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 4
+    },
+    {
+      "api_code": "review_lease_lost",
+      "title": "Error: PWA mutation: API failure",
+      "operation": "mutation",
+      "transport_kind": "",
+      "http_status": "409",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 4
+    },
+    {
+      "api_code": "session_revoked",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "401",
+      "release": "0d2d88e3127e-20261004223309",
+      "query_family": "",
+      "count()": 4
+    },
+    {
+      "api_code": "news_post_not_found",
+      "title": "Error: PWA query: API failure",
+      "operation": "query",
+      "transport_kind": "api",
+      "http_status": "404",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "news",
+      "count()": 4
+    },
+    {
+      "api_code": "",
+      "title": "asyncFunctionResume",
+      "operation": "",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 4
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA query: AuthNetworkError",
+      "operation": "query",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "55ed5e9c7e9c-20261008065457",
+      "query_family": "",
+      "count()": 4
+    },
+    {
+      "api_code": "",
+      "title": "Error: PWA written.submit: WrittenSubmissionLocalEvidenceError",
+      "operation": "written.submit",
+      "transport_kind": "",
+      "http_status": "",
+      "release": "d4bf4a30ce9d-20261008155618",
+      "query_family": "",
+      "count()": 4
+    }
+  ],
+  "outcomes": {
+    "sevenDays": {
+      "interval": "1d",
+      "accepted": 31136,
+      "droppedByReason": {
+        "ratelimit_backoff": 11574,
+        "event_processor": 23085,
+        "network_error": 1626,
+        "spike_protection": 1938
+      },
+      "note": "Daily bucket boundaries differ from rolling search windows; drop counts are not unique user failures."
+    },
+    "oneDay": {
+      "interval": "1h",
+      "accepted": 3528,
+      "droppedByReason": {
+        "event_processor": 2954,
+        "network_error": 160
+      }
+    }
+  },
+  "sampleFinding": {
+    "issue": "VMSHPWA-52",
+    "diagnostic": "Only synthetic capture stack present; original TypeError cause not established. No user data or event payload saved."
+  }
+}

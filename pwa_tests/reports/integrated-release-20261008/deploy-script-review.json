@@ -1,0 +1,27 @@
+{
+  "shell_syntax": "pass",
+  "literal_python_heredocs": 3,
+  "reviewed_controls": [
+    "full_sha_argument",
+    "host_identity",
+    "exclusive_deploy_lock",
+    "tracked_clean",
+    "ancestor_checks",
+    "frozen_dependencies",
+    "exact_three_new_migrations",
+    "verified_backup_before_and_after",
+    "online_copy_rehearsal_up_down_up",
+    "all_product_rows_comparison",
+    "stop_all_sqlite_writers",
+    "exclusive_migration_lock",
+    "atomic_static_activation",
+    "runtime_and_public_smoke",
+    "credentials_checksum_unchanged",
+    "nats_pid_unchanged",
+    "fail_closed_after_writers_reopen"
+  ],
+  "successful_retry": "r2",
+  "script_sha256": "88b32a51724e51af3ed4c29300d85148a3fcb2baec8c7f1c93d2e3ef94410085",
+  "json_receipts_compared_as_root": true,
+  "executed_status": 0
+}

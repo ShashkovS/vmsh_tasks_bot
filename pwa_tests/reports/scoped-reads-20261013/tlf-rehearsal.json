@@ -1,0 +1,25 @@
+{
+  "appliedMigrationCount": 92,
+  "copySeconds": 0.1,
+  "databaseBytes": 20549632,
+  "integrityCheck": "ok",
+  "journalMode": "wal",
+  "legacyRowCountParity": true,
+  "legacyRowCounts": {
+    "lessons": 0,
+    "problems": 62,
+    "results": 2376,
+    "users": 400,
+    "written_tasks_discussions": 0
+  },
+  "migrationSeconds": 0.035,
+  "operation": "phase11-sqlite-restore-rehearsal",
+  "recordedAt": "2026-10-13T08:16:04.134398Z",
+  "reportContainsPersonalData": false,
+  "rpoMeasured": false,
+  "schemaCurrent": true,
+  "schemaVersion": 1,
+  "sourceDatabaseRowsUpdated": 0,
+  "totalSeconds": 0.204,
+  "verificationSeconds": 0.066
+}

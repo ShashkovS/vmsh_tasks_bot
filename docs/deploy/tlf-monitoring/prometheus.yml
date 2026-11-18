@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+
+storage:
+  tsdb:
+    retention:
+      time: 60d
+      size: 2500MB
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - "127.0.0.1:9090"
+        labels:
+          instance: "prep.leaders.tech"
+
+  - job_name: node
+    static_configs:
+      - targets:
+          - "127.0.0.1:9100"
+        labels:
+          instance: "prep.leaders.tech"
+
+  - job_name: nginx
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - "127.0.0.1:9113"
+        labels:
+          instance: "prep.leaders.tech"
+
+  # Activate only after the clone's NATS monitoring endpoint is deployed.
+  - job_name: nats
+    scrape_interval: 15s
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/nats.json
+        refresh_interval: 30s
+
+  # Пока веб-приложение не задеплоено, файл содержит пустой список.
+  # После деплоя достаточно добавить 127.0.0.1:8000 в aiohttp.json:
+  # Prometheus подхватит цель автоматически, без перезапуска.
+  - job_name: aiohttp
+    scrape_interval: 15s
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/aiohttp.json
+        refresh_interval: 30s
+
+  # Аналогично подготовлена отдельная цель для Telegram-бота,
+  # если у него позднее появится собственный /metrics endpoint.
+  - job_name: telegram_bot
+    scrape_interval: 15s
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/telegram-bot.json
+        refresh_interval: 30s

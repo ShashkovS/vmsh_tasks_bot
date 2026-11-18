@@ -1,0 +1,28 @@
+{
+  "recorded_at": "2026-10-08T15:54:58.983640+00:00",
+  "user_instruction": "Давай обновлять оба продакшена",
+  "scope": [
+    "VMSH production",
+    "TLF production"
+  ],
+  "decision": "Release with completed checks after disclosed incomplete browser gate",
+  "integration_before_release_record": "419e450ab16e3c9abcdb5437a377243828fb2282",
+  "release_gate_green": false,
+  "completed_checks": {
+    "python_pass": 2882,
+    "python_skip": 7,
+    "frontend_pass": 1068,
+    "storybook_pass": 364,
+    "main_e2e_pass": 385,
+    "main_e2e_skip": 20,
+    "main_e2e_fail": 6
+  },
+  "remaining_browser_phases": [
+    "figure-layout",
+    "runtime-isolation full final phase",
+    "statistics",
+    "visual"
+  ],
+  "direct_s3_verified": false,
+  "deployment_status": "starting"
+}

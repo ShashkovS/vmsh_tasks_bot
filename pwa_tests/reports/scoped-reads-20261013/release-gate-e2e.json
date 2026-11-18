@@ -1,0 +1,126 @@
+{
+  "modes": [
+    "authentication",
+    "content",
+    "realtime",
+    "live-marking",
+    "statistics",
+    "review",
+    "submissions"
+  ],
+  "browser": "all",
+  "seconds": 499.38,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 7.508,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/authentication.spec.ts",
+        "e2e/content-publication.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 191.107,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.054,
+        "key": "413868b7645909da3d59a5a9e3d8cb996754008b2a1f71610ea9374b0dc2482f"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/runtime-isolation.spec.ts",
+        "--grep",
+        "product realtime|current-session revoke",
+        "--retries",
+        "0"
+      ],
+      "seconds": 25.604,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.061,
+        "key": "413868b7645909da3d59a5a9e3d8cb996754008b2a1f71610ea9374b0dc2482f"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/live-marking.spec.ts",
+        "e2e/live-marking-confirmation.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 108.733,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.018,
+        "key": "413868b7645909da3d59a5a9e3d8cb996754008b2a1f71610ea9374b0dc2482f"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.statistics.config.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 46.518,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.045,
+        "key": "979af9eb1ce95c0903760c89bd398d7063f16555eb827df84d0cbc904d403507"
+      }
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "e2e/test-submission.spec.ts",
+        "--retries",
+        "0"
+      ],
+      "seconds": 119.454,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.027,
+        "key": "413868b7645909da3d59a5a9e3d8cb996754008b2a1f71610ea9374b0dc2482f"
+      }
+    }
+  ]
+}

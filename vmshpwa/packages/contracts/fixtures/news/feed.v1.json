@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "postId": "news.course-41",
+      "source": "telegram",
+      "publishedAt": "2026-10-05T10:00:00Z",
+      "editedAt": null,
+      "revision": 1,
+      "state": "published",
+      "attribution": { "channel": "ВМШ 179" },
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "A😀Б",
+          "entities": [{ "type": "bold", "offset": 3, "length": 1 }]
+        }
+      ],
+      "media": [
+        {
+          "kind": "photo",
+          "mediaId": "news-media.course-41",
+          "previewUrl": "https://cdn.example.test/news/course-41.webp",
+          "alt": ""
+        }
+      ]
+    }
+  ],
+  "nextCursor": "news.course-41",
+  "requestId": "request-news-feed"
+}

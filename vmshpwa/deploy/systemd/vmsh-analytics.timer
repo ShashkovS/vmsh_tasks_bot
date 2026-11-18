@@ -1,0 +1,10 @@
+[Unit]
+Description=VMSH course analytics every two hours
+
+[Timer]
+OnCalendar=*-*-* 00/2:00:00 Europe/Moscow
+Persistent=true
+Unit=vmsh-analytics.service
+
+[Install]
+WantedBy=timers.target

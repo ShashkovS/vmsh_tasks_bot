@@ -1,0 +1,192 @@
+{
+  "migration": "0110.pwa_written_result_precedence",
+  "sourceSha256": "b7f8233f3662e5609d21ea760466f98727a608e891b40e5dafe2070aec577286",
+  "sourceUnchanged": true,
+  "upDownUp": true,
+  "integrity": "ok",
+  "existingForeignKeyViolations": 627,
+  "newForeignKeyViolations": 0,
+  "unchangedProductTables": 156,
+  "resultsCount": 36643,
+  "retainedManualPointers": 5567,
+  "changedCurrentResults": 81,
+  "repairedAcceptedResults": 20,
+  "incidents": [
+    {
+      "student": "Баймиева Юстина",
+      "problem": "2п.10б",
+      "state": "already-repaired-through-zoom",
+      "oldManualId": 14516,
+      "writtenId": 20403,
+      "laterManualId": 27670,
+      "laterManualAt": "2026-09-26T16:27:42.545619Z"
+    },
+    {
+      "student": "Демьяненков Назар",
+      "problem": "2п.10а",
+      "state": "already-repaired-through-zoom",
+      "oldManualId": 13545,
+      "writtenId": 14055,
+      "laterManualId": 28969,
+      "laterManualAt": "2026-09-27T11:35:38.344130Z"
+    },
+    {
+      "student": "Демьяненков Назар",
+      "problem": "2п.11а",
+      "state": "already-repaired-through-zoom",
+      "oldManualId": 13554,
+      "writtenId": 16846,
+      "laterManualId": 28971,
+      "laterManualAt": "2026-09-27T11:35:41.285391Z"
+    }
+  ],
+  "performance": {
+    "up": {
+      "schemaVersion": 1,
+      "database": "rehearsal-final.sqlite3",
+      "viewsChecked": 7,
+      "probes": [
+        {
+          "name": "effective-results-current-test-attempt",
+          "elapsedMs": 185.788,
+          "plan": [
+            "CO-ROUTINE effective_results",
+            "COMPOUND QUERY",
+            "LEFT-MOST SUBQUERY",
+            "MATERIALIZE choices",
+            "CO-ROUTINE latest",
+            "CO-ROUTINE candidates",
+            "COMPOUND QUERY",
+            "LEFT-MOST SUBQUERY",
+            "SCAN r USING COVERING INDEX results_written_current_idx",
+            "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+            "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+            "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+            "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "USE TEMP B-TREE FOR GROUP BY",
+            "UNION ALL",
+            "SCAN c USING INDEX sqlite_autoindex_live_mark_cells_1",
+            "SEARCH r USING INTEGER PRIMARY KEY (rowid=?)",
+            "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+            "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+            "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+            "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "USE TEMP B-TREE FOR GROUP BY",
+            "SCAN candidates",
+            "USE TEMP B-TREE FOR GROUP BY",
+            "SCAN latest",
+            "SEARCH w USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SEARCH wv USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SEARCH m USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SEARCH mv USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SCAN choices",
+            "SEARCH r USING INTEGER PRIMARY KEY (rowid=?)",
+            "UNION ALL",
+            "MATERIALIZE result_problem_groups",
+            "SCAN p",
+            "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+            "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+            "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SCAN r",
+            "CORRELATED SCALAR SUBQUERY 12",
+            "SEARCH e USING COVERING INDEX sqlite_autoindex_test_attempt_result_events_1 (result_id=?)",
+            "CORRELATED SCALAR SUBQUERY 13",
+            "SEARCH a USING COVERING INDEX test_attempts_result_idx (result_id=?)",
+            "BLOOM FILTER ON pg (problem_id=?)",
+            "SEARCH pg USING AUTOMATIC COVERING INDEX (problem_id=?) LEFT-JOIN",
+            "BLOOM FILTER ON choices (student_id=? AND logical_key=?)",
+            "SEARCH choices USING AUTOMATIC COVERING INDEX (student_id=? AND logical_key=?) LEFT-JOIN",
+            "SEARCH c USING INDEX sqlite_autoindex_live_mark_cells_1 (student_id=? AND problem_id=?) LEFT-JOIN",
+            "CORRELATED SCALAR SUBQUERY 11",
+            "SEARCH lm USING INTEGER PRIMARY KEY (rowid=?)",
+            "SCAN effective_results"
+          ]
+        }
+      ]
+    },
+    "down": {
+      "schemaVersion": 1,
+      "database": "rehearsal-final.sqlite3",
+      "viewsChecked": 5,
+      "probes": [
+        {
+          "name": "effective-results-current-test-attempt",
+          "elapsedMs": 48.659,
+          "plan": [
+            "SCAN r",
+            "CORRELATED SCALAR SUBQUERY 4",
+            "SEARCH e USING COVERING INDEX sqlite_autoindex_test_attempt_result_events_1 (result_id=?)",
+            "CORRELATED SCALAR SUBQUERY 5",
+            "SEARCH a USING COVERING INDEX test_attempts_result_idx (result_id=?)",
+            "SEARCH c USING INDEX sqlite_autoindex_live_mark_cells_1 (student_id=? AND problem_id=?) LEFT-JOIN",
+            "CORRELATED SCALAR SUBQUERY 3",
+            "SEARCH m USING INTEGER PRIMARY KEY (rowid=?)"
+          ]
+        }
+      ]
+    },
+    "again": {
+      "schemaVersion": 1,
+      "database": "rehearsal-final.sqlite3",
+      "viewsChecked": 7,
+      "probes": [
+        {
+          "name": "effective-results-current-test-attempt",
+          "elapsedMs": 143.247,
+          "plan": [
+            "CO-ROUTINE effective_results",
+            "COMPOUND QUERY",
+            "LEFT-MOST SUBQUERY",
+            "MATERIALIZE choices",
+            "CO-ROUTINE latest",
+            "CO-ROUTINE candidates",
+            "COMPOUND QUERY",
+            "LEFT-MOST SUBQUERY",
+            "SCAN r USING COVERING INDEX results_written_current_idx",
+            "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+            "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+            "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+            "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "USE TEMP B-TREE FOR GROUP BY",
+            "UNION ALL",
+            "SCAN c USING INDEX sqlite_autoindex_live_mark_cells_1",
+            "SEARCH r USING INTEGER PRIMARY KEY (rowid=?)",
+            "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)",
+            "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+            "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+            "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "USE TEMP B-TREE FOR GROUP BY",
+            "SCAN candidates",
+            "USE TEMP B-TREE FOR GROUP BY",
+            "SCAN latest",
+            "SEARCH w USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SEARCH wv USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SEARCH m USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SEARCH mv USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SCAN choices",
+            "SEARCH r USING INTEGER PRIMARY KEY (rowid=?)",
+            "UNION ALL",
+            "MATERIALIZE result_problem_groups",
+            "SCAN p",
+            "SEARCH g USING INDEX sqlite_autoindex_groups_1 (group_id=?) LEFT-JOIN",
+            "SEARCH sm USING INDEX problem_synonym_members_problem_active_uq (problem_id=?) LEFT-JOIN",
+            "SEARCH sg USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN",
+            "SCAN r",
+            "CORRELATED SCALAR SUBQUERY 12",
+            "SEARCH e USING COVERING INDEX sqlite_autoindex_test_attempt_result_events_1 (result_id=?)",
+            "CORRELATED SCALAR SUBQUERY 13",
+            "SEARCH a USING COVERING INDEX test_attempts_result_idx (result_id=?)",
+            "BLOOM FILTER ON pg (problem_id=?)",
+            "SEARCH pg USING AUTOMATIC COVERING INDEX (problem_id=?) LEFT-JOIN",
+            "BLOOM FILTER ON choices (student_id=? AND logical_key=?)",
+            "SEARCH choices USING AUTOMATIC COVERING INDEX (student_id=? AND logical_key=?) LEFT-JOIN",
+            "SEARCH c USING INDEX sqlite_autoindex_live_mark_cells_1 (student_id=? AND problem_id=?) LEFT-JOIN",
+            "CORRELATED SCALAR SUBQUERY 11",
+            "SEARCH lm USING INTEGER PRIMARY KEY (rowid=?)",
+            "SCAN effective_results"
+          ]
+        }
+      ]
+    }
+  }
+}

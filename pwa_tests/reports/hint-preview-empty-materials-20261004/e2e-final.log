@@ -1,0 +1,25 @@
+Toolchain: v26.9.0, pnpm@11.15.1, installed lockfile matches
+E2E build: cache hit (source, environment and all artifact bytes match)
+[WebServer] /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning: 
+[WebServer] 
+[WebServer] gcd is deprecated in Rational, use nsimplify instead
+[WebServer] 
+[WebServer] See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+[WebServer] for details.
+[WebServer] 
+[WebServer] This has been deprecated since SymPy version 1.11. It
+[WebServer] will be removed in a future version of SymPy.
+[WebServer] 
+[WebServer]   dummy_two = sympy.core.Rational(2, 1, 1)
+[WebServer] 2026-04-10 14:52:36 MathBot : WARNING  MainApp Start up!
+
+Running 4 tests using 1 worker
+
+(node:160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/figure-layout.spec.ts:38:1 › figure placement survives reload and publishes only after confirmation (14.6s)
+  ✓  2 [chromium] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (ru) (3.1s)
+  ✓  3 [chromium] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (en) (3.5s)
+  ✓  4 [chromium] › e2e/worksheet-print.spec.ts:5:1 › worksheets print only mounted conditions and expanded learning materials (2.5s)
+
+  4 passed (25.1s)

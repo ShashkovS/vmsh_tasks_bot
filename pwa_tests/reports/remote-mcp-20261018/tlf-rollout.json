@@ -1,0 +1,65 @@
+{
+  "beforeBackup": {
+    "backup": "20261018T173423.336647Z",
+    "createdAt": "2026-10-18T17:34:23.336647+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 3899
+  },
+  "afterBackup": {
+    "backup": "20261018T173525.809702Z",
+    "createdAt": "2026-10-18T17:35:25.809702+00:00",
+    "integrity": "ok",
+    "zoomReceipts": 3899
+  },
+  "dataParity": {
+    "businessTablesPreserved": 171,
+    "newEmptyTables": []
+  },
+  "performanceGuard": {
+    "schemaVersion": 1,
+    "viewsChecked": 7,
+    "probes": [
+      {
+        "name": "effective-results-current-test-attempt",
+        "elapsedMs": 5.253
+      },
+      {
+        "name": "review-sheet-case",
+        "elapsedMs": 0.301
+      },
+      {
+        "name": "review-sheet-evidence",
+        "elapsedMs": 0.051
+      },
+      {
+        "name": "statistics-results-scoped",
+        "elapsedMs": 6.223
+      },
+      {
+        "name": "statistics-attempts-scoped",
+        "elapsedMs": 5.383
+      },
+      {
+        "name": "statistics-pending-scoped",
+        "elapsedMs": 0.837
+      },
+      {
+        "name": "statistics-reviews-scoped",
+        "elapsedMs": 0.519
+      },
+      {
+        "name": "live-cell-scoped",
+        "elapsedMs": 2.268
+      },
+      {
+        "name": "live-board-scoped",
+        "elapsedMs": 1.55
+      },
+      {
+        "name": "live-visits-scoped",
+        "elapsedMs": 0.068
+      }
+    ],
+    "status": "passed"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "base_revision": "b6476a52133ca301ad17861f30cc6c8a6c4b5bc7",
+  "rollback_revision": "43b7d2f42c69169ca6f85fc0773071c7fe2b24e4",
+  "rollback_branch": "codex/content-recovery-rollback-20261004",
+  "retained_files": [
+    "migrations/0112.scheduled_publication_lifecycle.py",
+    "pwa_tests/fixtures/schema_inventory.v1.json",
+    "pwa_tests/fixtures/schema_snapshot.sql",
+    "docs/db_structure.sql"
+  ],
+  "reason": "Retain 0112 and matching schema artifacts; never erase terminal schedule history.",
+  "compatibility_proof": {
+    "schema_head": "0112.scheduled_publication_lifecycle",
+    "startup_guard": "PASS",
+    "old_backend_replaces_activated_publication": "PASS",
+    "retained_schedule_lineage": true
+  }
+}

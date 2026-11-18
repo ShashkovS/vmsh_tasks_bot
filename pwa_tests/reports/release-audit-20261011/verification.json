@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-10-11T13:18:05.602277+00:00",
+  "deployedCodeRevision": "623d1663d40538dff4450c5fe48b9f8dc25fc70f",
+  "gateRevision": "04badd23ffc61a8f42b92b7204571c580e085a84",
+  "sourceDigest": "ba42caee96980c245aef430e088be52cb14fa71e9d61017c2f1e19bee7660c72",
+  "pythonPassed": 2944,
+  "pythonSkipped": 7,
+  "frontendPassed": 1088,
+  "storybookPassed": 364,
+  "chromiumE2ePassed": 4,
+  "zoomImporterRegressionsPassed": 5,
+  "sites": {
+    "vmsh": {
+      "staticRelease": "623d1663d405-20261011130343",
+      "httpChecksPassed": 25,
+      "privateSourcemapArtifactsVerified": 402,
+      "tikz": "vmsh-tikz.json",
+      "static": "vmsh-static.json",
+      "backupIntegrity": "ok",
+      "servicesActive": true
+    },
+    "tlf": {
+      "staticRelease": "tlfprep-20261011-tikz-audit-623d1663d405",
+      "httpChecksPassed": 25,
+      "privateSourcemapArtifactsVerified": 402,
+      "tikz": "tlf-tikz.json",
+      "deployment": "tlf-deployment.json",
+      "fontFix": "tlf-fonts.json",
+      "backupBeforeAndAfterIntegrity": "ok",
+      "productTablesPreserved": 160,
+      "productRowsPreserved": 36664,
+      "canonicalSettingsPreserved": true,
+      "natsPidPreserved": 1093,
+      "servicesActive": true
+    }
+  },
+  "lastProductMigration": "0117.frontend_sentry_budget",
+  "remainingCurrentWork": {
+    "teacherWork": {
+      "revision": "bbbdd1a3",
+      "status": "ready on separate branch; not deployed",
+      "migration": "0118.teacher_work",
+      "releaseGatePassed": true,
+      "serverCopyRehearsalPassed": true,
+      "browserE2ePassed": 9
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "sourceBefore": "35c0a6ab81cfa5794a897227847f5cb43da56b57",
+  "sourceAfter": "eed1c1277d54047328f44535f74f244e97c33949",
+  "origin": "https://prep.leaders.tech",
+  "release": "login-password-20261104-eed1c1277d54",
+  "staticBefore": "/web/vmsh_tasks_bot/vmshpwa/releases/tlfprep-20261018-remote-mcp-450903b77351",
+  "staticAfter": "/web/vmsh_tasks_bot/vmshpwa/releases/login-password-20261104-eed1c1277d54",
+  "frontendOnly": true,
+  "configurationPreserved": true,
+  "servicesPreserved": {
+    "vmshpwa.service": "1739769",
+    "gunicorn.vmsh_tasks_bot.service": "0",
+    "nats.service": "1093",
+    "nats-server.service": "0"
+  },
+  "unrelatedLiveChangesPreserved": [],
+  "schemaChanged": false,
+  "httpChecksPassed": 25
+}

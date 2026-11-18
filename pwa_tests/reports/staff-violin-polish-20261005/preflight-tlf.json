@@ -1,0 +1,27 @@
+{
+  "host": "tlf",
+  "hostname": "vmsh-nbg",
+  "source_revision": "09bc16f185de5220d4c22d7d3c171238ce653dad",
+  "tracked_changes": "",
+  "staged_changes": "",
+  "frontend_release": "tlfprep-20261004-service-copy-09bc16f185de",
+  "services": {
+    "vmshpwa.service": {
+      "state": "active",
+      "pid": "386644"
+    },
+    "vmsh-analytics.timer": {
+      "state": "active",
+      "pid": ""
+    },
+    "vmshzoom.service": {
+      "state": "active",
+      "pid": "364915"
+    },
+    "nats.service": {
+      "state": "active",
+      "pid": "1936264"
+    }
+  },
+  "maintenance_cleared": true
+}

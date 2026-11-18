@@ -1,0 +1,13 @@
+(node:3487) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+│
+▲  No story files found for the specified pattern:
+│  dev/design-system/**/*.stories.@(ts|tsx)
+
+ RUN  v4.1.10 /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  23:36:32
+   Duration  3.50s (transform 0ms, setup 902ms, import 23ms, tests 1.45s, environment 0ms)

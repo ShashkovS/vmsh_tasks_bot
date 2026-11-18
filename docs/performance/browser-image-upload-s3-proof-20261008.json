@@ -1,0 +1,16 @@
+{
+  "runId": "browser-upload-20261008-0728",
+  "testBinding": "s3-test-binding-v1",
+  "provider": "Beget test contour",
+  "originClass": "agent-loopback",
+  "ok": false,
+  "put": true,
+  "badChecksumRejected": false,
+  "headChecksum": false,
+  "wrongLengthRejected": true,
+  "corsPreflight": false,
+  "corsPut": false,
+  "deleteAck": "passed",
+  "browserProof": "not-run",
+  "productionConfigurationChanged": false
+}

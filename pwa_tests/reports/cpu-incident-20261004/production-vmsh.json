@@ -1,0 +1,12 @@
+{
+  "host": "vmsh",
+  "source_revision": "bdfcf9a2b523b37130af6fd11f3bb5070d568674",
+  "frontend_release": "cc60df33d01b-20261004115535",
+  "production_frontend": true,
+  "services": {
+    "vmshpwa.service": "active",
+    "vmsh-analytics.timer": "active",
+    "gunicorn.vmsh_tasks_bot.service": "active"
+  },
+  "maintenance_cleared": true
+}

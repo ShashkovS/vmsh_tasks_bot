@@ -1,0 +1,42 @@
+{
+  "modes": [
+    "figure-layout"
+  ],
+  "browser": "chromium",
+  "seconds": 26.168,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.055,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/figure-layout.spec.ts",
+        "e2e/whiteboard-export.spec.ts",
+        "e2e/worksheet-print.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 25.816,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.017,
+        "key": "764caaa534293fcba5bcd909d9aabb0ba7c96b8cf00558fa1541e8accfcd8eef"
+      }
+    }
+  ]
+}

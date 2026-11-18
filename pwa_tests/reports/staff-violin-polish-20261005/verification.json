@@ -1,0 +1,223 @@
+{
+  "profile": "fast",
+  "modes": [
+    "statistics"
+  ],
+  "started_at": "2026-10-04T21:14:30.421644+00:00",
+  "steps": [
+    {
+      "name": "python-dependencies",
+      "command": [
+        "uv",
+        "sync",
+        "--frozen",
+        "--check"
+      ],
+      "seconds": 0.141,
+      "exit_code": 0
+    },
+    {
+      "name": "format",
+      "command": [
+        "pnpm",
+        "format:check"
+      ],
+      "seconds": 16.88,
+      "exit_code": 0
+    },
+    {
+      "name": "types",
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "seconds": 27.558,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-js",
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        ".",
+        "--max-warnings=0",
+        "--cache",
+        "--cache-strategy",
+        "content",
+        "--cache-location",
+        "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmshpwa/checks/lint/dbf69bcedd326cd037de30e83f0aa0852157fbf887ac1cbe364cfa4863458bfa"
+      ],
+      "seconds": 2.569,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-css",
+      "command": [
+        "pnpm",
+        "lint:css"
+      ],
+      "seconds": 1.573,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-frontend",
+      "command": [
+        "pnpm",
+        "i18n:check"
+      ],
+      "seconds": 6.42,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-backend",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.backend_i18n",
+        "check"
+      ],
+      "seconds": 0.951,
+      "exit_code": 0
+    },
+    {
+      "name": "python",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-n4",
+        "--durations=20",
+        "tests",
+        "pwa_tests"
+      ],
+      "seconds": 118.92,
+      "exit_code": 0
+    },
+    {
+      "name": "frontend",
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "seconds": 141.54,
+      "exit_code": 0
+    },
+    {
+      "name": "storybook",
+      "command": [
+        "pnpm",
+        "storybook:test"
+      ],
+      "seconds": 197.453,
+      "exit_code": 1
+    }
+  ],
+  "exit_code": 1,
+  "revision": "24ccc3d8db09aee6ec369abdd09508d6ebdfdde5",
+  "source_digest": "9f8c06d6efe957cdbe2976a3fb2d72cb0e999a629a7b03def42f0a16dd3f6e67",
+  "source_changed": false,
+  "seconds": 516.06,
+  "statistics_e2e_completion": {
+    "modes": [
+      "statistics"
+    ],
+    "browser": "chromium",
+    "seconds": 39.545,
+    "exit_code": 0,
+    "phases": [
+      {
+        "command": [
+          "pnpm",
+          "build"
+        ],
+        "seconds": 0.498,
+        "cache_hit": true,
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "pnpm",
+          "exec",
+          "playwright",
+          "test",
+          "--config",
+          "playwright.statistics.config.ts",
+          "--project",
+          "chromium",
+          "--retries",
+          "0"
+        ],
+        "seconds": 37.498,
+        "cache_hit": false,
+        "exit_code": 0,
+        "preparation": {
+          "seed_cache_hit": true,
+          "seconds": 0.045,
+          "key": "bdb4305282a97399715f85d094c6c0ef63c50699bc0eeee3d81fbbfb7e900235"
+        }
+      }
+    ]
+  },
+  "known_failure": {
+    "test": "LargeClassroom",
+    "file": "vmshpwa/apps/staff/src/live-marking-grid.stories.tsx",
+    "p95_ms": 60.1,
+    "isolated_p95_ms": 59.7,
+    "limit_ms": 50
+  },
+  "graph_visual_review": [
+    {
+      "theme": "light",
+      "targetWidth": 1280,
+      "contentWidth": 1280,
+      "fonts": "loaded",
+      "width": 1280
+    },
+    {
+      "theme": "light",
+      "targetWidth": 390,
+      "contentWidth": 390,
+      "fonts": "loaded",
+      "width": 390
+    },
+    {
+      "theme": "light",
+      "targetWidth": 320,
+      "contentWidth": 320,
+      "fonts": "loaded",
+      "width": 320
+    },
+    {
+      "theme": "dark",
+      "targetWidth": 1280,
+      "contentWidth": 1280,
+      "dark": true,
+      "fonts": "loaded",
+      "width": 1280
+    },
+    {
+      "theme": "dark",
+      "targetWidth": 390,
+      "contentWidth": 390,
+      "dark": true,
+      "fonts": "loaded",
+      "width": 390
+    },
+    {
+      "theme": "dark",
+      "targetWidth": 320,
+      "contentWidth": 320,
+      "dark": true,
+      "fonts": "loaded",
+      "width": 320
+    }
+  ]
+}

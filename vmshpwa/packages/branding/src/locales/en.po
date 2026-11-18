@@ -1,0 +1,46 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-01 13:45+0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: packages/branding/src/startup.ts
+msgid "Кабинет продолжит работу автоматически после подключения."
+msgstr "Your account will resume automatically when connected."
+
+#: packages/branding/src/startup.ts
+msgid "Обновление занимает больше времени. Мы продолжаем подключаться."
+msgstr "The update is taking longer. We keep connecting."
+
+#: packages/branding/src/startup.ts
+msgid "Обновляем сервис"
+msgstr "Updating the service"
+
+#: packages/branding/src/startup.ts
+msgid "Подключение занимает больше времени. Мы продолжаем пробовать."
+msgstr "Connecting is taking longer. We keep trying."
+
+#: packages/branding/src/startup.ts
+msgid "Проблема на нашей стороне всё ещё сохраняется. Проверяем доступность автоматически."
+msgstr "The problem on our side is still ongoing. We are checking availability automatically."
+
+#: packages/branding/src/startup.ts
+msgid "Проблема на нашей стороне. Проверяем доступность автоматически."
+msgstr "The problem is on our side. We are checking availability automatically."
+
+#: packages/branding/src/startup.ts
+msgid "Сервер не отвечает"
+msgstr "The server is not responding"
+
+#: packages/branding/src/startup.ts
+msgid "Сервис временно недоступен"
+msgstr "The service is temporarily unavailable"

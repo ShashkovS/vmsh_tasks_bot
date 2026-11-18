@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "response": {
+    "courseId": "course-fixture-alpha",
+    "summary": {
+      "attempted": 5,
+      "accepted": 3,
+      "partial": 1,
+      "needsWork": 1,
+      "awaitingReview": 1
+    },
+    "lessons": [
+      {
+        "lessonNumber": 40,
+        "attempted": 2,
+        "accepted": 1,
+        "partial": 1,
+        "needsWork": 0,
+        "awaitingReview": 0
+      },
+      {
+        "lessonNumber": 41,
+        "attempted": 3,
+        "accepted": 2,
+        "partial": 0,
+        "needsWork": 1,
+        "awaitingReview": 1
+      }
+    ],
+    "activity": [
+      { "date": "2026-09-15", "problemCount": 2 },
+      { "date": "2026-09-16", "problemCount": 3 }
+    ],
+    "analytics": {
+      "runId": "analytics-course-fixture-alpha-v1",
+      "algorithmVersion": "1",
+      "calculatedAt": "2026-09-16T12:00:00Z",
+      "lessons": [
+        {
+          "lessonNumber": 40,
+          "groupId": "group-fixture-alpha",
+          "groupCode": "п",
+          "simpleStrength": 7.5,
+          "complexStrength": 4.25,
+          "maxComplexStrength": 8.0,
+          "solvedItems": 6,
+          "totalItems": 12
+        }
+      ]
+    },
+    "achievements": [
+      { "code": "first_submission", "earnedAt": "2026-09-15T10:00:00Z" },
+      { "code": "first_accepted", "earnedAt": "2026-09-16T10:00:00Z" }
+    ]
+  }
+}

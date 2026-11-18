@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "browser": "Chromium",
+  "checks": [
+    {
+      "site": "vmsh",
+      "origin": "https://vmsh.shashkovs.ru",
+      "locale": "ru",
+      "passwordLabel": "Пароль",
+      "noTelegramOrTokenCopy": true,
+      "status": "PASS"
+    },
+    {
+      "site": "vmsh",
+      "origin": "https://vmsh.shashkovs.ru",
+      "locale": "en",
+      "passwordLabel": "Password",
+      "noTelegramOrTokenCopy": true,
+      "status": "PASS"
+    }
+  ]
+}

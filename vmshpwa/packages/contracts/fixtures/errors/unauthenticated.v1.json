@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": 1,
+  "httpStatus": 401,
+  "response": {
+    "error": {
+      "code": "authentication_required",
+      "message": "Войдите в личный кабинет",
+      "requestId": "fixture-error-unauthenticated-v1"
+    }
+  }
+}

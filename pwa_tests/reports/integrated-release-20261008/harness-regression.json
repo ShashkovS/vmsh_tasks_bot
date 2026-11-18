@@ -1,0 +1,35 @@
+{
+  "exit_code": 1,
+  "seconds": 110.79998925002292,
+  "browser": "all",
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 0.204,
+      "cache_hit": true,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/review-workspace.spec.ts",
+        "e2e/runtime-isolation.spec.ts",
+        "e2e/i18n.spec.ts",
+        "e2e/support-dialogue.spec.ts",
+        "--grep",
+        "clone, complete, compare|byte-different built worker|browser HTTP and WebSocket|Student switches the account|new replies jump",
+        "--retries",
+        "0"
+      ],
+      "seconds": 110.31,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

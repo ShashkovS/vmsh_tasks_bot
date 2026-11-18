@@ -1,0 +1,209 @@
+{
+  "vmsh": {
+    "backend_only": true,
+    "checked_at_utc": "2026-10-13T05:43:44.960673+00:00",
+    "origin": "https://vmsh.shashkovs.ru",
+    "source": "f0003fff8028e77a32270e5353f9780a44f692c3",
+    "static_release": "278515d194d3-20261011215407",
+    "staff_assets_sha256_matched": 116,
+    "production_provenance": {
+      "landing": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "landing"
+      },
+      "student": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "student"
+      },
+      "family": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "family"
+      },
+      "staff": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "278515d194d3-20261011215407",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "staff"
+      }
+    },
+    "html_sha256_matched": 4,
+    "media_anonymous_status": 401,
+    "public_sourcemaps": false,
+    "maintenance": false,
+    "services_active": [
+      "vmshpwa.service",
+      "gunicorn.vmsh_tasks_bot.service",
+      "vmsh-analytics.timer"
+    ],
+    "live_sqlite_readonly_quick_check": "ok",
+    "tracked_clean": true,
+    "revision_marker": "f0003fff8028e77a32270e5353f9780a44f692c3",
+    "services": {
+      "vmshpwa.service": {
+        "ActiveState": "active",
+        "ActiveEnterTimestamp": "Tue 2026-10-13 05:41:24 UTC",
+        "MainPID": "231920",
+        "NRestarts": "0"
+      },
+      "gunicorn.vmsh_tasks_bot.service": {
+        "ActiveState": "active",
+        "ActiveEnterTimestamp": "Tue 2026-10-13 05:41:21 UTC",
+        "MainPID": "231903",
+        "NRestarts": "0"
+      },
+      "nats-server.service": {
+        "ActiveState": "active",
+        "ActiveEnterTimestamp": "Fri 2026-10-02 02:31:11 UTC",
+        "MainPID": "1409",
+        "NRestarts": "0"
+      }
+    },
+    "public_http_checks_passed": 25,
+    "journal_review": {
+      "scope": "startup and post-deploy fragment",
+      "startup_error_signatures": 0,
+      "pwa_workers_booted": 2
+    }
+  },
+  "tlf": {
+    "backend_only": true,
+    "checked_at_utc": "2026-10-13T05:44:33.857444+00:00",
+    "origin": "https://prep.leaders.tech",
+    "source": "f0003fff8028e77a32270e5353f9780a44f692c3",
+    "static_release": "tlfprep-20261012-teacher-inputs-278515d194d3",
+    "staff_assets_sha256_matched": 116,
+    "production_provenance": {
+      "landing": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "landing"
+      },
+      "student": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "student"
+      },
+      "family": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "family"
+      },
+      "staff": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261012-teacher-inputs-278515d194d3",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "staff"
+      }
+    },
+    "html_sha256_matched": 4,
+    "media_anonymous_status": 401,
+    "public_sourcemaps": false,
+    "maintenance": false,
+    "services_active": [
+      "vmshpwa.service",
+      "vmshzoom.service",
+      "vmsh-analytics.timer",
+      "nats.service",
+      "vmsh-cross-backup.timer",
+      "vmsh-cross-backup-sync.timer",
+      "vmsh-cross-backup-verify.timer"
+    ],
+    "product_tables_matched": 168,
+    "product_rows_matched": 38207,
+    "config_env_sha256_preserved": true,
+    "tracked_clean": true,
+    "backup_before": {
+      "backup": "20261013T054129.001103Z",
+      "createdAt": "2026-10-13T05:41:29.001103+00:00",
+      "integrity": "ok",
+      "zoomReceipts": 2756
+    },
+    "backup_after": {
+      "backup": "20261013T054134.412311Z",
+      "createdAt": "2026-10-13T05:41:34.412311+00:00",
+      "integrity": "ok",
+      "zoomReceipts": 2756
+    },
+    "services": {
+      "vmshpwa.service": {
+        "ActiveState": "active",
+        "ActiveEnterTimestamp": "Tue 2026-10-13 08:41:32 MSK",
+        "MainPID": "3661253",
+        "NRestarts": "0"
+      },
+      "vmshzoom.service": {
+        "ActiveState": "active",
+        "ActiveEnterTimestamp": "Tue 2026-10-13 08:41:32 MSK",
+        "MainPID": "3661252",
+        "NRestarts": "0"
+      },
+      "nats.service": {
+        "ActiveState": "active",
+        "ActiveEnterTimestamp": "Tue 2026-10-06 07:57:23 MSK",
+        "MainPID": "1093",
+        "NRestarts": "0"
+      }
+    },
+    "installation_record": "/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261013-worker-cache-f0003fff8028",
+    "public_http_checks_passed": 25,
+    "journal_review": {
+      "scope": "startup and post-deploy fragment",
+      "startup_error_signatures": 0,
+      "pwa_workers_booted": 2
+    }
+  },
+  "application_commit": "f0003fff8028e77a32270e5353f9780a44f692c3",
+  "performance_percentiles": {
+    "measured": false,
+    "reason": "Release smoke has no representative production load; peak p95/p99 need a separate natural-traffic comparison."
+  }
+}

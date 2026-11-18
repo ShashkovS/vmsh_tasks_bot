@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pwa_tests.sqlite_template import create_test_database
+
 import asyncio
 import os
 from copy import deepcopy
@@ -31,6 +33,7 @@ def _get_worker_id():
 def isolated_db(tmp_path):
     db.sql.disconnect()
     db_file = tmp_path / f"handler_flows_{_get_worker_id()}.db"
+    create_test_database(db_file)
     db.sql.setup(str(db_file))
 
     students = deepcopy(test_students)
@@ -114,6 +117,41 @@ async def test_student_auth_selects_test_problem_and_submits_correct_answer(isol
     assert rows[0]["answer"] == "50"
     assert State.get_by_user_id(authed_student.id)["state"] == STATE.GET_TASK_INFO
     assert any("верно" in (msg.text or "").lower() for msg in fake_bot.sent_messages)
+
+
+@pytest.mark.asyncio
+async def test_broken_test_checker_does_not_create_false_wrong_result(isolated_db, fake_bot):
+    student = User.get_by_id(isolated_db["students"][0]["id"])
+    problem = Problem(
+        group_id="н",
+        lesson=4,
+        prob=16,
+        item="",
+        title="Задача с временно сломанной проверкой",
+        prob_text="",
+        prob_type=1,
+        ans_type=99,
+        ans_validation="",
+        validation_error="Введите строку",
+        cor_ans="",
+        cor_ans_checker="def check(answer):\n    return missing_name(answer)",
+        wrong_ans="Нет",
+        congrat="Да",
+    )
+
+    await student_handlers.check_answer_and_react(student.chat_id, problem, student, "179")
+    await _flush_tasks()
+
+    rows = db.sql.conn.execute(
+        "select * from results where student_id = :student_id and problem_id = :problem_id",
+        {"student_id": student.id, "problem_id": problem.id},
+    ).fetchall()
+    student_messages = [
+        message.text for message in fake_bot.sent_messages if message.chat.id == student.chat_id
+    ]
+    assert rows == []
+    assert "Ответ принят и ожидает настройки проверки." in student_messages
+    assert State.get_by_user_id(student.id)["state"] == STATE.GET_TASK_INFO
 
 
 @pytest.mark.asyncio

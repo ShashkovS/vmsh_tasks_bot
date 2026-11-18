@@ -1,0 +1,176 @@
+{
+  "production_branch": "vmshpwa",
+  "product_commit": "4584392b52e4d02658d5f4b5afd28bfb637da41c",
+  "schema_changed": false,
+  "admin_ui_production_acceptance": "not claimed; native clipboard paste remains a manual follow-up",
+  "vmsh": {
+    "checked_at_utc": "2026-10-11T15:47:53.003884+00:00",
+    "origin": "https://vmsh.shashkovs.ru",
+    "source": "4584392b52e4d02658d5f4b5afd28bfb637da41c",
+    "static_release": "4584392b52e4-20261011154513",
+    "staff_assets_sha256_matched": 114,
+    "production_provenance": {
+      "landing": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "4584392b52e4-20261011154513",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "landing"
+      },
+      "student": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "4584392b52e4-20261011154513",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "student"
+      },
+      "family": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "4584392b52e4-20261011154513",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "family"
+      },
+      "staff": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "4584392b52e4-20261011154513",
+        "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "staff"
+      }
+    },
+    "html_sha256_matched": 4,
+    "media_anonymous_status": 401,
+    "public_sourcemaps": false,
+    "maintenance": false,
+    "services_active": [
+      "vmshpwa.service",
+      "gunicorn.vmsh_tasks_bot.service",
+      "vmsh-analytics.timer"
+    ],
+    "public_http_checks": 25,
+    "backup": {
+      "backup": "/web/vmsh_tasks_bot/vmsh_tasks_bot/db/review-photo-release-20261011/post-deploy-20261011T154818Z.sqlite3",
+      "bytes": 380153856,
+      "integrity": "ok",
+      "schema_head": "0118.teacher_work",
+      "production_rows_exported": false
+    },
+    "private_sourcemaps_upload": {
+      "release": "4584392b52e4-20261011154513",
+      "organization": "vmsh",
+      "privateArtifacts": 402,
+      "upload": "verified"
+    }
+  },
+  "tlf": {
+    "checked_at_utc": "2026-10-11T15:46:57.622460+00:00",
+    "origin": "https://prep.leaders.tech",
+    "source": "4584392b52e4d02658d5f4b5afd28bfb637da41c",
+    "static_release": "tlfprep-20261011-review-photo-4584392b52e4",
+    "staff_assets_sha256_matched": 114,
+    "production_provenance": {
+      "landing": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261011-review-photo-4584392b52e4",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "landing"
+      },
+      "student": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261011-review-photo-4584392b52e4",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "student"
+      },
+      "family": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261011-review-photo-4584392b52e4",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "family"
+      },
+      "staff": {
+        "schemaVersion": 1,
+        "profile": "production",
+        "releaseId": "tlfprep-20261011-review-photo-4584392b52e4",
+        "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+        "sentryConfigured": true,
+        "sentryOrigin": "https://glitch.leaders.tech",
+        "msw": false,
+        "prototype": false,
+        "application": "staff"
+      }
+    },
+    "html_sha256_matched": 4,
+    "media_anonymous_status": 401,
+    "public_sourcemaps": false,
+    "maintenance": false,
+    "services_active": [
+      "vmshpwa.service",
+      "vmshzoom.service",
+      "vmsh-analytics.timer",
+      "nats.service",
+      "vmsh-cross-backup.timer",
+      "vmsh-cross-backup-sync.timer",
+      "vmsh-cross-backup-verify.timer"
+    ],
+    "public_http_checks": 25,
+    "operation": {
+      "product_tables_preserved": 168,
+      "product_rows_preserved": 36784,
+      "private_sourcemaps_upload": {
+        "release": "tlfprep-20261011-review-photo-4584392b52e4",
+        "organization": "tlf",
+        "privateArtifacts": 402,
+        "upload": "verified"
+      },
+      "backups": {
+        "before": {
+          "backup": "20261011T154529.074085Z",
+          "createdAt": "2026-10-11T15:45:29.074085+00:00",
+          "integrity": "ok",
+          "zoomReceipts": 2713
+        },
+        "after": {
+          "backup": "20261011T154559.165336Z",
+          "createdAt": "2026-10-11T15:45:59.165336+00:00",
+          "integrity": "ok",
+          "zoomReceipts": 2713
+        }
+      },
+      "canonical_settings_check": "Canonical settings preserved; only approved release label changed",
+      "nats_pid_preserved": true,
+      "http_smoke": "PASS: 25 read-only checks accepted https://prep.leaders.tech as production."
+    }
+  }
+}

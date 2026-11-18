@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "layout": {
+    "event": {
+      "publicId": "event-41",
+      "name": "Очное занятие",
+      "startsAt": "2026-10-11T10:00:00Z",
+      "endsAt": "2026-10-11T13:00:00Z",
+      "status": "scheduled",
+      "version": 1
+    },
+    "state": "confirmed",
+    "publicId": "layout-41",
+    "version": 3,
+    "groups": [
+      {
+        "groupLessonPublicId": "group-lesson-41",
+        "coursePublicId": "course-math",
+        "courseName": "Математика 5–7",
+        "groupPublicId": "group-beginner",
+        "groupName": "Начинающие",
+        "shortCode": "н",
+        "colorKey": "beginner",
+        "lessonNumber": 41,
+        "inPersonCount": 84,
+        "assignedCount": 79
+      }
+    ],
+    "rooms": [
+      {
+        "classroomPublicId": "room-201",
+        "classroomName": "201",
+        "classroomStatus": "active",
+        "groupLessonPublicId": "group-lesson-41",
+        "coursePublicId": "course-math",
+        "groupPublicId": "group-beginner",
+        "groupName": "Начинающие",
+        "sourceLayoutPublicId": "layout-40"
+      }
+    ],
+    "conflicts": []
+  },
+  "requestId": "classroom-layout-fixture"
+}

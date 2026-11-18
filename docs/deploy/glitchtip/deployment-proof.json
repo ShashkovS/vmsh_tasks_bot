@@ -1,0 +1,87 @@
+{
+  "verified_at": "2026-10-11T08:20:27.926176+00:00",
+  "origin": "https://glitch.leaders.tech",
+  "version": "6.2.6",
+  "https_login": true,
+  "secure_session_cookie": true,
+  "public_registration": false,
+  "billing_enabled": false,
+  "mcp_requires_authentication": true,
+  "frontend_javascript_files": 2,
+  "organizations": [
+    "vmsh",
+    "tlf"
+  ],
+  "email_configured": false,
+  "events": [
+    {
+      "event_id": "cfe724a1758f4a6db9bf2625ffe14fc4",
+      "project": 1,
+      "organization": "vmsh",
+      "has_stack": true
+    },
+    {
+      "event_id": "7563ae3d98b74440a368fbbf27e199d4",
+      "project": 3,
+      "organization": "tlf",
+      "has_stack": true
+    },
+    {
+      "event_id": "0785bf3f63b34f06a92ebc97cf08db2a",
+      "project": 4,
+      "organization": "tlf",
+      "has_stack": true
+    }
+  ],
+  "deployment_host": "prep.leaders.tech",
+  "addresses": {
+    "ipv4": "188.245.158.162",
+    "ipv6": "2a01:4f8:1c1b:c08f::1"
+  },
+  "ipv4_https_verified": true,
+  "ipv6_https_verified": true,
+  "retention_days": 30,
+  "backup": {
+    "latest": "/var/backups/glitchtip/20261011T082010Z",
+    "daily_utc": "02:35 + 0\u201310 min",
+    "retention_days": 7,
+    "restore_rehearsal": "PASS",
+    "restored_counts": {
+      "users": 1,
+      "organizations": 2,
+      "projects": 4,
+      "synthetic_events": 4
+    },
+    "location": "same host"
+  },
+  "after_container_restart": "same tracked event IDs, organizations, projects and original stacks verified",
+  "application_listener": "127.0.0.1:8011",
+  "postgres_public_port": false,
+  "prep_http_smoke": {
+    "checks": 25,
+    "result": "PASS"
+  },
+  "existing_main_pids": {
+    "nginx": 1219,
+    "vmshpwa": 1116995,
+    "vmshzoom": 1116997,
+    "nats": 1093
+  },
+  "application_dsns_switched": false,
+  "project_ids": {
+    "vmsh": {
+      "vmshpwa": 1,
+      "backend": 2
+    },
+    "tlf": {
+      "tlfpwa": 3,
+      "backend": 4
+    }
+  },
+  "tls": {
+    "certificate_expires": "2027-01-09",
+    "renewal_dry_run": "PASS",
+    "automatic_renewal_timer": "enabled"
+  },
+  "django_pending_migrations": 0
+}

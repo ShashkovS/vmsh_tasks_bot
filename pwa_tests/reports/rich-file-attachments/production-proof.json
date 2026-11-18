@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-02T15:55:49.285232+00:00",
+  "featureCommit": "9584efb7fd53da1eff41a1e60564d02fa7497fdc",
+  "migrationAdded": false,
+  "portals": [
+    {
+      "origin": "https://vmsh.shashkovs.ru",
+      "builds": {
+        "landing": {
+          "profile": "production",
+          "releaseId": "9584efb7fd53-20261002153458",
+          "prototype": false,
+          "msw": false
+        },
+        "student": {
+          "profile": "production",
+          "releaseId": "9584efb7fd53-20261002153458",
+          "prototype": false,
+          "msw": false
+        },
+        "family": {
+          "profile": "production",
+          "releaseId": "9584efb7fd53-20261002153458",
+          "prototype": false,
+          "msw": false
+        },
+        "staff": {
+          "profile": "production",
+          "releaseId": "9584efb7fd53-20261002153458",
+          "prototype": false,
+          "msw": false
+        }
+      },
+      "uploadAuthBoundary": {
+        "admin": {
+          "status": 401,
+          "code": "authentication_required"
+        },
+        "lesson": {
+          "status": 401,
+          "code": "authentication_required"
+        }
+      },
+      "staffBundleIncludesBothUploadRoutes": true
+    },
+    {
+      "origin": "https://prep.leaders.tech",
+      "builds": {
+        "landing": {
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-rich-files-9584efb7fd53",
+          "prototype": false,
+          "msw": false
+        },
+        "student": {
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-rich-files-9584efb7fd53",
+          "prototype": false,
+          "msw": false
+        },
+        "family": {
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-rich-files-9584efb7fd53",
+          "prototype": false,
+          "msw": false
+        },
+        "staff": {
+          "profile": "production",
+          "releaseId": "tlfprep-20261002-rich-files-9584efb7fd53",
+          "prototype": false,
+          "msw": false
+        }
+      },
+      "uploadAuthBoundary": {
+        "admin": {
+          "status": 401,
+          "code": "authentication_required"
+        },
+        "lesson": {
+          "status": 401,
+          "code": "authentication_required"
+        }
+      },
+      "staffBundleIncludesBothUploadRoutes": true
+    }
+  ],
+  "vmsh": {
+    "deployment": "existing automatic webhook",
+    "staticRelease": "9584efb7fd53-20261002153458",
+    "httpSmoke": {
+      "passed": 25,
+      "readOnly": true
+    },
+    "appliedMigrations": 80,
+    "quickCheck": "ok",
+    "natsPid": 1409,
+    "natsRestarted": false,
+    "servicesActive": [
+      "vmshpwa",
+      "gunicorn.vmsh_tasks_bot",
+      "vmsh-analytics.timer",
+      "nats-server"
+    ],
+    "maintenance": false,
+    "s3Probe": {
+      "status": "not_run",
+      "reason": "Agent SSH user cannot read the production configuration; no object was written."
+    },
+    "filesystemProxy": "Template committed; existing root-owned live nginx unchanged. Production attachments use direct S3 URLs."
+  },
+  "tlf": {
+    "deployment": "manual deploy_rich_files.sh",
+    "staticRelease": "tlfprep-20261002-rich-files-9584efb7fd53",
+    "hostRecord": "/web/vmsh_tasks_bot/deploy/releases/tlfprep-20261002-rich-files-9584efb7fd53/",
+    "httpSmoke": {
+      "passed": 25,
+      "readOnly": true
+    },
+    "appliedMigrations": 80,
+    "schemaCurrent": true,
+    "unchangedProductTables": 157,
+    "credentialsUnchanged": true,
+    "backups": [
+      {
+        "id": "20261002T153530.870193Z",
+        "integrity": "ok",
+        "rawZoomReceipts": 851
+      },
+      {
+        "id": "20261002T153708.227404Z",
+        "integrity": "ok",
+        "rawZoomReceipts": 851
+      }
+    ],
+    "natsPid": 1936264,
+    "natsRestarted": false,
+    "servicesActive": ["vmshpwa", "vmshzoom", "vmsh-analytics.timer", "nats"],
+    "maintenance": false,
+    "filesystemProxy": "Only /pwa-rich-files/ added to live nginx; nginx -t and reload passed.",
+    "s3Probe": {
+      "ok": true,
+      "cleanedUp": true,
+      "publicStatus": 200,
+      "mimeType": "text/plain",
+      "byteSize": 61,
+      "permanentPublicUrl": true,
+      "originalBytes": true,
+      "unicodeFilename": true
+    }
+  },
+  "productionContentWrites": false,
+  "syntheticS3ObjectRetained": false,
+  "notes": [
+    "Upload/save/publication flows were exercised in isolated E2E, not by creating production posts.",
+    "Public provenance, bundles and anonymous authentication boundaries passed on both portals.",
+    "No credentials, object URLs, session cookies or personal content are included in this record."
+  ]
+}

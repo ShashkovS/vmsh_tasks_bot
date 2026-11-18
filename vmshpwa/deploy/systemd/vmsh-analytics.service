@@ -1,0 +1,19 @@
+[Unit]
+Description=VMSH one course analytics iteration
+After=vmshpwa.service
+
+[Service]
+Type=oneshot
+User=vmsh_tasks_bot
+Group=vmsh_tasks_bot
+WorkingDirectory=/web/vmsh_tasks_bot/vmsh_tasks_bot
+EnvironmentFile=/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env
+ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/python -m vmshpwa.scripts.course_analytics
+TimeoutStartSec=30min
+Nice=10
+UMask=0007
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/web/vmsh_tasks_bot/vmsh_tasks_bot/db

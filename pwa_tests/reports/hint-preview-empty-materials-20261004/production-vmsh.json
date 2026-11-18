@@ -1,0 +1,32 @@
+{
+  "host": "vmsh",
+  "source_revision": "cc60df33d01b29ae77476db0b43b711f79e5d370",
+  "compiler": "vmsh-latex-compiler/10",
+  "release": "cc60df33d01b-20261004115535",
+  "production_build": {
+    "schemaVersion": 1,
+    "profile": "production",
+    "releaseId": "cc60df33d01b-20261004115535",
+    "publicMediaOrigin": "https://d3ca76cf4cf5-images-bucket.s3.ru1.storage.beget.cloud",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://o489435.ingest.us.sentry.io",
+    "msw": false,
+    "prototype": false,
+    "application": "staff"
+  },
+  "schema_current": true,
+  "ddl_sha256": "e3866265c928a175dbb6e749e9a038baf6714e6e10cca41d99d6f3efd3a4ce88",
+  "migration_ids": [
+    "0111.current_schema",
+    "0112.scheduled_publication_lifecycle",
+    "0113.content_upload_compiler_generation"
+  ],
+  "integrity": "ok",
+  "existing_fk_errors": 627,
+  "services": {
+    "vmshpwa.service": "active",
+    "vmsh-analytics.timer": "active",
+    "gunicorn.vmsh_tasks_bot.service": "active"
+  },
+  "maintenance_cleared": true
+}

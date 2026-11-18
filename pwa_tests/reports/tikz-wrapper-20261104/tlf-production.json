@@ -1,0 +1,29 @@
+{
+  "sourceBefore": "eed1c1277d54047328f44535f74f244e97c33949",
+  "sourceAfter": "e0666d3e6de68eacb1e2e3309942a0806b1ada61",
+  "origin": "https://prep.leaders.tech",
+  "static": "/web/vmsh_tasks_bot/vmshpwa/releases/login-password-20261104-eed1c1277d54",
+  "schemaChanged": false,
+  "unrelatedFiles": [],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 1739769,
+      "workersBefore": [
+        932465,
+        932466
+      ],
+      "workersAfter": [
+        1160572,
+        1160573
+      ]
+    }
+  },
+  "status": "PASS",
+  "tikzChecks": [
+    "TikZ production conversion PASS 0 52e11881d47267c8 24195 151 52",
+    "TikZ production conversion PASS 1 3bc2038d9506b3ed 6026 52 25"
+  ],
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true
+}

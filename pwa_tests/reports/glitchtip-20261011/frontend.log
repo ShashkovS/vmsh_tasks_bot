@@ -1,0 +1,12 @@
+$ vitest run --project "unit*"
+
+ RUN  v4.1.10 /Users/sergeyshashkov/.codex/worktrees/c996/vmsh_tasks_bot/vmshpwa
+
+(node:63334) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  215 passed (215)
+      Tests  1088 passed (1088)
+   Start at  12:13:52
+   Duration  133.01s (transform 7.38s, setup 16.77s, import 114.31s, tests 26.83s, environment 63.39s)
+
