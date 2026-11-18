@@ -68,7 +68,7 @@ def test_telegram_adapter_uses_shared_policy_for_every_non_choice_answer_type(
     correct_answer,
 ):
     if answer_type in {ANS_TYPE.SYMB_EXPRESSION, ANS_TYPE.SYMB_EQUIV}:
-        monkeypatch.setitem(submissions.ANS_CHECKER, answer_type, lambda *_: True)
+        monkeypatch.setattr(submissions, "compare_symbolic_answers", lambda *_: (True, False))
 
     decision = student_handlers.evaluate_telegram_test_problem_answer(
         _problem(answer_type, correct=correct_answer),
@@ -153,3 +153,12 @@ def test_historical_checker_symbols_alias_the_shared_policy():
     )
     assert student_handlers.is_py_func is TRUSTED_CHECKER_PATTERN
     assert student_handlers.MAX_CALLBACK_PAYLOAD_HOOK_LIMIT == 24
+
+
+def test_telegram_symbolic_error_explains_the_notation():
+    decision = student_handlers.evaluate_telegram_test_problem_answer(
+        _problem(ANS_TYPE.SYMB_EQUIV, correct="-1/2(x-4)^2"), "-1/2x^2+4x-8"
+    )
+    assert decision.verdict is student_handlers.ANS_CHECK_VERDICT.WRONG
+    assert decision.feedback == submissions.SYMBOLIC_COMPARISON_FEEDBACK
+    assert decision.counts_as_attempt

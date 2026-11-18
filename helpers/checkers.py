@@ -3,6 +3,7 @@ import re
 from contextlib import contextmanager
 from threading import Condition, Lock
 from collections import Counter
+from collections.abc import Iterable
 from helpers.consts import ANS_TYPE
 from helpers.config import logger
 from helpers.calc_ans_func_values import calc_first_10_values
@@ -237,24 +238,33 @@ def frac_multiset_eq(x, y):
     return to_frac_multiset(x) == to_frac_multiset(y)
 
 
+def compare_symbolic_answers(
+    answer_type: ANS_TYPE, answer: str, candidates: Iterable[str]
+) -> tuple[bool, bool]:
+    """Return acceptance and whether any unresolved comparison returned ERROR."""
+    saw_error = False
+    for candidate in candidates:
+        try:
+            with _symbolic_worker() as checker:
+                verdict = checker.strict_compare_v2(answer, candidate, timeout=1.0)
+        except Exception:
+            logger.exception("Symbolic comparison failed")
+            continue
+        if verdict == CompareVerdict.EQUAL or (
+            answer_type == ANS_TYPE.SYMB_EQUIV and verdict == CompareVerdict.MAY_BE
+        ):
+            return True, False
+        if verdict == CompareVerdict.ERROR:
+            saw_error = True
+    return False, saw_error
+
+
 def symb_eq(x, y):
-    try:
-        with _symbolic_worker() as checker:
-            res: CompareVerdict = checker.strict_compare_v2(x, y, timeout=1.0)
-        return res == CompareVerdict.EQUAL
-    except Exception as e:
-        logger.exception(e)
-        return False
+    return compare_symbolic_answers(ANS_TYPE.SYMB_EXPRESSION, x, (y,))[0]
 
 
 def symb_eq2(x, y):
-    try:
-        with _symbolic_worker() as checker:
-            res: CompareVerdict = checker.strict_compare_v2(x, y, timeout=1.0)
-        return res == CompareVerdict.EQUAL or res == CompareVerdict.MAY_BE
-    except Exception as e:
-        logger.exception(e)
-        return False
+    return compare_symbolic_answers(ANS_TYPE.SYMB_EQUIV, x, (y,))[0]
 
 
 def time_eq(x, y):

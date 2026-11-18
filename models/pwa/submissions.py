@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from helpers.checkers import ANS_CHECKER, ANS_REGEX
+from helpers.checkers import ANS_CHECKER, ANS_REGEX, compare_symbolic_answers
 from helpers.consts import ANS_TYPE, VERDICT
 from helpers.pwa.i18n import N_
 from helpers.pwa.test_checkers import (
@@ -34,6 +34,10 @@ NORMALIZED_ANSWER_SCHEMA_VERSION = 1
 CHECKER_POLICY_VERSION = "pwa-test-checker-v2"
 SELECT_ONE_COMPATIBILITY_LIMIT = 24
 BUILT_IN_FEEDBACK_SOURCE = "built_in"
+SYMBOLIC_COMPARISON_FEEDBACK = N_(
+    "Не удалось проверить выражение. Проверьте пробелы и скобки. "
+    "Например, 1/3x означает 1/(3x), а 1/3 x означает x/3."
+)
 
 
 class SubmissionConfigurationError(ValueError):
@@ -317,6 +321,7 @@ def _checked(
     normalized_value: object | None,
     correct: bool,
     checker_message: str | None = None,
+    builtin_error: str | None = None,
 ) -> TestAnswerEvaluation:
     return TestAnswerEvaluation(
         display_answer=display_answer,
@@ -334,11 +339,11 @@ def _checked(
         feedback=(
             config.congratulation or N_("Да, всё верно!")
             if correct
-            else config.wrong_answer or N_("Нет, ответ неверный.")
+            else builtin_error or config.wrong_answer or N_("Нет, ответ неверный.")
         ),
         feedback_source=(
             BUILT_IN_FEEDBACK_SOURCE
-            if (config.congratulation if correct else config.wrong_answer) is None
+            if builtin_error or (config.congratulation if correct else config.wrong_answer) is None
             else None
         ),
         checker_message=checker_message,
@@ -471,8 +476,16 @@ def evaluate_test_answer(
             diagnostic_code="correct_answer_missing",
         )
 
+    builtin_error = None
+    checker_message = None
     try:
-        if config.answer_type is ANS_TYPE.POLYNOMIAL:
+        if config.answer_type in (ANS_TYPE.SYMB_EXPRESSION, ANS_TYPE.SYMB_EQUIV):
+            correct, saw_error = compare_symbolic_answers(
+                config.answer_type, display_answer, config.correct_answer.split(";")
+            )
+            if saw_error:
+                builtin_error = SYMBOLIC_COMPARISON_FEEDBACK
+        elif config.answer_type is ANS_TYPE.POLYNOMIAL:
             correct, checker_message = _polynomial_check(
                 display_answer, config.correct_answer
             )
@@ -482,7 +495,6 @@ def evaluate_test_answer(
                 standard_checker(display_answer, candidate)
                 for candidate in config.correct_answer.split(";")
             )
-            checker_message = None
     except Exception:
         return TestAnswerEvaluation(
             display_answer=display_answer,
@@ -503,12 +515,14 @@ def evaluate_test_answer(
         normalized_value=normalized["value"],
         correct=correct,
         checker_message=checker_message,
+        builtin_error=builtin_error,
     )
 
 
 def built_in_feedback(
     config: TestProblemAnswerConfig,
     outcome: TestAnswerOutcome | str,
+    feedback: str | None = None,
 ) -> str | None:
     """Return a default only when configuration proves no author copy exists.
 
@@ -531,6 +545,12 @@ def built_in_feedback(
     if resolved is TestAnswerOutcome.CORRECT:
         return N_("Да, всё верно!") if config.congratulation is None else None
     if resolved is TestAnswerOutcome.WRONG:
+        if (
+            feedback == SYMBOLIC_COMPARISON_FEEDBACK
+            and config.answer_type in (ANS_TYPE.SYMB_EXPRESSION, ANS_TYPE.SYMB_EQUIV)
+            and config.wrong_answer != feedback
+        ):
+            return SYMBOLIC_COMPARISON_FEEDBACK
         return N_("Нет, ответ неверный.") if config.wrong_answer is None else None
     return None
 

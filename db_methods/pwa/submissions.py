@@ -1174,7 +1174,7 @@ def _history_feedback_source(
         return None
     return (
         BUILT_IN_FEEDBACK_SOURCE
-        if built_in_feedback(config, outcome) == feedback
+        if built_in_feedback(config, outcome, feedback) == feedback
         else None
     )
 

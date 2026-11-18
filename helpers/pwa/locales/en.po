@@ -1188,6 +1188,10 @@ msgstr "Could not apply the change. Refresh the list."
 msgid "Не удалось проверить XLSX-файл"
 msgstr "Could not check the XLSX file"
 
+#: models/pwa/submissions.py
+msgid "Не удалось проверить выражение. Проверьте пробелы и скобки. Например, 1/3x означает 1/(3x), а 1/3 x означает x/3."
+msgstr "We couldn’t check this expression. Check the spacing and parentheses. For example, 1/3x means 1/(3x), while 1/3 x means x/3."
+
 #: apps/pwa_api/problem_import_routes.py
 msgid "Не удалось прочитать XLSX-файл"
 msgstr "Could not read the XLSX file"

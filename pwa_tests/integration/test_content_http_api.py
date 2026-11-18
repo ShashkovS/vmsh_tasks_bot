@@ -799,6 +799,7 @@ async def _create_lesson_window(
 async def _prepare_published_test_problem(
     fixture: ContentHttpFixture,
     *,
+    answer_type: int = 3,
     correct_answer: str | None = "7",
     correct_answer_checker: str | None = None,
     problem_type: int = 1,
@@ -864,7 +865,7 @@ async def _prepare_published_test_problem(
         {
             "title": ("Целое число" if problem_type == 1 else "Письменная задача"),
             "problemType": problem_type,
-            "answerType": 3 if problem_type == 1 else None,
+            "answerType": answer_type if problem_type == 1 else None,
             "answerValidation": None,
             "validationError": validation_error if problem_type == 1 else None,
             "correctAnswer": correct_answer if problem_type == 1 else None,
@@ -1256,14 +1257,29 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
     assert counts == (2, 1, 2)
 
 
+@pytest.mark.parametrize(
+    ("answer_type", "expected", "answer", "ru", "en"),
+    [
+        (3, "7", "7", "Да, всё верно!", "Yes, that is correct!"),
+        (
+            21, "-1/2(x-4)^2", "-1/2x^2+4x-8",
+            "Не удалось проверить выражение. Проверьте пробелы и скобки. "
+            "Например, 1/3x означает 1/(3x), а 1/3 x означает x/3.",
+            "We couldn’t check this expression. Check the spacing and parentheses. "
+            "For example, 1/3x means 1/(3x), while 1/3 x means x/3.",
+        ),
+    ],
+)
 async def test_student_test_submission_localizes_only_proven_built_in_feedback(
-    content_http: ContentHttpFixture,
+    content_http: ContentHttpFixture, answer_type, expected, answer, ru, en,
 ):
     """P3.3: the response is localized while stored and authored copy stays exact."""
 
     fixture = content_http
     problem_public_id, condition_revision_id = await _prepare_published_test_problem(
         fixture,
+        answer_type=answer_type,
+        correct_answer=expected,
         validation_error=None,
         wrong_answer=None,
         congratulation=None,
@@ -1276,7 +1292,7 @@ async def test_student_test_submission_localizes_only_proven_built_in_feedback(
             "conditionRevisionId": condition_revision_id,
             "configVersion": 1,
         },
-        "displayAnswer": "7",
+        "displayAnswer": answer,
         "clientCreatedAt": _timestamp(),
     }
     english_cookies = _cookie(fixture, "student") | {LOCALE_COOKIE_NAME: "en"}
@@ -1289,7 +1305,7 @@ async def test_student_test_submission_localizes_only_proven_built_in_feedback(
     )
     assert created.status == 201, await created.text()
     english_receipt = await created.json()
-    assert english_receipt["feedback"] == "Yes, that is correct!"
+    assert english_receipt["feedback"] == en
     assert "feedbackSource" not in english_receipt
 
     stored = fixture.factory.run_read(
@@ -1300,7 +1316,7 @@ async def test_student_test_submission_localizes_only_proven_built_in_feedback(
             ).fetchone()["response_json"]
         )
     )
-    assert stored["feedback"] == "Да, всё верно!"
+    assert stored["feedback"] == ru
     assert stored["feedbackSource"] == "built_in"
 
     replay = await fixture.client.post(
@@ -1310,7 +1326,7 @@ async def test_student_test_submission_localizes_only_proven_built_in_feedback(
         headers=_headers(unsafe=True),
     )
     assert replay.status == 201
-    assert (await replay.json())["feedback"] == "Да, всё верно!"
+    assert (await replay.json())["feedback"] == ru
 
     history = await fixture.client.get(
         route,
@@ -1318,7 +1334,7 @@ async def test_student_test_submission_localizes_only_proven_built_in_feedback(
         headers=_headers(),
     )
     assert history.status == 200, await history.text()
-    assert (await history.json())["attempts"][0]["feedback"] == "Yes, that is correct!"
+    assert (await history.json())["attempts"][0]["feedback"] == en
 
 
 async def test_student_test_submission_http_rejects_unauthenticated_and_bad_cursor(

@@ -103,3 +103,11 @@ Python 2847 PASS / 6 SKIP, frontend 1055 PASS, Storybook 363 PASS;
 format/types/lint/i18n PASS. Браузерная матрица 139 PASS / 20 штатных SKIP, три движка, retries=0;
 [точные receipts и corrected test probe](../../../docs/performance/2026-10-08-fixes.md#verification).
 Production не изменён.
+
+### 2026-11-18 — сообщение при ошибке символьного сравнения
+
+Для типов 20 и 21 [общая проверка ответа](../../../models/pwa/submissions.py)
+показывает пояснение о пробелах и скобках на примере `1/3x` и `1/3 x`, когда mathsolvers вернул ERROR
+и ни один вариант эталона не подошёл. Попытка получает прежний отрицательный вердикт.
+[Регрессионные тесты](../../../pwa_tests/domain/test_pwa_test_submissions.py)
+проверяют также совпадение со вторым вариантом и обычный неверный ответ.

@@ -94,7 +94,7 @@ def test_every_non_choice_answer_type_reaches_a_checked_verdict(
     correct_answer: str,
 ):
     if answer_type in {ANS_TYPE.SYMB_EXPRESSION, ANS_TYPE.SYMB_EQUIV}:
-        monkeypatch.setitem(submissions.ANS_CHECKER, answer_type, lambda *_: True)
+        monkeypatch.setattr(submissions, "compare_symbolic_answers", lambda *_: (True, False))
 
     result = evaluate_test_answer(
         answer_config(answer_type, correct=correct_answer),
@@ -485,3 +485,23 @@ def test_case_insensitive_strings_preserve_legacy_lookalikes(value):
     assert str_eq(value, expected)
     assert str_eq(expected, value)
     assert not str_eq(value, "фа")
+
+
+@pytest.mark.parametrize("answer_type", [ANS_TYPE.SYMB_EXPRESSION, ANS_TYPE.SYMB_EQUIV])
+def test_symbolic_comparison_feedback_and_alternative_answers(answer_type):
+    answer = "-1/2x^2+4x-8"
+    config = answer_config(answer_type, correct="-1/2(x-4)^2")
+    unresolved = evaluate_test_answer(config, answer)
+    assert unresolved.outcome is AnswerOutcome.WRONG
+    assert unresolved.counts_as_attempt
+    assert unresolved.feedback == submissions.SYMBOLIC_COMPARISON_FEEDBACK
+    assert unresolved.feedback_source == submissions.BUILT_IN_FEEDBACK_SOURCE
+    assert submissions.built_in_feedback(config, unresolved.outcome, unresolved.feedback) == unresolved.feedback
+
+    matched = evaluate_test_answer(replace(config, correct_answer=f"{config.correct_answer};{answer}"), answer)
+    assert matched.outcome is AnswerOutcome.CORRECT
+    assert matched.feedback == config.congratulation
+
+    wrong = evaluate_test_answer(replace(config, correct_answer="x+1"), "x+2")
+    assert wrong.outcome is AnswerOutcome.WRONG
+    assert wrong.feedback == config.wrong_answer
