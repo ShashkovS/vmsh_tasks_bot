@@ -21,6 +21,12 @@ formatting, `makebox`, `verb`, `multicols`, `multline*`, оболочку `table
 позиционированный TikZ. Потерянные ранее символы `U+FFFD` считаются
 повреждением source, которое parser не пытается угадывать или восстанавливать.
 
+В версии компилятора 12 команда `\textit{…}` внутри предложения сохраняет
+курсив и окружающую пунктуацию в одном абзаце. Если аргумент содержит
+блочную команду (например, `\пункт`), [парсер](../../helpers/pwa/content/parser.py)
+разбирает её как структуру задачи. Оба случая покрывают
+[тесты компилятора](../../pwa_tests/domain/test_content_compiler.py).
+
 ## Web и Telegram renderers
 
 Web HTML сохраняет исходные LaTeX expressions в безопасных math nodes. KaTeX работает на клиенте с HTML+MathML output; его CSS и fonts собираются Vite и входят в precache Student/Family. Текущий полный набор увеличивает precache примерно до 1.4 MiB; после стабилизации корпуса нужно оставить необходимые web-форматы/subsets с regression-набором реальных формул. Выделение/copy helper и интерактивное меню формул отключены, но assistive semantics не удаляются.

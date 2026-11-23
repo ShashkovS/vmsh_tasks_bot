@@ -280,7 +280,6 @@ _BLOCK_GROUP_WRAPPERS = {
     "parbox",
     "scalebox",
     "smash",
-    "textit",
     "vbox",
 }
 _HEADING_COMMANDS = {

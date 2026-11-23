@@ -746,6 +746,27 @@ def test_two_argument_page_boundary_macro_does_not_leak_dimensions() -> None:
         assert "50mm" not in derivative
 
 
+def test_inline_italics_preserve_the_surrounding_paragraph() -> None:
+    result = _compile(
+        r"""\задача
+Общий участок границы (\textit{не точку!}).
+Нарисуйте карту.
+\кзадача"""
+    )
+
+    assert not result.has_errors
+    document = render_web_document(result.ast, role=ContentRole.CONDITION)
+    paragraph, = document["problems"][0]["blocks"]
+    assert paragraph["type"] == "paragraph"
+    before, emphasis, after = paragraph["children"]
+    assert before["value"].strip() == "Общий участок границы ("
+    assert emphasis == {
+        "type": "emphasis",
+        "children": [{"type": "text", "value": "не точку!"}],
+    }
+    assert " ".join(after["value"].split()) == "). Нарисуйте карту."
+
+
 def test_structural_content_inside_print_wrappers_remains_visible() -> None:
     result = _compile(
         r"""
