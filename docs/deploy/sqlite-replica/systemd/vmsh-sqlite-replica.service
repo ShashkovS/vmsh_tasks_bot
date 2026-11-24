@@ -1,0 +1,16 @@
+[Unit]
+Description=Ten-minute FirstVDS SQLite replica
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /web/vmsh_tasks_bot/sqlite-replica/replicate.py
+UMask=0077
+Nice=10
+MemoryMax=512M
+TimeoutStartSec=9min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/vmsh-sqlite-replica

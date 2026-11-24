@@ -1,0 +1,8 @@
+{
+  "enabled_rules": 13,
+  "evaluation_interval_seconds": 30,
+  "telegram_destination_matches": true,
+  "resolved_notifications": true,
+  "critical_repeat": "1h",
+  "warning_repeat": "4h"
+}

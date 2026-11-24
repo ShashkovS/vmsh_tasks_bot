@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "requestId": "contribution-fixture",
+  "timezone": "Europe/Moscow",
+  "allTime": {
+    "total": 1240,
+    "plus": 930,
+    "byKind": {
+      "written": { "total": 900, "plus": 680 },
+      "school": { "total": 250, "plus": 210 },
+      "zoom": { "total": 90, "plus": 40 }
+    }
+  },
+  "lesson": {
+    "courseId": "c-1",
+    "number": 11,
+    "counts": {
+      "total": 23,
+      "plus": 17,
+      "byKind": {
+        "written": { "total": 15, "plus": 11 },
+        "school": { "total": 5, "plus": 4 },
+        "zoom": { "total": 3, "plus": 2 }
+      }
+    },
+    "milestone": { "value": 23, "reached": [1, 10], "next": 25 }
+  },
+  "milestone": { "value": 1240, "reached": [1, 10, 50, 100, 250, 500, 1000], "next": 2500 },
+  "daily": {
+    "current": 4,
+    "best": 7,
+    "periodCount": 3,
+    "minimum": 3,
+    "milestone": { "value": 7, "reached": [2, 3, 5, 7], "next": 14 }
+  },
+  "weekly": {
+    "current": 3,
+    "best": 3,
+    "periodCount": 23,
+    "minimum": 3,
+    "milestone": { "value": 3, "reached": [2], "next": 4 }
+  },
+  "courses": [{ "id": "c-1", "name": "ВМШ 2026–2027", "lessons": [11, 10, 9] }]
+}

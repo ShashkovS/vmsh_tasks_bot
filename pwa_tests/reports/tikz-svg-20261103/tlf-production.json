@@ -1,0 +1,29 @@
+{
+  "sourceBefore": "3ddb0a8e8d54184c1cacd032cfa77f3a7e2bbdd0",
+  "sourceAfter": "35c0a6ab81cfa5794a897227847f5cb43da56b57",
+  "origin": "https://prep.leaders.tech",
+  "static": "/web/vmsh_tasks_bot/vmshpwa/releases/tlfprep-20261018-remote-mcp-450903b77351",
+  "schemaChanged": false,
+  "unrelatedFiles": [],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 1739769,
+      "workersBefore": [
+        1739846,
+        1739849
+      ],
+      "workersAfter": [
+        932465,
+        932466
+      ]
+    }
+  },
+  "status": "PASS",
+  "tikzChecks": [
+    "TikZ production conversion PASS 0 52fa6f5d8d036181 7578 148 148",
+    "TikZ production conversion PASS 1 3bc2038d9506b3ed 6026 52 25"
+  ],
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true
+}

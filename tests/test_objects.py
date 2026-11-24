@@ -1,3 +1,4 @@
+from pwa_tests.sqlite_template import create_test_database
 import os
 from dataclasses import asdict
 from unittest import TestCase
@@ -23,6 +24,7 @@ class UserMethodsTest(TestCase):
         except FileNotFoundError:
             pass
         # create shiny new db instance from scratch and connect
+        create_test_database(test_db_filename)
         self.db.sql.setup(test_db_filename)
         self.insert_dummy_users()
 

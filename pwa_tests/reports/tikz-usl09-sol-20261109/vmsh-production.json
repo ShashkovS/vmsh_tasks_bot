@@ -1,0 +1,187 @@
+{
+  "sourceBefore": "7ee709141deddbf624d3034a9d092ef02e4bb2e2",
+  "sourceAfter": "7a8075484b1a6cc0302b3a812833d02961ef16e9",
+  "origin": "https://vmsh.shashkovs.ru",
+  "static": "releases/media-cache-20261107",
+  "schemaChanged": false,
+  "unrelatedFiles": [
+    "helpers/pwa/content/metadata_generation.py",
+    "helpers/pwa/locales/en.po",
+    "vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py"
+  ],
+  "preservedUntrackedFiles": [],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 1006,
+      "workersBefore": [
+        1132,
+        1135
+      ],
+      "workersAfter": [
+        27974,
+        27975
+      ]
+    },
+    "gunicorn.vmsh_tasks_bot.service": {
+      "master": 899,
+      "workersBefore": [
+        1137,
+        1140
+      ],
+      "workersAfter": [
+        27991,
+        27992
+      ]
+    }
+  },
+  "tikzChecks": [
+    {
+      "source": "current",
+      "line": 86,
+      "sha256": "84c3e2dd0edb112ce196e26d616494b37251638c9927957b073f60c2f1bf661c",
+      "width": 294,
+      "height": 67,
+      "bytes": 4881
+    },
+    {
+      "source": "current",
+      "line": 213,
+      "sha256": "52fa6f5d8d03618158a7bf5143f1eb0abe30345408fb8c225bef2ed5a18671e3",
+      "width": 148,
+      "height": 148,
+      "bytes": 7578
+    },
+    {
+      "source": "current",
+      "line": 246,
+      "sha256": "baba386cf51873fccd8899581cbe4da110ea13ebe0d65ceacefdbec4b1e25a4f",
+      "width": 289,
+      "height": 148,
+      "bytes": 13069
+    },
+    {
+      "source": "current",
+      "line": 322,
+      "sha256": "bb8f40d231324d6677c5243099a36b9a1866946c6e6fa11fa27367c6d755c2df",
+      "width": 289,
+      "height": 148,
+      "bytes": 13825
+    },
+    {
+      "source": "current",
+      "line": 414,
+      "sha256": "91024be38fbb1c62430b858c6286cc46a6d6bca5778c824bc43f199d17b0df4c",
+      "width": 97,
+      "height": 111,
+      "bytes": 1648
+    },
+    {
+      "source": "current",
+      "line": 431,
+      "sha256": "7a308bf9c8661e70adda8b6e8541161da86a2a9d5c61e09881eeda99858103d0",
+      "width": 97,
+      "height": 111,
+      "bytes": 2628
+    },
+    {
+      "source": "current",
+      "line": 598,
+      "sha256": "dd9c426a5b2996f420ad3ec512a4ec99179e89367c9c02bc4727a235f35d4f11",
+      "width": 146,
+      "height": 202,
+      "bytes": 18524
+    },
+    {
+      "source": "cr-183",
+      "line": 87,
+      "sha256": "15a5802d50c4dcb8f81777632d37da882bd231e31f882577e56da24397b159c4",
+      "width": 300,
+      "height": 67,
+      "bytes": 4887
+    },
+    {
+      "source": "cr-183",
+      "line": 214,
+      "sha256": "04c2412f716c0ad385efd45886dea658bb7f2b36b8970e67c81ff72fac55ea5b",
+      "width": 154,
+      "height": 148,
+      "bytes": 13761
+    },
+    {
+      "source": "cr-183",
+      "line": 258,
+      "sha256": "754668b7ab44477598359fed03b1e7aa64231875372b168d67bd9e9aa77ba3c4",
+      "width": 103,
+      "height": 111,
+      "bytes": 1635
+    },
+    {
+      "source": "cr-183",
+      "line": 275,
+      "sha256": "918f9e5f845ba21358ea422ae2a0305a87c66db7dc784b77e5c8c89b869c359b",
+      "width": 103,
+      "height": 111,
+      "bytes": 2627
+    },
+    {
+      "source": "cr-184",
+      "line": 87,
+      "sha256": "15a5802d50c4dcb8f81777632d37da882bd231e31f882577e56da24397b159c4",
+      "width": 300,
+      "height": 67,
+      "bytes": 4887
+    },
+    {
+      "source": "cr-184",
+      "line": 214,
+      "sha256": "04c2412f716c0ad385efd45886dea658bb7f2b36b8970e67c81ff72fac55ea5b",
+      "width": 154,
+      "height": 148,
+      "bytes": 13761
+    },
+    {
+      "source": "cr-184",
+      "line": 247,
+      "sha256": "445f6b416e449244d7ffe275a7419379806cb7613dcaefb6d0a4751b0415807b",
+      "width": 295,
+      "height": 148,
+      "bytes": 13023
+    },
+    {
+      "source": "cr-184",
+      "line": 324,
+      "sha256": "0509469083a3d20efd0d91827fac8e45476b7913d9f5d6b776a2de20e27b7dd3",
+      "width": 295,
+      "height": 148,
+      "bytes": 13792
+    },
+    {
+      "source": "cr-184",
+      "line": 416,
+      "sha256": "754668b7ab44477598359fed03b1e7aa64231875372b168d67bd9e9aa77ba3c4",
+      "width": 103,
+      "height": 111,
+      "bytes": 1635
+    },
+    {
+      "source": "cr-184",
+      "line": 433,
+      "sha256": "918f9e5f845ba21358ea422ae2a0305a87c66db7dc784b77e5c8c89b869c359b",
+      "width": 103,
+      "height": 111,
+      "bytes": 2627
+    },
+    {
+      "source": "restored-pdfrender-style",
+      "width": 148,
+      "height": 148,
+      "bytes": 13690,
+      "textStroke": true
+    }
+  ],
+  "status": "PASS",
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true,
+  "schemaSha256": "bdc350e5483e056531cf7e131cea5089c29162deb6ff8fbf1b17c320571b51a9"
+}

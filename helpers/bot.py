@@ -403,11 +403,16 @@ class BotIg(Bot):
                     raise asyncio.TimeoutError("The TimeoutError in answer_callback_query in a row...")
 
 
-# Запускаем API телеграм-бота
-bot = BotIg(
-    config.telegram_bot_token,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    session=AiohttpSession(timeout=5),
+# Other legacy web adapters import this module even without Telegram enabled.
+# See docs/optional-telegram-bot.md and apps/__init__.py.
+bot = (
+    BotIg(
+        config.telegram_bot_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        session=AiohttpSession(timeout=5),
+    )
+    if config.telegram_bot_token
+    else None
 )
 router = Router()
 group_router = Router()

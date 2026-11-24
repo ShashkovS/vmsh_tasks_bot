@@ -1,0 +1,8 @@
+{
+  "glitchtipHelperSha256": "57875239f6f2d5607205ad833ed86300d66ad18626753aef5e520523a9b2fab1",
+  "glitchtipService": "active",
+  "dashboardTargetsUpdated": 5,
+  "credentialsAndStatePreserved": true,
+  "grafanaHealth": "database ok",
+  "grafanaDashboardFileUpdated": true
+}

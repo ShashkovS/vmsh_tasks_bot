@@ -1,0 +1,116 @@
+[
+  {
+    "name": "chromium",
+    "width": 320,
+    "send": {
+      "x": 12,
+      "y": 301.546875,
+      "width": 175.59375,
+      "height": 34
+    },
+    "hint": {
+      "x": 199.59375,
+      "y": 301.75,
+      "width": 108.40625,
+      "height": 33.59375
+    },
+    "overflow": false
+  },
+  {
+    "name": "chromium",
+    "width": 390,
+    "send": {
+      "x": 12,
+      "y": 265.546875,
+      "width": 175.59375,
+      "height": 34
+    },
+    "hint": {
+      "x": 199.59375,
+      "y": 274.140625,
+      "width": 153.03125,
+      "height": 16.796875
+    },
+    "overflow": false
+  },
+  {
+    "name": "chromium",
+    "headingLeft": 16
+  },
+  {
+    "name": "firefox",
+    "width": 320,
+    "send": {
+      "x": 12,
+      "y": 301.54998779296875,
+      "width": 175.5833282470703,
+      "height": 34
+    },
+    "hint": {
+      "x": 199.5833282470703,
+      "y": 301.75,
+      "width": 108.41667175292969,
+      "height": 33.600006103515625
+    },
+    "overflow": false
+  },
+  {
+    "name": "firefox",
+    "width": 390,
+    "send": {
+      "x": 12,
+      "y": 265.54998779296875,
+      "width": 175.5833282470703,
+      "height": 34
+    },
+    "hint": {
+      "x": 199.5833282470703,
+      "y": 274.1499938964844,
+      "width": 153.0500030517578,
+      "height": 16.79998779296875
+    },
+    "overflow": false
+  },
+  {
+    "name": "firefox",
+    "headingLeft": 16
+  },
+  {
+    "name": "webkit",
+    "width": 320,
+    "send": {
+      "x": 12,
+      "y": 316.546875,
+      "width": 175.59375,
+      "height": 34
+    },
+    "hint": {
+      "x": 199.59375,
+      "y": 316.75,
+      "width": 108.40625,
+      "height": 33.59375
+    },
+    "overflow": false
+  },
+  {
+    "name": "webkit",
+    "width": 390,
+    "send": {
+      "x": 12,
+      "y": 265.546875,
+      "width": 175.59375,
+      "height": 34
+    },
+    "hint": {
+      "x": 199.59375,
+      "y": 274.140625,
+      "width": 153.265625,
+      "height": 16.796875
+    },
+    "overflow": false
+  },
+  {
+    "name": "webkit",
+    "headingLeft": 16
+  }
+]

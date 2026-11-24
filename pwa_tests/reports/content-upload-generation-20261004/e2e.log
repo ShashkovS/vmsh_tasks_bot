@@ -1,0 +1,23 @@
+Toolchain: v26.9.0, pnpm@11.15.1, installed lockfile matches
+E2E build: cache hit (source, environment and all artifact bytes match)
+[WebServer] /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning: 
+[WebServer] 
+[WebServer] gcd is deprecated in Rational, use nsimplify instead
+[WebServer] 
+[WebServer] See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+[WebServer] for details.
+[WebServer] 
+[WebServer] This has been deprecated since SymPy version 1.11. It
+[WebServer] will be removed in a future version of SymPy.
+[WebServer] 
+[WebServer]   dummy_two = sympy.core.Rational(2, 1, 1)
+[WebServer] 2026-04-10 13:47:54 MathBot : WARNING  MainApp Start up!
+
+Running 2 tests using 1 worker
+
+(node:61818) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/content-publication.spec.ts:186:1 › Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions (15.2s)
+  ✓  2 [chromium] › e2e/content-publication.spec.ts:313:1 › Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first (24.9s)
+
+  2 passed (48.3s)

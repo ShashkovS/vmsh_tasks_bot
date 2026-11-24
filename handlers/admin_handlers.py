@@ -14,7 +14,7 @@ from helpers.consts import *
 from helpers.config import logger, config
 from helpers.msg_texts import msgs
 from models import User, Problem, State
-from models.spreadsheets import FromGoogleSpreadsheet
+from models.spreadsheets import FromGoogleSpreadsheet, GoogleBulkUpdateDisabled
 import db_methods as db
 from helpers.bot import bot, router
 from handlers import student_keyboards
@@ -41,13 +41,33 @@ def _resolve_group_ids(group_tokens):
     return group_ids, unknown
 
 
-@router.message(Command('update_all_quaLtzPE', 'update_all'))
+def _google_import_enabled(_message: types.Message) -> bool:
+    """Gate import commands; see docs/optional-telegram-bot.md."""
+    return bool(config.google_sheets_key)
+
+
+@router.message(Command('update_all_quaLtzPE', 'update_all'), _google_import_enabled)
 async def update_all_internal_data(message: types.Message):
     logger.debug('update_all_internal_data')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    errors = FromGoogleSpreadsheet.update_all()
+    try:
+        errors = FromGoogleSpreadsheet.update_all()
+    except GoogleBulkUpdateDisabled:
+        emit_trace(
+            "admin.data.sync.blocked",
+            user_id=teacher.id,
+            teacher_id=teacher.id,
+            chat_id=message.chat.id,
+            entity="all",
+            reason="partial_google_cutover",
+        )
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=msgs.a_all_data_update_disabled,
+        )
+        return
     emit_trace(
         "admin.data.sync",
         user_id=teacher.id,
@@ -66,7 +86,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
-@router.message(Command('update_teachers', 'ut'))
+@router.message(Command('update_teachers', 'ut'), _google_import_enabled)
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -80,7 +100,7 @@ async def update_teachers(message: types.Message):
     )
 
 
-@router.message(Command('update_students', 'us'))
+@router.message(Command('update_students', 'us'), _google_import_enabled)
 async def update_students(message: types.Message):
     logger.debug('update_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -94,7 +114,7 @@ async def update_students(message: types.Message):
     )
 
 
-@router.message(Command('update_bot_settings'))
+@router.message(Command('update_bot_settings'), _google_import_enabled)
 async def update_bot_settings(message: types.Message):
     logger.debug('update_bot_settings')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -112,7 +132,7 @@ async def update_bot_settings(message: types.Message):
     )
 
 
-@router.message(Command('update_ui_messages'))
+@router.message(Command('update_ui_messages'), _google_import_enabled)
 async def update_ui_messages(message: types.Message):
     logger.debug('update_ui_messages')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -127,7 +147,7 @@ async def update_ui_messages(message: types.Message):
     )
 
 
-@router.message(Command('update_problems', 'up'))
+@router.message(Command('update_problems', 'up'), _google_import_enabled)
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -151,7 +171,7 @@ async def update_problems(message: types.Message):
     )
 
 
-@router.message(Command('update_groups', 'ug'))
+@router.message(Command('update_groups', 'ug'), _google_import_enabled)
 async def update_groups(message: types.Message):
     logger.debug('update_groups')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -513,7 +533,7 @@ async def update_teachers_commands(message: types.Message):
 
 async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
     for_recheck = db.result.get_for_recheck_by_problem_id(problem.id)
-    oks = errs = changes = 0
+    oks = errs = skipped = changes = 0
     students_to_update_keyboards = set()
     for row in for_recheck:
         check_verdict, _, error_text = check_test_problem_answer(problem, student=None, student_answer=row["answer"])
@@ -523,6 +543,9 @@ async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
         if check_verdict == ANS_CHECK_VERDICT.CORRECT:
             row["verdict"] = VERDICT.SOLVED
             oks += 1
+        elif check_verdict == ANS_CHECK_VERDICT.PENDING_CONFIGURATION:
+            skipped += 1
+            continue
         else:
             row["verdict"] = VERDICT.WRONG_ANSWER
             errs += 1
@@ -532,7 +555,10 @@ async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
     db.result.update_verdicts(for_recheck)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=msgs.a_recheck_summary.format_map({'problem': problem, 'oks': oks, 'errs': errs, 'changes': changes}),
+        text=msgs.a_recheck_summary.format_map({
+            'problem': problem, 'oks': oks, 'errs': errs,
+            'skipped': skipped, 'changes': changes,
+        }),
     )
     # Обновляем клавиатуры школьникам
     for student_id in students_to_update_keyboards:

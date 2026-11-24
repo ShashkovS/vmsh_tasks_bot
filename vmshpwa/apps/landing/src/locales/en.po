@@ -1,0 +1,58 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-18 22:22+0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: apps/landing/src/main.tsx
+msgid "{brandName} — математический кружок"
+msgstr "{brandName} — math circle"
+
+#: apps/landing/src/main.tsx
+msgid "{brandName} — математический кружок для школьников и родителей"
+msgstr "{brandName} — a math club for students and parents"
+
+#: apps/landing/src/landing-page.tsx
+msgid "{brandName} — математический кружок для школьников. Выберите нужный кабинет, чтобы открыть задачи, результаты занятий и новости."
+msgstr "{brandName} is a math club for students. Choose your account to open problems, class results, and news."
+
+#: apps/landing/src/landing-page.tsx
+msgid "{brandName} · математический кружок"
+msgstr "{brandName} · Math Club"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Активность ребёнка, результаты занятий и опубликованные новости."
+msgstr "Your child's activity, class results, and published news."
+
+#: apps/landing/src/landing-page.tsx
+msgid "Задачи, сдача решений, проверки, новости и личный прогресс."
+msgstr "Problems, solution submissions, reviews, news, and personal progress."
+
+#: apps/landing/src/landing-page.tsx
+msgid "Кабинет родителя"
+msgstr "Family account"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Кабинет школьника"
+msgstr "Student account"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Математика · обучение · общение"
+msgstr "Mathematics · learning · conversation"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Открыть кабинет"
+msgstr "Open account"
+
+#: apps/landing/src/landing-page.tsx
+msgid "Решаем задачи и учимся видеть в математике больше."
+msgstr "Solve problems and discover more in mathematics."

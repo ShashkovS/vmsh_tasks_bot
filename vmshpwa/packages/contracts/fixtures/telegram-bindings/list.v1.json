@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "publicId": "telegram-binding.math-news",
+      "ownerType": "course",
+      "ownerId": "course.math-5-7",
+      "ownerName": "Математика 5–7",
+      "courseId": "course.math-5-7",
+      "courseName": "Математика 5–7",
+      "purpose": "news_source",
+      "chatId": -100179000001,
+      "messageThreadId": null,
+      "titleCached": "Новости ВМШ 179",
+      "status": "verified",
+      "verifiedAt": "2026-07-29T09:00:00Z",
+      "createdAt": "2026-07-29T08:58:00Z",
+      "updatedAt": "2026-07-29T09:00:00Z",
+      "version": 2
+    },
+    {
+      "publicId": "telegram-binding.beginner-materials",
+      "ownerType": "group",
+      "ownerId": "group.math-beginner",
+      "ownerName": "Начинающие",
+      "courseId": "course.math-5-7",
+      "courseName": "Математика 5–7",
+      "purpose": "materials_target",
+      "chatId": -100179000002,
+      "messageThreadId": 179,
+      "titleCached": "Материалы начинающих",
+      "status": "draft",
+      "verifiedAt": null,
+      "createdAt": "2026-07-29T10:00:00Z",
+      "updatedAt": "2026-07-29T10:00:00Z",
+      "version": 1
+    }
+  ],
+  "requestId": "telegram-bindings-fixture"
+}

@@ -1,0 +1,11 @@
+{
+  "$comment": "Translated scopes. Frontend globs (relative to vmshpwa/) ban unwrapped Cyrillic via ESLint and require English for every catalog message they own; backend globs (relative to the repository root) require English for every backend message they own. P8 covers all production areas; fixture/generated exclusions are explicit in eslint.config.js. See dev/development-plan/24-i18n.md.",
+  "frontend": ["apps/*/src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
+  "backend": [
+    "apps/pwa_app.py",
+    "apps/pwa_api/**/*.py",
+    "helpers/pwa/**/*.py",
+    "models/pwa/**/*.py",
+    "db_methods/pwa/**/*.py"
+  ]
+}

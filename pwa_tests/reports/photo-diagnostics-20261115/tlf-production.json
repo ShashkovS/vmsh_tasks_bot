@@ -1,0 +1,57 @@
+{
+  "sourceBefore": "7a8075484b1a6cc0302b3a812833d02961ef16e9",
+  "sourceAfter": "d2e5dddc2b0211aa86a9f93063317a10a1ab2a82",
+  "origin": "https://prep.leaders.tech",
+  "static": "/web/vmsh_tasks_bot/vmshpwa/releases/ui-audit-20261104-7ee709141ded",
+  "schemaChanged": false,
+  "unrelatedFiles": [],
+  "preservedUntrackedFiles": [
+    "creds_prod/vmsh_bot_config_prod.json.before-glitchtip",
+    "deployment-snapshot.json"
+  ],
+  "handover": {
+    "vmshpwa.service": {
+      "master": 2732555,
+      "workersBefore": [
+        2732610,
+        2732612
+      ],
+      "workersAfter": [
+        4187715,
+        4187716
+      ]
+    }
+  },
+  "conversionChecks": [
+    {
+      "kind": "jpeg-conversion",
+      "status": "PASS",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "kind": "corrupt-input-diagnostics",
+      "status": "PASS",
+      "reason": "asset.converter_failed",
+      "capability": "image-normalization",
+      "diagnostics": {
+        "tool": "magick",
+        "return_code": 1,
+        "converter_output": "magick: no decode delegate for this image format `<workdir>/input.bin' @ error/constitute.c/ReadImage/752.",
+        "source_bytes": 37,
+        "source_format": "unknown",
+        "source_sha256": "9015e8cb7dc2f65afe1505672a36878c6f4c1d13c6bc406eaba57665038fffe0"
+      }
+    },
+    {
+      "kind": "glitchtip-client-configured",
+      "status": "PASS",
+      "project": "/4"
+    }
+  ],
+  "status": "PASS",
+  "httpChecksPassed": 25,
+  "verifiedOnlineBackups": true,
+  "configStaticNatsPreserved": true,
+  "schemaSha256": "bdc350e5483e056531cf7e131cea5089c29162deb6ff8fbf1b17c320571b51a9"
+}

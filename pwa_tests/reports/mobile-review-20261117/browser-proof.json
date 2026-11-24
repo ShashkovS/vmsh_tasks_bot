@@ -1,0 +1,50 @@
+[
+  {
+    "name": "chromium",
+    "theme": "light",
+    "width": 276,
+    "availableWidth": 294,
+    "hyphens": "auto",
+    "overflow": false
+  },
+  {
+    "name": "chromium",
+    "theme": "dark",
+    "width": 276,
+    "availableWidth": 294,
+    "hyphens": "auto",
+    "overflow": false
+  },
+  {
+    "name": "firefox",
+    "theme": "light",
+    "width": 276,
+    "availableWidth": 294,
+    "hyphens": "auto",
+    "overflow": false
+  },
+  {
+    "name": "firefox",
+    "theme": "dark",
+    "width": 276,
+    "availableWidth": 294,
+    "hyphens": "auto",
+    "overflow": false
+  },
+  {
+    "name": "webkit",
+    "theme": "light",
+    "width": 276,
+    "availableWidth": 294,
+    "hyphens": "auto",
+    "overflow": false
+  },
+  {
+    "name": "webkit",
+    "theme": "dark",
+    "width": 276,
+    "availableWidth": 294,
+    "hyphens": "auto",
+    "overflow": false
+  }
+]

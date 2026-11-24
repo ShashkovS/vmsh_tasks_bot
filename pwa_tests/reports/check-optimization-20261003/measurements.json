@@ -1,0 +1,451 @@
+{
+  "context": {
+    "revision": "dc80817329b81c405a86d83a05eb4d9b3fd5d74d",
+    "started_at": "2026-10-03T22:44:09+0300",
+    "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+    "node": "v26.9.0",
+    "pnpm": "11.15.1",
+    "python_workers": 4,
+    "frontend_workers": 2,
+    "concurrent_heavy_suites": 1
+  },
+  "before": {
+    "python": {
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-n4",
+        "--durations=30",
+        "tests",
+        "pwa_tests"
+      ],
+      "seconds": 693.768,
+      "exit_code": 1
+    },
+    "frontend": {
+      "command": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "--maxWorkers",
+        "2"
+      ],
+      "seconds": 131.574,
+      "exit_code": 0
+    },
+    "storybook": {
+      "command": ["pnpm", "storybook:test"],
+      "seconds": 122.134,
+      "exit_code": 0
+    },
+    "e2e": {
+      "seconds": 97.993,
+      "phases": [
+        {
+          "mode": "content",
+          "seconds": 43.048,
+          "exit_code": 0
+        },
+        {
+          "mode": "review",
+          "seconds": 27.45,
+          "exit_code": 0
+        },
+        {
+          "mode": "submissions",
+          "seconds": 27.494,
+          "exit_code": 0
+        }
+      ]
+    },
+    "lint": {
+      "command": ["pnpm", "lint:js"],
+      "seconds": 111.697,
+      "exit_code": 0
+    },
+    "e2e_outer_wall": {
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-c",
+        "exec(open('.runtime/check-optimization-20261003/e2e-before.py').read())"
+      ],
+      "seconds": 98.028,
+      "exit_code": 0
+    }
+  },
+  "after": {
+    "fast_pipeline": {
+      "profile": "fast",
+      "modes": ["content", "review", "submissions"],
+      "started_at": "2026-10-03T20:58:48.176230+00:00",
+      "steps": [
+        {
+          "name": "format",
+          "command": ["pnpm", "format:check"],
+          "seconds": 5.547,
+          "exit_code": 0
+        },
+        {
+          "name": "types",
+          "command": ["pnpm", "typecheck"],
+          "seconds": 7.831,
+          "exit_code": 0
+        },
+        {
+          "name": "lint-js",
+          "command": [
+            "pnpm",
+            "exec",
+            "eslint",
+            ".",
+            "--max-warnings=0",
+            "--cache",
+            "--cache-strategy",
+            "content",
+            "--cache-location",
+            ".runtime/vmshpwa/checks/lint/9105560309a894d4d1c5deedfb50cc2c80dd9a788371e733f7beba2d83c67bda"
+          ],
+          "seconds": 32.084,
+          "exit_code": 0
+        },
+        {
+          "name": "lint-css",
+          "command": ["pnpm", "lint:css"],
+          "seconds": 0.786,
+          "exit_code": 0
+        },
+        {
+          "name": "i18n-frontend",
+          "command": ["pnpm", "i18n:check"],
+          "seconds": 1.642,
+          "exit_code": 0
+        },
+        {
+          "name": "i18n-backend",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "-m",
+            "vmshpwa.scripts.backend_i18n",
+            "check"
+          ],
+          "seconds": 0.424,
+          "exit_code": 0
+        },
+        {
+          "name": "python",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "pytest",
+            "-q",
+            "-n4",
+            "--durations=20",
+            "tests",
+            "pwa_tests"
+          ],
+          "seconds": 79.489,
+          "exit_code": 0
+        },
+        {
+          "name": "frontend",
+          "command": ["pnpm", "test"],
+          "seconds": 50.95,
+          "exit_code": 0
+        },
+        {
+          "name": "storybook",
+          "command": ["pnpm", "storybook:test"],
+          "seconds": 62.227,
+          "exit_code": 0
+        },
+        {
+          "name": "e2e",
+          "command": [
+            "uv",
+            "run",
+            "--frozen",
+            "--no-sync",
+            "python",
+            "-m",
+            "vmshpwa.scripts.e2e_runner",
+            "--browser",
+            "chromium",
+            "--report",
+            ".runtime/check-optimization-20261003/fast-final/e2e.json",
+            "--mode",
+            "content",
+            "--mode",
+            "review",
+            "--mode",
+            "submissions"
+          ],
+          "seconds": 44.346,
+          "exit_code": 0
+        }
+      ],
+      "exit_code": 0,
+      "revision": "dc80817329b81c405a86d83a05eb4d9b3fd5d74d",
+      "source_digest": "59d0da60e93ce6fcff9714fdd497e56b0987b535649ac69517a1083eee0c3e2e",
+      "source_changed": false,
+      "seconds": 286.015
+    },
+    "cold_e2e": {
+      "modes": ["content", "review", "submissions"],
+      "browser": "chromium",
+      "seconds": 46.522,
+      "exit_code": 0,
+      "phases": [
+        {
+          "command": ["pnpm", "build"],
+          "seconds": 5.397,
+          "cache_hit": false,
+          "exit_code": 0
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/content-publication.spec.ts",
+            "e2e/review-workspace.spec.ts",
+            "e2e/test-submission.spec.ts",
+            "--project",
+            "chromium",
+            "--retries",
+            "0"
+          ],
+          "seconds": 40.798,
+          "cache_hit": false,
+          "exit_code": 0
+        }
+      ]
+    },
+    "warm_e2e": {
+      "modes": ["content", "review", "submissions"],
+      "browser": "chromium",
+      "seconds": 41.11,
+      "exit_code": 0,
+      "phases": [
+        {
+          "command": ["pnpm", "build"],
+          "seconds": 0.143,
+          "cache_hit": true,
+          "exit_code": 0
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/content-publication.spec.ts",
+            "e2e/review-workspace.spec.ts",
+            "e2e/test-submission.spec.ts",
+            "--project",
+            "chromium",
+            "--retries",
+            "0"
+          ],
+          "seconds": 40.697,
+          "cache_hit": false,
+          "exit_code": 0,
+          "preparation": {
+            "seed_cache_hit": true,
+            "seconds": 0.037,
+            "key": "4f7687c81fc3396f14103d9145d70b98fcb0ee7f55ad60d79b3772033ff9c5b5"
+          }
+        }
+      ]
+    },
+    "post_checks": {
+      "source_digest": "c86e832c24296d5e4261cd141052f3aaa4aaa7cd53349a5d71507dc935332d50",
+      "steps": [
+        {
+          "name": "types",
+          "seconds": 8.149,
+          "exit_code": 0
+        },
+        {
+          "name": "lint-js",
+          "seconds": 32.537,
+          "exit_code": 0
+        },
+        {
+          "name": "lint-js-warm",
+          "seconds": 1.403,
+          "exit_code": 0
+        },
+        {
+          "name": "format",
+          "seconds": 5.805,
+          "exit_code": 0
+        },
+        {
+          "name": "e2e-warm",
+          "seconds": 41.178,
+          "exit_code": 0
+        }
+      ],
+      "exit_code": 0,
+      "source_changed": false
+    },
+    "runtime_matrix": {
+      "modes": ["runtime-isolation"],
+      "browser": "all",
+      "seconds": 82.466,
+      "exit_code": 0,
+      "phases": [
+        {
+          "command": ["pnpm", "build"],
+          "seconds": 0.163,
+          "cache_hit": true,
+          "exit_code": 0
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/runtime-isolation.spec.ts",
+            "--retries",
+            "0"
+          ],
+          "seconds": 81.992,
+          "cache_hit": false,
+          "exit_code": 0,
+          "preparation": {
+            "seed_cache_hit": true,
+            "seconds": 0.072,
+            "key": "bea433ed9de0803307611b1d5e39880426fdd4877d5d91076499310a1ca391c1"
+          }
+        }
+      ]
+    },
+    "remaining_chromium_phases": {
+      "browser": "chromium",
+      "scope": "remaining all-mode phases: figure, statistics, visual",
+      "seconds": 45.897,
+      "exit_code": 0,
+      "phases": [
+        {
+          "command": ["pnpm", "build"],
+          "seconds": 0.153,
+          "cache_hit": true,
+          "exit_code": 0
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/figure-layout.spec.ts",
+            "--project",
+            "chromium",
+            "--retries",
+            "0"
+          ],
+          "seconds": 17.581,
+          "cache_hit": false,
+          "exit_code": 0,
+          "preparation": {
+            "seed_cache_hit": false,
+            "seconds": 1.283,
+            "key": "4f7687c81fc3396f14103d9145d70b98fcb0ee7f55ad60d79b3772033ff9c5b5"
+          }
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "--config",
+            "playwright.statistics.config.ts",
+            "--project",
+            "chromium",
+            "--retries",
+            "0"
+          ],
+          "seconds": 21.044,
+          "cache_hit": false,
+          "exit_code": 0,
+          "preparation": {
+            "seed_cache_hit": false,
+            "seconds": 4.769,
+            "key": "2d01f18286f2f4d5771ed24382e482bb7412cc327b08a0f7bbab4afc36357806"
+          }
+        },
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "--grep",
+            "@visual",
+            "--project",
+            "chromium",
+            "--retries",
+            "0"
+          ],
+          "seconds": 6.85,
+          "cache_hit": false,
+          "exit_code": 0,
+          "preparation": {
+            "seed_cache_hit": true,
+            "seconds": 0.035,
+            "key": "4f7687c81fc3396f14103d9145d70b98fcb0ee7f55ad60d79b3772033ff9c5b5"
+          }
+        }
+      ]
+    }
+  },
+  "coverage": {
+    "python_full_pass": 2846,
+    "python_skip": 7,
+    "frontend_pass": 1028,
+    "frontend_files": 203,
+    "storybook_pass": 355,
+    "storybook_files": 74,
+    "cache_guard_final_pass": 28,
+    "chromium_unique_cases_by_phases": 139,
+    "runtime_matrix_pass": 75,
+    "visual_baselines_updated": false
+  },
+  "limitations": [
+    "Before Python has 7 import-order metric failures; fixed without weakening assertions.",
+    "Before typecheck fails in parallel UI work, excluded from speedup comparison.",
+    "Shared macOS host; one heavy suite at a time within this task, varying tool caches; single measurements.",
+    "Fast pipeline timing precedes final 26 ms Python preflight and separately tested receipt/sidecar fixes.",
+    "Full Chromium validation is composed from phases and a targeted corrected runtime matrix; original failed run remains FAIL.",
+    "Deployment and production histories unchanged; rollout duration not measured."
+  ],
+  "final_verified_source_digest": "ec6fc2f52356bdeaa987b628c5d48db65385b079d4bd140d640598d748df99eb",
+  "final_focused_gate": {
+    "passed": 28,
+    "pytest_seconds": 6.73,
+    "ruff": "PASS",
+    "format": "PASS",
+    "python_dependencies_check": "PASS"
+  }
+}

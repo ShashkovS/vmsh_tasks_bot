@@ -1,0 +1,127 @@
+{
+  "candidateSha256": "b9d28523cb02f9f87b413a3e68e57281211425c4c7aacec04b65c105098faf2f",
+  "samples": [
+    {
+      "sample": "L_12__29x100.heif",
+      "sourceSha256": "f3dee921639a77ea3bf0920a43e4abb6e052fee4e0f8ab45fa9b2bbf93a7a213",
+      "width": 29,
+      "height": 100,
+      "outputBytes": 130,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 80
+    },
+    {
+      "sample": "RGBA_12__128x128.heif",
+      "sourceSha256": "7baf5a4e786fa381ac3e7675fd8245c886dadd4ef5c006bccfc6ac7f901a39f5",
+      "width": 128,
+      "height": 128,
+      "outputBytes": 604,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 81
+    },
+    {
+      "sample": "RGB_10__128x128.heif",
+      "sourceSha256": "7fbf1573c1e5c1693953b31bb287327c53eaefa74a6f1324e7391a08b3ed1e73",
+      "width": 128,
+      "height": 128,
+      "outputBytes": 446,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 73
+    },
+    {
+      "sample": "RGB_12__128x128.heif",
+      "sourceSha256": "92c048d4bead7eebd3e0da5cb13a2e286cccbde3acb23580ee9c5f6b4cfde812",
+      "width": 128,
+      "height": 128,
+      "outputBytes": 442,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 70
+    },
+    {
+      "sample": "arrow.heic",
+      "sourceSha256": "73f604d7353df4848505a1f45a5517f736857fe047372f95c2f3d671df92c22c",
+      "width": 1440,
+      "height": 1920,
+      "outputBytes": 74486,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 1064
+    },
+    {
+      "sample": "spatial_photo.heic",
+      "sourceSha256": "ef941d328072a2df034adb3c3b46f41117606bfc8fcc100dff975d31f55ec028",
+      "width": 1920,
+      "height": 1920,
+      "outputBytes": 311404,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 1613
+    },
+    {
+      "sample": "synthetic-gps.jpg",
+      "sourceSha256": "a193a4f778dd1c55e4e6b46a6650a5b9c73bc22ad46c4523cd3de9537ae86e4f",
+      "width": 64,
+      "height": 32,
+      "outputBytes": 86,
+      "directWebp": true,
+      "oldSystemSucceeded": true,
+      "elapsedMs": 46
+    },
+    {
+      "sample": "test.jpg",
+      "sourceSha256": "9e44506b7b16f89a06c71cf1985fcb58d355d4f8c585a6026e11b73324f338b4",
+      "width": 64,
+      "height": 48,
+      "outputBytes": 116,
+      "directWebp": true,
+      "oldSystemSucceeded": true,
+      "elapsedMs": 46
+    },
+    {
+      "sample": "test.png",
+      "sourceSha256": "73f6e3d0a581e4c8e2e454ee18d2cedb6c35674a9074b635ad2be66abe98dcc0",
+      "width": 64,
+      "height": 48,
+      "outputBytes": 114,
+      "directWebp": true,
+      "oldSystemSucceeded": true,
+      "elapsedMs": 48
+    },
+    {
+      "sample": "test.webp",
+      "sourceSha256": "5aac6967141b7bd61d1a796844c7a726f5c88fe50791989e36c2202a439bcc41",
+      "width": 64,
+      "height": 48,
+      "outputBytes": 126,
+      "directWebp": true,
+      "oldSystemSucceeded": true,
+      "elapsedMs": 43
+    },
+    {
+      "sample": "xiaomi.heic",
+      "sourceSha256": "cb5c7d9131931df4abd9bfe1c3de47617b68d1fae54a1c367fc5981ffea6aeed",
+      "width": 1920,
+      "height": 1440,
+      "outputBytes": 123464,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 1113
+    },
+    {
+      "sample": "zPug_3.heic",
+      "sourceSha256": "daf1515c651e15968ad6ec142e443759156fee76c65715e4f5713cf1ad072774",
+      "width": 64,
+      "height": 64,
+      "outputBytes": 1086,
+      "directWebp": true,
+      "oldSystemSucceeded": false,
+      "elapsedMs": 57
+    }
+  ],
+  "corruptRejected": true,
+  "externalCwebpUsed": false
+}

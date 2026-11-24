@@ -1,0 +1,43 @@
+{
+  "modes": [
+    "redeploy",
+    "offline-current"
+  ],
+  "browser": "chromium",
+  "seconds": 131.432,
+  "exit_code": 0,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 3.805,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/smooth-redeploy.spec.ts",
+        "e2e/offline-current-lessons.spec.ts",
+        "e2e/content-publication.spec.ts",
+        "--project",
+        "chromium",
+        "--retries",
+        "0"
+      ],
+      "seconds": 127.268,
+      "cache_hit": false,
+      "exit_code": 0,
+      "preparation": {
+        "seed_cache_hit": true,
+        "seconds": 0.033,
+        "key": "819a4f35664e7d1a087c333e8e35b904d48eab56294cfa2fc9b72cb81010311f"
+      }
+    }
+  ]
+}

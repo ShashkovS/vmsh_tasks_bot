@@ -1,0 +1,75 @@
+name: glitchtip
+
+services:
+  postgres:
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_USER: glitchtip
+      POSTGRES_DB: glitchtip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set in private .env}
+    restart: unless-stopped
+    shm_size: 128mb
+    mem_limit: 768m
+    volumes:
+      - pg-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U glitchtip -d glitchtip']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+  web:
+    image: glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+    env_file: .env
+    environment:
+      SERVER_ROLE: all_in_one
+      VALKEY_URL: ''
+      GLITCHTIP_DOMAIN: https://glitch.leaders.tech
+      ALLOWED_HOSTS: glitch.leaders.tech,localhost,127.0.0.1
+      CSRF_TRUSTED_ORIGINS: https://glitch.leaders.tech
+      ENABLE_USER_REGISTRATION: 'False'
+      ENABLE_SOCIAL_APPS_USER_REGISTRATION: 'False'
+      ENABLE_ORGANIZATION_CREATION: 'False'
+      ENABLE_ADMIN: 'True'
+      GLITCHTIP_ENABLE_MCP: 'True'
+      GLITCHTIP_ENABLE_LOGS: 'False'
+      GLITCHTIP_ENABLE_UPTIME: 'False'
+      GLITCHTIP_ENABLE_DUCKDB: 'False'
+      GLITCHTIP_RETENTION_DAYS: '30'
+      GLITCHTIP_EVENT_HOT_DAYS: '30'
+      GLITCHTIP_RELEASE_RETENTION_DAYS: '90'
+      SECURE_HSTS_SECONDS: '31536000'
+      VTASKS_CONCURRENCY: '8'
+      DATABASE_POOL_MAX_SIZE: '12'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 1024m
+    ports:
+      - 127.0.0.1:8011:8000
+    volumes:
+      - uploads:/code/uploads
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - /code/healthcheck.py
+      interval: 30s
+      timeout: 8s
+      start_period: 120s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+volumes:
+  pg-data:
+  uploads:

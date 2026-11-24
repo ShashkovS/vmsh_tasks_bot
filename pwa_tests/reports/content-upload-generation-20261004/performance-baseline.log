@@ -1,0 +1,129 @@
+Scope: all 14 workspace projects
+Recreating /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/node_modules
+✓ Lockfile passes supply-chain policies (verified 3d ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+dependencies:
++ @base-ui/react 1.6.0
++ @lingui/core 6.7.0
++ @lingui/react 6.7.0
++ @sentry/react 10.67.0
++ @tanstack/react-query 5.101.4
++ @tanstack/react-router 1.170.18
++ @tanstack/react-table 8.21.3
++ @tanstack/react-virtual 3.14.7
++ @visx/responsive 4.0.0
++ @visx/scale 4.0.0
++ @visx/shape 4.0.0
++ class-variance-authority 0.7.1
++ clsx 2.1.1
++ d3-array 3.2.4
++ d3-scale 4.0.2
++ d3-shape 3.2.0
++ dexie 4.4.4
++ dompurify 3.4.12
++ katex 0.16.47
++ lucide-react 0.540.0
++ react 19.2.8
++ react-dom 19.2.8
++ tailwind-merge 3.6.0
++ tw-animate-css 1.4.0
++ zod 4.4.3
+
+devDependencies:
++ @babel/core 7.29.7
++ @eslint/js 9.39.5
++ @lingui/babel-plugin-lingui-macro 6.7.0
++ @lingui/cli 6.7.0
++ @lingui/conf 6.7.0
++ @lingui/format-po 6.7.0
++ @lingui/message-utils 6.7.0
++ @lingui/vite-plugin 6.7.0
++ @playwright/test 1.61.1
++ @rolldown/plugin-babel 0.2.4
++ @storybook/addon-a11y 10.5.3
++ @storybook/addon-vitest 10.5.3
++ @storybook/react-vite 10.5.3
++ @tailwindcss/vite 4.3.3
++ @tanstack/router-cli 1.167.21
++ @tanstack/router-plugin 1.168.23
++ @testing-library/react 16.3.2
++ @testing-library/user-event 14.6.1
++ @types/d3-array 3.2.2
++ @types/d3-scale 4.0.9
++ @types/d3-shape 3.1.8
++ @types/node 24.13.3
++ @types/react 19.2.17
++ @types/react-dom 19.2.3
++ @vitejs/plugin-react 6.0.3
++ @vitest/browser-playwright 4.1.10
++ @vitest/coverage-v8 4.1.10
++ @vmsh/app-shell 0.1.0 <- packages/app-shell
++ @vmsh/i18n 0.1.0 <- packages/i18n
++ @vmsh/test-utils 0.1.0 <- packages/test-utils
++ @vmsh/ui 0.1.0 <- packages/ui
++ concurrently 9.2.4
++ eslint 9.39.5
++ eslint-plugin-jsx-a11y 6.10.2
++ eslint-plugin-lingui 0.16.0
++ eslint-plugin-react-hooks 7.1.1
++ eslint-plugin-react-refresh 0.4.26
++ fflate 0.8.3
++ globals 16.5.0
++ jsdom 26.1.0
++ msw 2.15.0
++ msw-storybook-addon 2.0.7
++ playwright 1.61.1
++ prettier 3.9.6
++ storybook 10.5.3
++ stylelint 16.26.1
++ stylelint-config-standard 39.0.1
++ typescript 5.9.3
++ typescript-eslint 8.65.0
++ vite 8.1.5
++ vite-plugin-pwa 1.3.0
++ vitest 4.1.10
++ workbox-background-sync 7.4.1
++ workbox-cacheable-response 7.4.1
++ workbox-core 7.4.1
++ workbox-expiration 7.4.1
++ workbox-precaching 7.4.1
++ workbox-routing 7.4.1
++ workbox-strategies 7.4.1
+
+Done in 2.9s using pnpm v11.15.1
+(node:61932) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+│
+▲  One or more extensionless imports detected: "../vite-branding" in file
+│  "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmsh-upload-baseline-y_o6s4vh/vmshpwa/.storybook/main.ts".
+│  For more information on how to resolve the issue:
+│  ]8;;https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensionshttps://storybook.js.org/docs/faq#extensionless-imports-in-st...]8;;
+│
+▲  One or more extensionless imports detected: "../vite-i18n" in file
+│  "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmsh-upload-baseline-y_o6s4vh/vmshpwa/.storybook/main.ts".
+│  For more information on how to resolve the issue:
+│  ]8;;https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensionshttps://storybook.js.org/docs/faq#extensionless-imports-in-st...]8;;
+│
+▲  No story files found for the specified pattern:
+│  dev/design-system/**/*.stories.@(ts|tsx)
+
+ RUN  v4.1.10 /Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmsh-upload-baseline-y_o6s4vh/vmshpwa
+
+1:49:42 PM [vite] (client) [optimizer] bundling dependencies...
+ ❯ |storybook (chromium)| apps/staff/src/live-marking-grid.stories.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |storybook (chromium)| apps/staff/src/live-marking-grid.stories.tsx [ apps/staff/src/live-marking-grid.stories.tsx ]
+Error: Failed to import test file /Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/node_modules/.pnpm/@storybook+addon-vitest@10.5.3_@vitest+browser-playwright@4.1.10_@vitest+browser@4.1.10_4aef618590b32b664c3039db51116f27/node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js
+Caused by: TypeError: Failed to fetch dynamically imported module: http://localhost:63315/Users/sergeyshashkov/repos/vmsh_tasks_bot/vmshpwa/node_modules/.pnpm/@storybook+addon-vitest@10.5.3_@vitest+browser-playwright@4.1.10_@vitest+browser@4.1.10_4aef618590b32b664c3039db51116f27/node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js?import&browserv=1791110983905
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  13:49:40
+   Duration  3.36s (transform 0ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)
+

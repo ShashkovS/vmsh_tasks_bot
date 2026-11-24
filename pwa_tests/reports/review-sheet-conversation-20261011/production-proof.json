@@ -1,0 +1,175 @@
+{
+  "feature_commit": "9e98e28288087fd212781efe78bdb6cb0ec0551c",
+  "branch": "vmshpwa",
+  "servers": [
+    {
+      "review_sheet_http": {
+        "/staff/review/sheet": 200,
+        "/staff/api/v1/review/sheet/options": 401,
+        "/staff/api/v1/review/sheet?lesson=ls-1&mode=pending": 401
+      },
+      "checked_at_utc": "2026-10-11T18:56:32.314688+00:00",
+      "origin": "https://vmsh.shashkovs.ru",
+      "source": "9e98e28288087fd212781efe78bdb6cb0ec0551c",
+      "static_release": "9e98e2828808-20261011185432",
+      "staff_assets_sha256_matched": 116,
+      "production_provenance": {
+        "landing": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "9e98e2828808-20261011185432",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "landing"
+        },
+        "student": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "9e98e2828808-20261011185432",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "student"
+        },
+        "family": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "9e98e2828808-20261011185432",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "family"
+        },
+        "staff": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "9e98e2828808-20261011185432",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "staff"
+        }
+      },
+      "html_sha256_matched": 4,
+      "media_anonymous_status": 401,
+      "public_sourcemaps": false,
+      "maintenance": false,
+      "services_active": [
+        "vmshpwa.service",
+        "gunicorn.vmsh_tasks_bot.service",
+        "vmsh-analytics.timer"
+      ]
+    },
+    {
+      "review_sheet_http": {
+        "/staff/review/sheet": 200,
+        "/staff/api/v1/review/sheet/options": 401,
+        "/staff/api/v1/review/sheet?lesson=ls-1&mode=pending": 401
+      },
+      "checked_at_utc": "2026-10-11T18:55:38.841632+00:00",
+      "origin": "https://prep.leaders.tech",
+      "source": "9e98e28288087fd212781efe78bdb6cb0ec0551c",
+      "static_release": "tlfprep-20261011-review-sheet-9e98e2828808",
+      "staff_assets_sha256_matched": 116,
+      "production_provenance": {
+        "landing": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-review-sheet-9e98e2828808",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "landing"
+        },
+        "student": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-review-sheet-9e98e2828808",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "student"
+        },
+        "family": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-review-sheet-9e98e2828808",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "family"
+        },
+        "staff": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-review-sheet-9e98e2828808",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "staff"
+        }
+      },
+      "html_sha256_matched": 4,
+      "media_anonymous_status": 401,
+      "public_sourcemaps": false,
+      "maintenance": false,
+      "services_active": [
+        "vmshpwa.service",
+        "vmshzoom.service",
+        "vmsh-analytics.timer",
+        "nats.service",
+        "vmsh-cross-backup.timer",
+        "vmsh-cross-backup-sync.timer",
+        "vmsh-cross-backup-verify.timer"
+      ]
+    }
+  ],
+  "http_checks_per_server": 25,
+  "private_artifacts_uploaded_per_server": 406,
+  "tlf_data": {
+    "tables": 168,
+    "rows": 36989,
+    "all_table_hashes_unchanged": true,
+    "config_preserved": "Canonical settings preserved; only approved release label changed",
+    "backups": [
+      {
+        "backup": "20261011T185438.753575Z",
+        "createdAt": "2026-10-11T18:54:38.753575+00:00",
+        "integrity": "ok",
+        "zoomReceipts": 2714
+      },
+      {
+        "backup": "20261011T185508.479736Z",
+        "createdAt": "2026-10-11T18:55:08.479736+00:00",
+        "integrity": "ok",
+        "zoomReceipts": 2714
+      }
+    ]
+  },
+  "vmsh_backup": {
+    "backup": "db/review-sheet-release-20261011/post-deploy-20261011T185632Z.sqlite3",
+    "bytes": 391454720,
+    "integrity": "ok",
+    "schema": "0118.teacher_work"
+  },
+  "migration": false,
+  "production_rows_downloaded": false,
+  "authenticated_browser_acceptance": false
+}

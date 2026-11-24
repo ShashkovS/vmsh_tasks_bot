@@ -1,0 +1,18 @@
+{
+  "vmshpwa/apps/staff/src/locales/en.po": "3415ced850b250bbb8f00f967f205718f640a1f8ad2e8538faf216013651f3b9",
+  "vmshpwa/apps/staff/src/locales/ru.po": "f11838460a2119c3df9da699e58a902ecc4f65db5ece2dfb86361d45a818f695",
+  "vmshpwa/apps/staff/src/pages.tsx": "34b42eb587d2e39b02d6ae8a4346a4a2638d24ba8a276c97923fdd43804279ad",
+  "vmshpwa/apps/staff/src/review-history-page.tsx": "04d059382804ce69459077e378b4b92d439b2f77efe538efdf4887f13d96a7c1",
+  "vmshpwa/apps/staff/src/review-queue-page.tsx": "6647f8dc4dca7c95ef10c520ede764c07b1441991d695620ca328fbf93aca9dd",
+  "vmshpwa/apps/staff/src/review-series-page.tsx": "4389e85407b331801d69593bab83d5efd99be0182690dd526d2b89437720c953",
+  "vmshpwa/apps/staff/src/review-sheet-page.tsx": "c4a06ea84b8813db12f12789e3def76f279c713c937cfa1a3b8f20f633df94e5",
+  "vmshpwa/apps/staff/src/review-transfer.tsx": "3a2c8720e5dcc168b120ad701e62accb61b1fd1019b999c41fa776e9af686f0b",
+  "vmshpwa/apps/staff/src/review-workspace-page.tsx": "7d4c51e7bc7bf40653200aec34fa567feb9b082b471c42d2c1644facc19c8de1",
+  "vmshpwa/packages/app-shell/src/page-layout.tsx": "77055896a89f1f68a405d4201d83543863f6b63b5fcd837eb927247cafa555e2",
+  "vmshpwa/packages/product/src/locales/en.po": "0dbae490bd526b9b07b0fe16166cdcbf88c988ace09c45b44a17df2cbaa777a5",
+  "vmshpwa/packages/product/src/locales/ru.po": "a593f7f3ef1107829525737a39c8fcf9f49a80d2d46f085b9e86334da06e40da",
+  "vmshpwa/packages/product/src/reaction-picker.tsx": "e17d1dad8d2f8d5dc15a8d6f049829a5eaf2b1d5dfc13d4374b18593f1b976f8",
+  "vmshpwa/packages/product/src/review-feedback-form.tsx": "f744989f618e409e4de8e92f4f6aa1fa92d35a7e498b2acfa7fcec2c94696ec3",
+  "vmshpwa/packages/product/src/review-verdict-actions.tsx": "7ecefbc924e5c74f6efb083e433938e5d53ff428eb3e07d8cf80a3f92af842fe",
+  "vmshpwa/packages/product/src/review.stories.tsx": "5919dc080538fe3401378d5eaaf9c6bf1b112143ecc33735ac3f0059eabd9f12"
+}

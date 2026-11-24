@@ -1,0 +1,22 @@
+[
+  {
+    "id": "vmsh",
+    "name": "ВМШ 179",
+    "defaultLocale": "ru",
+    "assetVersion": 1,
+    "themeColor": "#205f7d",
+    "backgroundColor": "#edeff1",
+    "englishName": "VMSh 179",
+    "supportEmail": "vmsh@179.ru"
+  },
+  {
+    "id": "tlf-prep-clubs",
+    "name": "TLF Prep Clubs",
+    "defaultLocale": "en",
+    "assetVersion": 1,
+    "themeColor": "#17384A",
+    "backgroundColor": "#FFFFFF",
+    "englishName": "TLF Prep Clubs",
+    "supportEmail": "info@leaders.tech"
+  }
+]

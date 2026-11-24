@@ -1,0 +1,49 @@
+@import '@vmsh/content/worksheet-paper.css';
+
+/* Physical export surface deliberately ignores UI theme; docs/whiteboard-export.md. */
+.vmsh-export-paper {
+  box-sizing: border-box;
+  width: 800px;
+  padding: 20px;
+  background: white;
+  color: black;
+  color-scheme: light;
+  font-size: 11pt;
+  line-height: 1.35;
+}
+
+.vmsh-export-paper *,
+.vmsh-export-paper *::before,
+.vmsh-export-paper *::after {
+  color: black !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.vmsh-export-paper .vmsh-problem:first-child {
+  margin-top: 0;
+}
+
+.vmsh-export-paper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11pt;
+}
+
+.vmsh-export-paper th,
+.vmsh-export-paper td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #bbb;
+  text-align: left;
+}
+
+.vmsh-export-paper h1 {
+  font-size: 16pt;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.vmsh-export-paper p {
+  margin-bottom: 12px;
+}

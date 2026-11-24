@@ -1,0 +1,684 @@
+Toolchain: v26.9.0, pnpm@11.15.1, installed lockfile matches
+E2E build: cache hit (source, environment and all artifact bytes match)
+[WebServer] /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning:
+[WebServer]
+[WebServer] gcd is deprecated in Rational, use nsimplify instead
+[WebServer]
+[WebServer] See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+[WebServer] for details.
+[WebServer]
+[WebServer] This has been deprecated since SymPy version 1.11. It
+[WebServer] will be removed in a future version of SymPy.
+[WebServer]
+[WebServer]   dummy_two = sympy.core.Rational(2, 1, 1)
+[WebServer] 2026-11-10 20:14:07 MathBot : WARNING  MainApp Start up!
+
+Running 423 tests using 1 worker
+
+(node:31951) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓    1 [chromium] › e2e/authentication.spec.ts:124:3 › student: anonymous deep link returns through the correct login with query and hash (578ms)
+  ✓    2 [chromium] › e2e/authentication.spec.ts:124:3 › family: anonymous deep link returns through the correct login with query and hash (511ms)
+  ✓    3 [chromium] › e2e/authentication.spec.ts:124:3 › staff: anonymous deep link returns through the correct login with query and hash (480ms)
+  ✓    4 [chromium] › e2e/authentication.spec.ts:155:3 › Student: real seeded login survives reload with the authoritative principal (717ms)
+  ✓    5 [chromium] › e2e/authentication.spec.ts:155:3 › Family: real seeded login survives reload with the authoritative principal (661ms)
+  ✓    6 [chromium] › e2e/authentication.spec.ts:155:3 › Teacher: real seeded login survives reload with the authoritative principal (873ms)
+  ✓    7 [chromium] › e2e/authentication.spec.ts:155:3 › Admin: real seeded login survives reload with the authoritative principal (788ms)
+  ✓    8 [chromium] › e2e/authentication.spec.ts:196:1 › Admin searches the real immutable audit timeline (528ms)
+  ✓    9 [chromium] › e2e/authentication.spec.ts:212:1 › Teacher reads only the scoped anonymous course statistics (532ms)
+  ✓   10 [chromium] › e2e/authentication.spec.ts:233:1 › Teacher home loads the real scoped operational dashboard (476ms)
+  ✓   11 [chromium] › e2e/authentication.spec.ts:253:1 › Student profile uses the authenticated course enrollment instead of prototype data (548ms)
+  ✓   12 [chromium] › e2e/authentication.spec.ts:264:1 › Admin creates a course and confirms its schedule through real Staff APIs (995ms)
+  ✓   13 [chromium] › e2e/authentication.spec.ts:298:1 › Admin finds a student and never loses an unsaved course edit on reload (731ms)
+  ✓   14 [chromium] › e2e/authentication.spec.ts:315:1 › Admin creates a Family login without persisting its password in the browser (1.3s)
+  ✓   15 [chromium] › e2e/authentication.spec.ts:368:1 › Admin creates a Student web login backed by the current bot token (1.2s)
+  ✓   16 [chromium] › e2e/authentication.spec.ts:413:1 › Admin creates a small Student account batch and keeps selection across reload (880ms)
+  ✓   17 [chromium] › e2e/authentication.spec.ts:442:1 › Deploy-first: Admin imports a Student TSV, enrolls the account and Student logs in (1.2s)
+  ✓   18 [chromium] › e2e/authentication.spec.ts:510:1 › Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in (1.1s)
+  ✓   19 [chromium] › e2e/authentication.spec.ts:562:1 › Deploy-first: Admin imports a Teacher batch with shared course access (1.3s)
+  ✓   20 [chromium] › e2e/authentication.spec.ts:618:1 › Teacher sees only scoped students and cannot edit admin enrollment fields (493ms)
+  ✓   21 [chromium] › e2e/authentication.spec.ts:631:1 › Admin edits teacher scopes without losing the local draft (935ms)
+[WebServer] /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/openpyxl/worksheet/_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+[WebServer]   warn(msg)
+  ✓   22 [chromium] › e2e/authentication.spec.ts:668:1 › Admin previews the reference problem workbook (726ms)
+[WebServer] /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/openpyxl/worksheet/_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+[WebServer]   warn(msg)
+[WebServer] /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/openpyxl/worksheet/_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+[WebServer]   warn(msg)
+  ✓   23 [chromium] › e2e/authentication.spec.ts:680:1 › Admin applies and rolls back the reviewed problem workbook (1.2s)
+  ✓   24 [chromium] › e2e/authentication.spec.ts:697:1 › Admin saves a course enrollment through the real API (677ms)
+  ✓   25 [chromium] › e2e/authentication.spec.ts:731:3 › student: a wrong credential yields the same safe visible error (371ms)
+  ✓   26 [chromium] › e2e/authentication.spec.ts:731:3 › family: a wrong credential yields the same safe visible error (379ms)
+  ✓   27 [chromium] › e2e/authentication.spec.ts:731:3 › staff: a wrong credential yields the same safe visible error (346ms)
+  ✓   28 [chromium] › e2e/authentication.spec.ts:760:3 › student: logout revokes the real session and clears audience cookies (802ms)
+  ✓   29 [chromium] › e2e/authentication.spec.ts:760:3 › family: logout revokes the real session and clears audience cookies (757ms)
+  ✓   30 [chromium] › e2e/authentication.spec.ts:760:3 › staff: logout revokes the real session and clears audience cookies (717ms)
+  ✓   31 [chromium] › e2e/authentication.spec.ts:801:1 › one browser keeps Student, Family and Staff sessions independent (1.5s)
+  ✓   32 [chromium] › e2e/authentication.spec.ts:836:1 › refresh rotates both browser cookies without changing the logical session (558ms)
+  ✓   33 [chromium] › e2e/authentication.spec.ts:877:1 › a private reload recovers a missing access cookie through one automatic refresh (845ms)
+  ✓   34 [chromium] › e2e/authentication.spec.ts:924:1 › two tabs with one expired access cookie consume the shared refresh cookie once (1.1s)
+  ✓   35 [chromium] › e2e/authentication.spec.ts:966:1 › revoking one browser session leaves the other device active (660ms)
+  ✓   36 [chromium] › e2e/authentication.spec.ts:1028:1 › a Student cookie cannot authorize Family and anonymous private API is 401 (557ms)
+  ✓   37 [chromium] › e2e/authentication.spec.ts:1042:1 › the one-origin gateway preserves exact auth Host/Origin and rejects spoofing (93ms)
+  ✓   38 [chromium] › e2e/branding.spec.ts:8:1 › admin selects TLF; new devices use English and branded install assets (1.8s)
+  ✓   39 [chromium] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 1 photographs and restores them without recompression (1.0s)
+  ✓   40 [chromium] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 2 photographs and restores them without recompression (1.2s)
+  ✓   41 [chromium] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 10 photographs and restores them without recompression (1.8s)
+  ✓   42 [chromium] › e2e/classroom-catalog.spec.ts:41:1 › Phase 7: admin maintains the durable classroom catalog (1.1s)
+  ✓   43 [chromium] › e2e/classroom-catalog.spec.ts:111:1 › Phase 7: an event layout survives reload and is confirmed explicitly (864ms)
+  ✓   44 [chromium] › e2e/classroom-catalog.spec.ts:181:1 › Phase 7: classroom edits survive reload and are explicitly announced (4.1s)
+  ✓   45 [chromium] › e2e/content-publication.spec.ts:186:1 › Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions (5.5s)
+  ✓   46 [chromium] › e2e/content-publication.spec.ts:313:1 › Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first (10.6s)
+[WebServer] Error handling request from 127.0.0.1
+[WebServer] Traceback (most recent call last):
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+[WebServer]     resp = await request_handler(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_app.py", line 559, in _handle
+[WebServer]     return await handler(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/scripts/e2e_gateway.py", line 463, in _transport
+[WebServer]     return await _relay_websocket(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/scripts/e2e_gateway.py", line 411, in _relay_websocket
+[WebServer]     await downstream.prepare(request)
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_ws.py", line 271, in prepare
+[WebServer]     protocol, writer = self._pre_start(request)
+[WebServer]                        ~~~~~~~~~~~~~~~^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_ws.py", line 373, in _pre_start
+[WebServer]     raise ConnectionResetError("Connection lost")
+[WebServer] ConnectionResetError: Connection lost
+[WebServer] Error handling request from 127.0.0.1
+[WebServer] Traceback (most recent call last):
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+[WebServer]     resp = await request_handler(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_app.py", line 559, in _handle
+[WebServer]     return await handler(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/scripts/e2e_gateway.py", line 463, in _transport
+[WebServer]     return await _relay_websocket(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/scripts/e2e_gateway.py", line 411, in _relay_websocket
+[WebServer]     await downstream.prepare(request)
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_ws.py", line 271, in prepare
+[WebServer]     protocol, writer = self._pre_start(request)
+[WebServer]                        ~~~~~~~~~~~~~~~^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_ws.py", line 373, in _pre_start
+[WebServer]     raise ConnectionResetError("Connection lost")
+[WebServer] ConnectionResetError: Connection lost
+[WebServer] Error handling request from 127.0.0.1
+[WebServer] Traceback (most recent call last):
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+[WebServer]     resp = await request_handler(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_app.py", line 559, in _handle
+[WebServer]     return await handler(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/scripts/e2e_gateway.py", line 463, in _transport
+[WebServer]     return await _relay_websocket(request)
+[WebServer]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/scripts/e2e_gateway.py", line 411, in _relay_websocket
+[WebServer]     await downstream.prepare(request)
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_ws.py", line 271, in prepare
+[WebServer]     protocol, writer = self._pre_start(request)
+[WebServer]                        ~~~~~~~~~~~~~~~^^^^^^^^^
+[WebServer]   File "/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/aiohttp/web_ws.py", line 373, in _pre_start
+[WebServer]     raise ConnectionResetError("Connection lost")
+[WebServer] ConnectionResetError: Connection lost
+  ✓   47 [chromium] › e2e/course-attendance.spec.ts:7:1 › course setting hides attendance and rooms, then restores the stored preference (2.9s)
+  ✓   48 [chromium] › e2e/family-context.spec.ts:48:1 › Phase 9: Family switches children and opens only their current course context (1.0s)
+  ✓   49 [chromium] › e2e/family-context.spec.ts:83:1 › Phase 9: child caches stay separate and Family confirms a group and mode change (1.2s)
+  ✓   50 [chromium] › e2e/family-worksheet-polish.spec.ts:5:1 › family reads earlier worksheets, switches viewing groups and has usable child/profile pages (1.3s)
+  ✓   51 [chromium] › e2e/i18n.spec.ts:8:1 › Landing follows the device language and keeps Russian as the default (307ms)
+  ✓   52 [chromium] › e2e/i18n.spec.ts:32:1 › Landing recovers from missing catalogs with a bilingual reload screen (252ms)
+  ✓   53 [chromium] › e2e/i18n.spec.ts:84:1 › Student switches the account to English in the profile (1.4s)
+  ✓   54 [chromium] › e2e/i18n.spec.ts:110:1 › Student sees English support, news, progress and notification chrome (1.3s)
+  ✓   55 [chromium] › e2e/i18n.spec.ts:135:1 › Staff switches the language from the header menu (811ms)
+  ✓   56 [chromium] › e2e/i18n.spec.ts:148:1 › Staff sees English review, result and statistics controls (6.2s)
+  ✓   57 [chromium] › e2e/i18n.spec.ts:169:1 › Staff sees English course, classroom, oral, and publishing administration (1.8s)
+  ✓   58 [chromium] › e2e/i18n.spec.ts:202:1 › Family sees English child progress and notification settings (1.0s)
+  ✓   59 [chromium] › e2e/i18n.spec.ts:228:1 › English device language translates the sign-in page (272ms)
+  ✓   60 [chromium] › e2e/i18n.spec.ts:236:1 › Russian stays the default without a device choice (538ms)
+  ✓   61 [chromium] › e2e/i18n.spec.ts:243:1 › Staff sees English lesson, import, synonym, and whiteboard tools (2.5s)
+  ✓   62 [chromium] › e2e/i18n.spec.ts:289:1 › Staff sees English account, access, audit, analytics, binding, and support controls (1.8s)
+  ✓   63 [chromium] › e2e/live-marking-confirmation.spec.ts:5:1 › Classroom marks wait for receipts and follow other teachers through reconnect (7.4s)
+  ✓   64 [chromium] › e2e/live-marking.spec.ts:16:1 › Live student search ignores patronymics and can match only surnames (952ms)
+  ✓   65 [chromium] › e2e/live-marking.spec.ts:57:1 › Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions (12.9s)
+  ✓   66 [chromium] › e2e/live-marking.spec.ts:188:1 › Live classroom: teacher transfer, attendance and another teacher sees the saved mark (6.7s)
+  ✓   67 [chromium] › e2e/live-marking.spec.ts:250:1 › Live Zoom: two levels share one session without changing enrollment (4.2s)
+  ✓   68 [chromium] › e2e/news-notifications.spec.ts:60:1 › Phase 8: Admin edits a scheduled local post without losing its draft (1.1s)
+  ✓   69 [chromium] › e2e/news-notifications.spec.ts:118:1 › Phase 8: Admin corrects a published local post without moving its time (798ms)
+  ✓   70 [chromium] › e2e/news-notifications.spec.ts:177:1 › Phase 8: Family changes real notification preferences without individual review push (859ms)
+  ✓   71 [chromium] › e2e/news-notifications.spec.ts:221:1 › Phase 8: Admin explicitly sends one lesson digest and Family sees it (1.1s)
+  ✓   72 [chromium] › e2e/news-notifications.spec.ts:279:1 › Phase 8: Student reads cached news, dismisses a banner and acknowledges the event (5.2s)
+  ✓   73 [chromium] › e2e/news-notifications.spec.ts:434:1 › Phase 8: Family sees the shared post, banner and its own news event (773ms)
+  ✓   74 [chromium] › e2e/offline-current-lessons.spec.ts:11:3 › Student downloads current levels on Now and opens them after a cold offline start (network) (2.2s)
+  ✓   75 [chromium] › e2e/offline-current-lessons.spec.ts:11:3 › Student downloads current levels on Now and opens them after a cold offline start (api) (2.2s)
+  ✓   76 [chromium] › e2e/oral-admission.spec.ts:14:1 › Phase 7: Student joins an oral window and Teacher records the legacy result (2.4s)
+  ✓   77 [chromium] › e2e/oral-windows-weekly.spec.ts:4:1 › Weekly oral draft: choose days, persist, save, clone and edit (1.0s)
+  ✓   78 [chromium] › e2e/organizer-layout.spec.ts:5:1 › Organizer entry points have responsive layouts (1.5s)
+  ✓   79 [chromium] › e2e/organizer-questions.spec.ts:7:3 › Organizers: student asks privately and administrator replies (3.2s)
+  ✓   80 [chromium] › e2e/organizer-questions.spec.ts:7:3 › Organizers: family asks privately and administrator replies (3.1s)
+  ✓   81 [chromium] › e2e/organizer-questions.spec.ts:123:1 › Organizers: teacher cannot see queue or photos (467ms)
+  ✘   82 [chromium] › e2e/problem-release.spec.ts:5:1 › teacher releases fifteen tasks progressively to Student and Family (34.3s)
+(node:32130) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   83 [chromium] › e2e/review-queue.spec.ts:5:1 › Review queue: filters, summary, colleague lease and return navigation (2.8s)
+  ✓   84 [chromium] › e2e/review-workspace.spec.ts:16:1 › Sheet review: independent cards, foreign verdict conflict and explicit resend (4.2s)
+  ✓   85 [chromium] › e2e/review-workspace.spec.ts:203:1 › Written precedence: Student and Family follow review, reload and reconnect (2.8s)
+  ✓   86 [chromium] › e2e/review-workspace.spec.ts:318:3 › Series feed › clone, complete, compare, correct and move whole entries (2.0s)
+  ✓   87 [chromium] › e2e/review-workspace.spec.ts:391:1 › Phase 6: Staff review restores its draft and completes one leased case (7.4s)
+  ✓   88 [chromium] › e2e/rich-file-attachments.spec.ts:44:1 › news attachment survives publication and caption editing for Student and Family (2.1s)
+  ✓   89 [chromium] › e2e/rich-file-attachments.spec.ts:102:1 › broadcast banner attachment is published to Student and Family (2.0s)
+  ✓   90 [chromium] › e2e/rich-file-attachments.spec.ts:136:1 › both lesson blocks retain file links through draft and publication (2.5s)
+  ✓   91 [chromium] › e2e/runtime-isolation.spec.ts:266:3 › student: exact health and runtime contracts cross the one-origin gateway (45ms)
+  ✓   92 [chromium] › e2e/runtime-isolation.spec.ts:322:3 › student: history fallback cannot swallow API, WS or missing assets (46ms)
+  ✓   93 [chromium] › e2e/runtime-isolation.spec.ts:266:3 › family: exact health and runtime contracts cross the one-origin gateway (46ms)
+  ✓   94 [chromium] › e2e/runtime-isolation.spec.ts:322:3 › family: history fallback cannot swallow API, WS or missing assets (47ms)
+  ✓   95 [chromium] › e2e/runtime-isolation.spec.ts:266:3 › staff: exact health and runtime contracts cross the one-origin gateway (46ms)
+  ✓   96 [chromium] › e2e/runtime-isolation.spec.ts:322:3 › staff: history fallback cannot swallow API, WS or missing assets (46ms)
+  ✓   97 [chromium] › e2e/runtime-isolation.spec.ts:354:1 › the gateway exposes no MSW artifact (63ms)
+  ✓   98 [chromium] › e2e/runtime-isolation.spec.ts:364:1 › browser HTTP and WebSocket traffic cannot leave the E2E loopback origin (233ms)
+  ✓   99 [chromium] › e2e/runtime-isolation.spec.ts:413:3 › student: manifest and every icon have exact install boundaries (60ms)
+  ✓  100 [chromium] › e2e/runtime-isolation.spec.ts:413:3 › family: manifest and every icon have exact install boundaries (63ms)
+  ✓  101 [chromium] › e2e/runtime-isolation.spec.ts:439:1 › student and family service workers install, activate and control only their scopes (1.4s)
+  ✓  102 [chromium] › e2e/runtime-isolation.spec.ts:503:1 › student and family workers own disjoint scopes and Cache Storage (6.1s)
+  ✓  103 [chromium] › e2e/runtime-isolation.spec.ts:576:3 › student: a byte-different built worker reaches prompt and controls the page (button) (2.3s)
+  ✓  104 [chromium] › e2e/runtime-isolation.spec.ts:576:3 › student: a byte-different built worker reaches prompt and controls the page (another tab) (2.6s)
+  ✓  105 [chromium] › e2e/runtime-isolation.spec.ts:576:3 › family: a byte-different built worker reaches prompt and controls the page (button) (2.2s)
+  ✓  106 [chromium] › e2e/runtime-isolation.spec.ts:576:3 › family: a byte-different built worker reaches prompt and controls the page (another tab) (2.5s)
+  ✓  107 [chromium] › e2e/runtime-isolation.spec.ts:780:3 › student: product realtime reconnects with cursor and refetches HTTP authority (1.0s)
+  ✓  108 [chromium] › e2e/runtime-isolation.spec.ts:836:3 › student: WebSocket first connect, heartbeat and reconnect require refetch (558ms)
+  ✓  109 [chromium] › e2e/runtime-isolation.spec.ts:780:3 › family: product realtime reconnects with cursor and refetches HTTP authority (1.4s)
+  ✓  110 [chromium] › e2e/runtime-isolation.spec.ts:836:3 › family: WebSocket first connect, heartbeat and reconnect require refetch (530ms)
+  ✓  111 [chromium] › e2e/runtime-isolation.spec.ts:780:3 › staff: product realtime reconnects with cursor and refetches HTTP authority (1.4s)
+  ✓  112 [chromium] › e2e/runtime-isolation.spec.ts:836:3 › staff: WebSocket first connect, heartbeat and reconnect require refetch (516ms)
+  ✓  113 [chromium] › e2e/runtime-isolation.spec.ts:906:1 › student: current-session revoke closes product realtime and returns to login (1.6s)
+  ✓  114 [chromium] › e2e/runtime-isolation.spec.ts:945:1 › localStorage theme state stays audience-scoped on the shared origin (1.2s)
+  ✓  115 [chromium] › e2e/runtime-isolation.spec.ts:1034:1 › runtime-created IndexedDB names encode audience and instance (1.4s)
+  ✓  116 [chromium] › e2e/shells.spec.ts:8:1 › public root shows Student and Family entry points only (156ms)
+  ✓  117 [chromium] › e2e/shells.spec.ts:46:3 › student: shell, base path and history fallback (677ms)
+  ✓  118 [chromium] › e2e/shells.spec.ts:46:3 › family: shell, base path and history fallback (630ms)
+  ✓  119 [chromium] › e2e/shells.spec.ts:46:3 › staff: shell, base path and history fallback (614ms)
+  ✓  120 [chromium] › e2e/shells.spec.ts:57:1 › theme choice survives navigation within its application (785ms)
+  ✓  121 [chromium] › e2e/smooth-redeploy.spec.ts:13:1 › cold start explains our server failure and recovers without blaming the internet (3.9s)
+  ✓  122 [chromium] › e2e/smooth-redeploy.spec.ts:47:1 › Family keeps connecting after a minute instead of turning waiting into an error (1.1m)
+  ✓  123 [chromium] › e2e/smooth-redeploy.spec.ts:65:1 › a twenty-second deployment preserves an open form and saves exactly once (25.1s)
+  ✓  124 [chromium] › e2e/smooth-redeploy.spec.ts:100:1 › a teacher mark survives a lost response with the same operation key (4.1s)
+  ✓  125 [chromium] › e2e/smooth-redeploy.spec.ts:132:1 › a written answer keeps its photograph and resumes the existing outbox operation (4.8s)
+  ✓  126 [chromium] › e2e/student-results.spec.ts:9:1 › Student archive: fuzzy search, multiple levels, complete history, URL and responsive layout (2.2s)
+  ✓  127 [chromium] › e2e/student-results.spec.ts:122:1 › Old review: Teacher and Admin read full mixed dialogue and correct original evidence (2.1s)
+  ✓  128 [chromium] › e2e/student-results.spec.ts:210:1 › Student archive refuses teacher access (597ms)
+  ✓  129 [chromium] › e2e/support-dialogue.spec.ts:19:1 › Phase 6: private Student and Staff dialogue survives reload and syncs live (2.5s)
+  ✓  130 [chromium] › e2e/support-dialogue.spec.ts:123:1 › new replies jump into an older worksheet and read state converges across devices (13.5s)
+  ✓  131 [chromium] › e2e/task-interaction-polish.spec.ts:8:1 › task references, worksheet return, narrow composer and delayed sending (4.5s)
+  ✓  132 [chromium] › e2e/teacher-work.spec.ts:7:1 › Admin accounting tabs, calculation, export and protected teacher view (4.0s)
+  ✓  133 [chromium] › e2e/teacher-work.spec.ts:63:1 › Teacher cannot read work accounting (510ms)
+  ✓  134 [chromium] › e2e/teacher-work.spec.ts:71:1 › Admin confirms school work and a written override survives recalculation (1.4s)
+  ✓  135 [chromium] › e2e/test-submission.spec.ts:247:1 › Phase 4: a test answer survives reload and an offline POST is delivered exactly once (4.0s)
+  ✓  136 [chromium] › e2e/test-submission.spec.ts:337:1 › Phase 4: an admin repairs a published checker and rechecks an immutable pending answer (3.4s)
+  ✓  137 [chromium] › e2e/test-submission.spec.ts:406:1 › Phase 5: a written draft with a photo survives reload and resumes exactly once (3.9s)
+  ✓  138 [chromium] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (ru) (3.1s)
+  ✓  139 [chromium] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (en) (10.2s)
+  ✓  140 [chromium] › e2e/worksheet-preview.spec.ts:5:1 › staff preview uses the student conditions and material presentation without recording views (2.2s)
+  ✓  141 [chromium] › e2e/worksheet-print.spec.ts:5:1 › worksheets print only mounted conditions and expanded learning materials (2.4s)
+(node:32274) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  142 [webkit] › e2e/authentication.spec.ts:124:3 › student: anonymous deep link returns through the correct login with query and hash (988ms)
+  ✓  143 [webkit] › e2e/authentication.spec.ts:124:3 › family: anonymous deep link returns through the correct login with query and hash (628ms)
+  ✓  144 [webkit] › e2e/authentication.spec.ts:124:3 › staff: anonymous deep link returns through the correct login with query and hash (620ms)
+  ✓  145 [webkit] › e2e/authentication.spec.ts:155:3 › Student: real seeded login survives reload with the authoritative principal (857ms)
+  ✓  146 [webkit] › e2e/authentication.spec.ts:155:3 › Family: real seeded login survives reload with the authoritative principal (787ms)
+  ✓  147 [webkit] › e2e/authentication.spec.ts:155:3 › Teacher: real seeded login survives reload with the authoritative principal (1.1s)
+  ✓  148 [webkit] › e2e/authentication.spec.ts:155:3 › Admin: real seeded login survives reload with the authoritative principal (1.0s)
+  ✓  149 [webkit] › e2e/authentication.spec.ts:196:1 › Admin searches the real immutable audit timeline (664ms)
+  ✓  150 [webkit] › e2e/authentication.spec.ts:212:1 › Teacher reads only the scoped anonymous course statistics (698ms)
+  ✓  151 [webkit] › e2e/authentication.spec.ts:233:1 › Teacher home loads the real scoped operational dashboard (648ms)
+  ✓  152 [webkit] › e2e/authentication.spec.ts:253:1 › Student profile uses the authenticated course enrollment instead of prototype data (707ms)
+  ✓  153 [webkit] › e2e/authentication.spec.ts:264:1 › Admin creates a course and confirms its schedule through real Staff APIs (1.2s)
+  ✓  154 [webkit] › e2e/authentication.spec.ts:298:1 › Admin finds a student and never loses an unsaved course edit on reload (917ms)
+  -  155 [webkit] › e2e/authentication.spec.ts:315:1 › Admin creates a Family login without persisting its password in the browser
+  -  156 [webkit] › e2e/authentication.spec.ts:368:1 › Admin creates a Student web login backed by the current bot token
+  -  157 [webkit] › e2e/authentication.spec.ts:413:1 › Admin creates a small Student account batch and keeps selection across reload
+  -  158 [webkit] › e2e/authentication.spec.ts:442:1 › Deploy-first: Admin imports a Student TSV, enrolls the account and Student logs in
+  -  159 [webkit] › e2e/authentication.spec.ts:510:1 › Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in
+  -  160 [webkit] › e2e/authentication.spec.ts:562:1 › Deploy-first: Admin imports a Teacher batch with shared course access
+  ✓  161 [webkit] › e2e/authentication.spec.ts:618:1 › Teacher sees only scoped students and cannot edit admin enrollment fields (641ms)
+  -  162 [webkit] › e2e/authentication.spec.ts:631:1 › Admin edits teacher scopes without losing the local draft
+[WebServer] /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/openpyxl/worksheet/_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+[WebServer]   warn(msg)
+  ✓  163 [webkit] › e2e/authentication.spec.ts:668:1 › Admin previews the reference problem workbook (992ms)
+  -  164 [webkit] › e2e/authentication.spec.ts:680:1 › Admin applies and rolls back the reviewed problem workbook
+  -  165 [webkit] › e2e/authentication.spec.ts:697:1 › Admin saves a course enrollment through the real API
+  ✓  166 [webkit] › e2e/authentication.spec.ts:731:3 › student: a wrong credential yields the same safe visible error (456ms)
+  ✓  167 [webkit] › e2e/authentication.spec.ts:731:3 › family: a wrong credential yields the same safe visible error (464ms)
+  ✓  168 [webkit] › e2e/authentication.spec.ts:731:3 › staff: a wrong credential yields the same safe visible error (471ms)
+  ✓  169 [webkit] › e2e/authentication.spec.ts:760:3 › student: logout revokes the real session and clears audience cookies (996ms)
+  ✓  170 [webkit] › e2e/authentication.spec.ts:760:3 › family: logout revokes the real session and clears audience cookies (939ms)
+  ✓  171 [webkit] › e2e/authentication.spec.ts:760:3 › staff: logout revokes the real session and clears audience cookies (1.0s)
+  ✓  172 [webkit] › e2e/authentication.spec.ts:801:1 › one browser keeps Student, Family and Staff sessions independent (1.5s)
+  ✓  173 [webkit] › e2e/authentication.spec.ts:836:1 › refresh rotates both browser cookies without changing the logical session (674ms)
+  ✓  174 [webkit] › e2e/authentication.spec.ts:877:1 › a private reload recovers a missing access cookie through one automatic refresh (963ms)
+  ✓  175 [webkit] › e2e/authentication.spec.ts:924:1 › two tabs with one expired access cookie consume the shared refresh cookie once (1.4s)
+  ✓  176 [webkit] › e2e/authentication.spec.ts:966:1 › revoking one browser session leaves the other device active (746ms)
+  ✓  177 [webkit] › e2e/authentication.spec.ts:1028:1 › a Student cookie cannot authorize Family and anonymous private API is 401 (709ms)
+  ✓  178 [webkit] › e2e/authentication.spec.ts:1042:1 › the one-origin gateway preserves exact auth Host/Origin and rejects spoofing (198ms)
+  ✓  179 [webkit] › e2e/branding.spec.ts:8:1 › admin selects TLF; new devices use English and branded install assets (1.9s)
+  ✓  180 [webkit] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 1 photographs and restores them without recompression (1.4s)
+  ✓  181 [webkit] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 2 photographs and restores them without recompression (1.4s)
+  ✓  182 [webkit] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 10 photographs and restores them without recompression (2.2s)
+  ✓  183 [webkit] › e2e/classroom-catalog.spec.ts:41:1 › Phase 7: admin maintains the durable classroom catalog (1.4s)
+  ✓  184 [webkit] › e2e/classroom-catalog.spec.ts:111:1 › Phase 7: an event layout survives reload and is confirmed explicitly (1.0s)
+  ✓  185 [webkit] › e2e/classroom-catalog.spec.ts:181:1 › Phase 7: classroom edits survive reload and are explicitly announced (4.2s)
+  ✓  186 [webkit] › e2e/content-publication.spec.ts:186:1 › Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions (6.1s)
+  ✓  187 [webkit] › e2e/content-publication.spec.ts:313:1 › Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first (12.8s)
+  ✘  188 [webkit] › e2e/course-attendance.spec.ts:7:1 › course setting hides attendance and rooms, then restores the stored preference (1.9s)
+(node:32386) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  189 [webkit] › e2e/family-context.spec.ts:48:1 › Phase 9: Family switches children and opens only their current course context (1.2s)
+  ✓  190 [webkit] › e2e/family-context.spec.ts:83:1 › Phase 9: child caches stay separate and Family confirms a group and mode change (1.2s)
+  ✓  191 [webkit] › e2e/family-worksheet-polish.spec.ts:5:1 › family reads earlier worksheets, switches viewing groups and has usable child/profile pages (1.6s)
+  ✓  192 [webkit] › e2e/i18n.spec.ts:8:1 › Landing follows the device language and keeps Russian as the default (444ms)
+  ✓  193 [webkit] › e2e/i18n.spec.ts:32:1 › Landing recovers from missing catalogs with a bilingual reload screen (357ms)
+  ✓  194 [webkit] › e2e/i18n.spec.ts:84:1 › Student switches the account to English in the profile (1.7s)
+  ✓  195 [webkit] › e2e/i18n.spec.ts:110:1 › Student sees English support, news, progress and notification chrome (1.4s)
+  ✓  196 [webkit] › e2e/i18n.spec.ts:135:1 › Staff switches the language from the header menu (968ms)
+  ✓  197 [webkit] › e2e/i18n.spec.ts:148:1 › Staff sees English review, result and statistics controls (1.6s)
+  ✓  198 [webkit] › e2e/i18n.spec.ts:169:1 › Staff sees English course, classroom, oral, and publishing administration (2.3s)
+  ✓  199 [webkit] › e2e/i18n.spec.ts:202:1 › Family sees English child progress and notification settings (1.1s)
+  ✓  200 [webkit] › e2e/i18n.spec.ts:228:1 › English device language translates the sign-in page (373ms)
+  ✓  201 [webkit] › e2e/i18n.spec.ts:236:1 › Russian stays the default without a device choice (665ms)
+  ✓  202 [webkit] › e2e/i18n.spec.ts:243:1 › Staff sees English lesson, import, synonym, and whiteboard tools (2.7s)
+  ✓  203 [webkit] › e2e/i18n.spec.ts:289:1 › Staff sees English account, access, audit, analytics, binding, and support controls (2.0s)
+  ✓  204 [webkit] › e2e/live-marking-confirmation.spec.ts:5:1 › Classroom marks wait for receipts and follow other teachers through reconnect (8.0s)
+  ✓  205 [webkit] › e2e/live-marking.spec.ts:16:1 › Live student search ignores patronymics and can match only surnames (1.1s)
+  ✓  206 [webkit] › e2e/live-marking.spec.ts:57:1 › Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions (13.2s)
+  ✓  207 [webkit] › e2e/live-marking.spec.ts:188:1 › Live classroom: teacher transfer, attendance and another teacher sees the saved mark (7.4s)
+  ✓  208 [webkit] › e2e/live-marking.spec.ts:250:1 › Live Zoom: two levels share one session without changing enrollment (4.3s)
+  ✓  209 [webkit] › e2e/news-notifications.spec.ts:60:1 › Phase 8: Admin edits a scheduled local post without losing its draft (1.3s)
+  ✓  210 [webkit] › e2e/news-notifications.spec.ts:118:1 › Phase 8: Admin corrects a published local post without moving its time (1.0s)
+  ✓  211 [webkit] › e2e/news-notifications.spec.ts:177:1 › Phase 8: Family changes real notification preferences without individual review push (948ms)
+  ✓  212 [webkit] › e2e/news-notifications.spec.ts:221:1 › Phase 8: Admin explicitly sends one lesson digest and Family sees it (1.3s)
+  ✓  213 [webkit] › e2e/news-notifications.spec.ts:279:1 › Phase 8: Student reads cached news, dismisses a banner and acknowledges the event (5.5s)
+  ✓  214 [webkit] › e2e/news-notifications.spec.ts:434:1 › Phase 8: Family sees the shared post, banner and its own news event (879ms)
+  -  215 [webkit] › e2e/offline-current-lessons.spec.ts:11:3 › Student downloads current levels on Now and opens them after a cold offline start (network)
+  ✓  216 [webkit] › e2e/offline-current-lessons.spec.ts:11:3 › Student downloads current levels on Now and opens them after a cold offline start (api) (2.8s)
+  ✓  217 [webkit] › e2e/oral-admission.spec.ts:14:1 › Phase 7: Student joins an oral window and Teacher records the legacy result (2.7s)
+  ✓  218 [webkit] › e2e/oral-windows-weekly.spec.ts:4:1 › Weekly oral draft: choose days, persist, save, clone and edit (1.2s)
+  ✓  219 [webkit] › e2e/organizer-layout.spec.ts:5:1 › Organizer entry points have responsive layouts (1.7s)
+  ✓  220 [webkit] › e2e/organizer-questions.spec.ts:7:3 › Organizers: student asks privately and administrator replies (3.8s)
+  ✓  221 [webkit] › e2e/organizer-questions.spec.ts:7:3 › Organizers: family asks privately and administrator replies (3.8s)
+  ✓  222 [webkit] › e2e/organizer-questions.spec.ts:123:1 › Organizers: teacher cannot see queue or photos (631ms)
+  ✓  223 [webkit] › e2e/problem-release.spec.ts:5:1 › teacher releases fifteen tasks progressively to Student and Family (6.0s)
+  ✓  224 [webkit] › e2e/review-queue.spec.ts:5:1 › Review queue: filters, summary, colleague lease and return navigation (3.6s)
+  ✓  225 [webkit] › e2e/review-workspace.spec.ts:16:1 › Sheet review: independent cards, foreign verdict conflict and explicit resend (5.8s)
+  ✓  226 [webkit] › e2e/review-workspace.spec.ts:203:1 › Written precedence: Student and Family follow review, reload and reconnect (3.8s)
+  ✓  227 [webkit] › e2e/review-workspace.spec.ts:318:3 › Series feed › clone, complete, compare, correct and move whole entries (2.3s)
+  ✓  228 [webkit] › e2e/review-workspace.spec.ts:391:1 › Phase 6: Staff review restores its draft and completes one leased case (9.7s)
+  ✓  229 [webkit] › e2e/rich-file-attachments.spec.ts:44:1 › news attachment survives publication and caption editing for Student and Family (2.5s)
+  ✘  230 [webkit] › e2e/rich-file-attachments.spec.ts:102:1 › broadcast banner attachment is published to Student and Family (1.5m)
+(node:32520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  231 [webkit] › e2e/rich-file-attachments.spec.ts:136:1 › both lesson blocks retain file links through draft and publication (3.4s)
+  ✓  232 [webkit] › e2e/runtime-isolation.spec.ts:266:3 › student: exact health and runtime contracts cross the one-origin gateway (154ms)
+  ✓  233 [webkit] › e2e/runtime-isolation.spec.ts:322:3 › student: history fallback cannot swallow API, WS or missing assets (158ms)
+  ✓  234 [webkit] › e2e/runtime-isolation.spec.ts:266:3 › family: exact health and runtime contracts cross the one-origin gateway (153ms)
+  ✓  235 [webkit] › e2e/runtime-isolation.spec.ts:322:3 › family: history fallback cannot swallow API, WS or missing assets (153ms)
+  ✓  236 [webkit] › e2e/runtime-isolation.spec.ts:266:3 › staff: exact health and runtime contracts cross the one-origin gateway (150ms)
+  ✓  237 [webkit] › e2e/runtime-isolation.spec.ts:322:3 › staff: history fallback cannot swallow API, WS or missing assets (150ms)
+  ✓  238 [webkit] › e2e/runtime-isolation.spec.ts:354:1 › the gateway exposes no MSW artifact (148ms)
+  ✓  239 [webkit] › e2e/runtime-isolation.spec.ts:364:1 › browser HTTP and WebSocket traffic cannot leave the E2E loopback origin (386ms)
+  ✓  240 [webkit] › e2e/runtime-isolation.spec.ts:413:3 › student: manifest and every icon have exact install boundaries (154ms)
+  ✓  241 [webkit] › e2e/runtime-isolation.spec.ts:413:3 › family: manifest and every icon have exact install boundaries (152ms)
+  ✓  242 [webkit] › e2e/runtime-isolation.spec.ts:439:1 › student and family service workers install, activate and control only their scopes (1.5s)
+  ✓  243 [webkit] › e2e/runtime-isolation.spec.ts:503:1 › student and family workers own disjoint scopes and Cache Storage (1.3s)
+  ✓  244 [webkit] › e2e/runtime-isolation.spec.ts:576:3 › student: a byte-different built worker reaches prompt and controls the page (button) (1.3s)
+  ✓  245 [webkit] › e2e/runtime-isolation.spec.ts:576:3 › student: a byte-different built worker reaches prompt and controls the page (another tab) (1.7s)
+  ✓  246 [webkit] › e2e/runtime-isolation.spec.ts:576:3 › family: a byte-different built worker reaches prompt and controls the page (button) (1.3s)
+  ✓  247 [webkit] › e2e/runtime-isolation.spec.ts:576:3 › family: a byte-different built worker reaches prompt and controls the page (another tab) (1.6s)
+  ✓  248 [webkit] › e2e/runtime-isolation.spec.ts:780:3 › student: product realtime reconnects with cursor and refetches HTTP authority (1.6s)
+  ✓  249 [webkit] › e2e/runtime-isolation.spec.ts:836:3 › student: WebSocket first connect, heartbeat and reconnect require refetch (672ms)
+  ✓  250 [webkit] › e2e/runtime-isolation.spec.ts:780:3 › family: product realtime reconnects with cursor and refetches HTTP authority (1.5s)
+  ✓  251 [webkit] › e2e/runtime-isolation.spec.ts:836:3 › family: WebSocket first connect, heartbeat and reconnect require refetch (624ms)
+  ✓  252 [webkit] › e2e/runtime-isolation.spec.ts:780:3 › staff: product realtime reconnects with cursor and refetches HTTP authority (1.5s)
+  ✓  253 [webkit] › e2e/runtime-isolation.spec.ts:836:3 › staff: WebSocket first connect, heartbeat and reconnect require refetch (630ms)
+  ✓  254 [webkit] › e2e/runtime-isolation.spec.ts:906:1 › student: current-session revoke closes product realtime and returns to login (1.7s)
+  ✓  255 [webkit] › e2e/runtime-isolation.spec.ts:945:1 › localStorage theme state stays audience-scoped on the shared origin (1.4s)
+  ✓  256 [webkit] › e2e/runtime-isolation.spec.ts:1034:1 › runtime-created IndexedDB names encode audience and instance (1.5s)
+  ✓  257 [webkit] › e2e/shells.spec.ts:8:1 › public root shows Student and Family entry points only (282ms)
+  ✓  258 [webkit] › e2e/shells.spec.ts:46:3 › student: shell, base path and history fallback (5.7s)
+  ✓  259 [webkit] › e2e/shells.spec.ts:46:3 › family: shell, base path and history fallback (706ms)
+  ✓  260 [webkit] › e2e/shells.spec.ts:46:3 › staff: shell, base path and history fallback (5.7s)
+  ✓  261 [webkit] › e2e/shells.spec.ts:57:1 › theme choice survives navigation within its application (876ms)
+  ✓  262 [webkit] › e2e/smooth-redeploy.spec.ts:13:1 › cold start explains our server failure and recovers without blaming the internet (3.9s)
+  ✓  263 [webkit] › e2e/smooth-redeploy.spec.ts:47:1 › Family keeps connecting after a minute instead of turning waiting into an error (1.1m)
+  ✓  264 [webkit] › e2e/smooth-redeploy.spec.ts:65:1 › a twenty-second deployment preserves an open form and saves exactly once (24.8s)
+  ✓  265 [webkit] › e2e/smooth-redeploy.spec.ts:100:1 › a teacher mark survives a lost response with the same operation key (4.4s)
+  ✓  266 [webkit] › e2e/smooth-redeploy.spec.ts:132:1 › a written answer keeps its photograph and resumes the existing outbox operation (4.8s)
+  ✓  267 [webkit] › e2e/student-results.spec.ts:9:1 › Student archive: fuzzy search, multiple levels, complete history, URL and responsive layout (3.0s)
+  ✓  268 [webkit] › e2e/student-results.spec.ts:122:1 › Old review: Teacher and Admin read full mixed dialogue and correct original evidence (2.6s)
+  ✓  269 [webkit] › e2e/student-results.spec.ts:210:1 › Student archive refuses teacher access (760ms)
+  ✓  270 [webkit] › e2e/support-dialogue.spec.ts:19:1 › Phase 6: private Student and Staff dialogue survives reload and syncs live (2.9s)
+  ✘  271 [webkit] › e2e/support-dialogue.spec.ts:123:1 › new replies jump into an older worksheet and read state converges across devices (8.6s)
+(node:32667) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  272 [webkit] › e2e/task-interaction-polish.spec.ts:8:1 › task references, worksheet return, narrow composer and delayed sending (5.1s)
+  ✓  273 [webkit] › e2e/teacher-work.spec.ts:7:1 › Admin accounting tabs, calculation, export and protected teacher view (5.9s)
+  ✓  274 [webkit] › e2e/teacher-work.spec.ts:63:1 › Teacher cannot read work accounting (654ms)
+  ✓  275 [webkit] › e2e/teacher-work.spec.ts:71:1 › Admin confirms school work and a written override survives recalculation (1.9s)
+  ✓  276 [webkit] › e2e/test-submission.spec.ts:247:1 › Phase 4: a test answer survives reload and an offline POST is delivered exactly once (4.3s)
+  ✓  277 [webkit] › e2e/test-submission.spec.ts:337:1 › Phase 4: an admin repairs a published checker and rechecks an immutable pending answer (4.0s)
+  ✓  278 [webkit] › e2e/test-submission.spec.ts:406:1 › Phase 5: a written draft with a photo survives reload and resumes exactly once (4.3s)
+  ✓  279 [webkit] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (ru) (3.5s)
+  ✓  280 [webkit] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (en) (3.7s)
+  ✓  281 [webkit] › e2e/worksheet-preview.spec.ts:5:1 › staff preview uses the student conditions and material presentation without recording views (3.0s)
+  ✓  282 [webkit] › e2e/worksheet-print.spec.ts:5:1 › worksheets print only mounted conditions and expanded learning materials (2.9s)
+(node:32696) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  283 [firefox] › e2e/authentication.spec.ts:124:3 › student: anonymous deep link returns through the correct login with query and hash (1.1s)
+  ✓  284 [firefox] › e2e/authentication.spec.ts:124:3 › family: anonymous deep link returns through the correct login with query and hash (596ms)
+  ✓  285 [firefox] › e2e/authentication.spec.ts:124:3 › staff: anonymous deep link returns through the correct login with query and hash (544ms)
+  ✓  286 [firefox] › e2e/authentication.spec.ts:155:3 › Student: real seeded login survives reload with the authoritative principal (866ms)
+  ✓  287 [firefox] › e2e/authentication.spec.ts:155:3 › Family: real seeded login survives reload with the authoritative principal (774ms)
+  ✓  288 [firefox] › e2e/authentication.spec.ts:155:3 › Teacher: real seeded login survives reload with the authoritative principal (1.2s)
+  ✓  289 [firefox] › e2e/authentication.spec.ts:155:3 › Admin: real seeded login survives reload with the authoritative principal (1.2s)
+  ✓  290 [firefox] › e2e/authentication.spec.ts:196:1 › Admin searches the real immutable audit timeline (715ms)
+  ✓  291 [firefox] › e2e/authentication.spec.ts:212:1 › Teacher reads only the scoped anonymous course statistics (767ms)
+  ✓  292 [firefox] › e2e/authentication.spec.ts:233:1 › Teacher home loads the real scoped operational dashboard (1.0s)
+  ✓  293 [firefox] › e2e/authentication.spec.ts:253:1 › Student profile uses the authenticated course enrollment instead of prototype data (731ms)
+  ✓  294 [firefox] › e2e/authentication.spec.ts:264:1 › Admin creates a course and confirms its schedule through real Staff APIs (1.3s)
+  ✓  295 [firefox] › e2e/authentication.spec.ts:298:1 › Admin finds a student and never loses an unsaved course edit on reload (1.0s)
+  -  296 [firefox] › e2e/authentication.spec.ts:315:1 › Admin creates a Family login without persisting its password in the browser
+  -  297 [firefox] › e2e/authentication.spec.ts:368:1 › Admin creates a Student web login backed by the current bot token
+  -  298 [firefox] › e2e/authentication.spec.ts:413:1 › Admin creates a small Student account batch and keeps selection across reload
+  -  299 [firefox] › e2e/authentication.spec.ts:442:1 › Deploy-first: Admin imports a Student TSV, enrolls the account and Student logs in
+  -  300 [firefox] › e2e/authentication.spec.ts:510:1 › Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in
+  -  301 [firefox] › e2e/authentication.spec.ts:562:1 › Deploy-first: Admin imports a Teacher batch with shared course access
+  ✓  302 [firefox] › e2e/authentication.spec.ts:618:1 › Teacher sees only scoped students and cannot edit admin enrollment fields (1.0s)
+  -  303 [firefox] › e2e/authentication.spec.ts:631:1 › Admin edits teacher scopes without losing the local draft
+[WebServer] /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/openpyxl/worksheet/_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+[WebServer]   warn(msg)
+  ✓  304 [firefox] › e2e/authentication.spec.ts:668:1 › Admin previews the reference problem workbook (909ms)
+  -  305 [firefox] › e2e/authentication.spec.ts:680:1 › Admin applies and rolls back the reviewed problem workbook
+  -  306 [firefox] › e2e/authentication.spec.ts:697:1 › Admin saves a course enrollment through the real API
+  ✓  307 [firefox] › e2e/authentication.spec.ts:731:3 › student: a wrong credential yields the same safe visible error (470ms)
+  ✓  308 [firefox] › e2e/authentication.spec.ts:731:3 › family: a wrong credential yields the same safe visible error (396ms)
+  ✓  309 [firefox] › e2e/authentication.spec.ts:731:3 › staff: a wrong credential yields the same safe visible error (415ms)
+  ✓  310 [firefox] › e2e/authentication.spec.ts:760:3 › student: logout revokes the real session and clears audience cookies (1.2s)
+  ✓  311 [firefox] › e2e/authentication.spec.ts:760:3 › family: logout revokes the real session and clears audience cookies (947ms)
+  ✓  312 [firefox] › e2e/authentication.spec.ts:760:3 › staff: logout revokes the real session and clears audience cookies (1.3s)
+  ✓  313 [firefox] › e2e/authentication.spec.ts:801:1 › one browser keeps Student, Family and Staff sessions independent (1.6s)
+  ✓  314 [firefox] › e2e/authentication.spec.ts:836:1 › refresh rotates both browser cookies without changing the logical session (622ms)
+  ✓  315 [firefox] › e2e/authentication.spec.ts:877:1 › a private reload recovers a missing access cookie through one automatic refresh (955ms)
+  ✓  316 [firefox] › e2e/authentication.spec.ts:924:1 › two tabs with one expired access cookie consume the shared refresh cookie once (1.4s)
+  ✓  317 [firefox] › e2e/authentication.spec.ts:966:1 › revoking one browser session leaves the other device active (703ms)
+  ✓  318 [firefox] › e2e/authentication.spec.ts:1028:1 › a Student cookie cannot authorize Family and anonymous private API is 401 (642ms)
+  ✓  319 [firefox] › e2e/authentication.spec.ts:1042:1 › the one-origin gateway preserves exact auth Host/Origin and rejects spoofing (128ms)
+  ✓  320 [firefox] › e2e/branding.spec.ts:8:1 › admin selects TLF; new devices use English and branded install assets (2.1s)
+  ✓  321 [firefox] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 1 photographs and restores them without recompression (1.8s)
+  ✓  322 [firefox] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 2 photographs and restores them without recompression (2.1s)
+  ✓  323 [firefox] › e2e/browser-image-upload.spec.ts:9:3 › browser prepares 10 photographs and restores them without recompression (2.2s)
+  ✓  324 [firefox] › e2e/classroom-catalog.spec.ts:41:1 › Phase 7: admin maintains the durable classroom catalog (1.9s)
+  ✓  325 [firefox] › e2e/classroom-catalog.spec.ts:111:1 › Phase 7: an event layout survives reload and is confirmed explicitly (1.4s)
+  ✓  326 [firefox] › e2e/classroom-catalog.spec.ts:181:1 › Phase 7: classroom edits survive reload and are explicitly announced (5.5s)
+  ✓  327 [firefox] › e2e/content-publication.spec.ts:186:1 › Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions (6.7s)
+  ✓  328 [firefox] › e2e/content-publication.spec.ts:313:1 › Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first (12.5s)
+  ✓  329 [firefox] › e2e/course-attendance.spec.ts:7:1 › course setting hides attendance and rooms, then restores the stored preference (4.3s)
+  ✓  330 [firefox] › e2e/family-context.spec.ts:48:1 › Phase 9: Family switches children and opens only their current course context (1.4s)
+  ✓  331 [firefox] › e2e/family-context.spec.ts:83:1 › Phase 9: child caches stay separate and Family confirms a group and mode change (1.6s)
+  ✓  332 [firefox] › e2e/family-worksheet-polish.spec.ts:5:1 › family reads earlier worksheets, switches viewing groups and has usable child/profile pages (1.4s)
+  ✓  333 [firefox] › e2e/i18n.spec.ts:8:1 › Landing follows the device language and keeps Russian as the default (447ms)
+  ✓  334 [firefox] › e2e/i18n.spec.ts:32:1 › Landing recovers from missing catalogs with a bilingual reload screen (373ms)
+  ✓  335 [firefox] › e2e/i18n.spec.ts:84:1 › Student switches the account to English in the profile (1.9s)
+  ✓  336 [firefox] › e2e/i18n.spec.ts:110:1 › Student sees English support, news, progress and notification chrome (2.1s)
+  ✓  337 [firefox] › e2e/i18n.spec.ts:135:1 › Staff switches the language from the header menu (2.3s)
+  ✓  338 [firefox] › e2e/i18n.spec.ts:148:1 › Staff sees English review, result and statistics controls (6.5s)
+  ✓  339 [firefox] › e2e/i18n.spec.ts:169:1 › Staff sees English course, classroom, oral, and publishing administration (7.2s)
+  ✓  340 [firefox] › e2e/i18n.spec.ts:202:1 › Family sees English child progress and notification settings (1.3s)
+  ✓  341 [firefox] › e2e/i18n.spec.ts:228:1 › English device language translates the sign-in page (305ms)
+  ✓  342 [firefox] › e2e/i18n.spec.ts:236:1 › Russian stays the default without a device choice (653ms)
+  ✓  343 [firefox] › e2e/i18n.spec.ts:243:1 › Staff sees English lesson, import, synonym, and whiteboard tools (3.0s)
+  ✓  344 [firefox] › e2e/i18n.spec.ts:289:1 › Staff sees English account, access, audit, analytics, binding, and support controls (2.2s)
+  ✓  345 [firefox] › e2e/live-marking-confirmation.spec.ts:5:1 › Classroom marks wait for receipts and follow other teachers through reconnect (8.4s)
+  ✓  346 [firefox] › e2e/live-marking.spec.ts:16:1 › Live student search ignores patronymics and can match only surnames (1.2s)
+  ✓  347 [firefox] › e2e/live-marking.spec.ts:57:1 › Live Zoom: fast cycle, delayed save, undo, offline recovery and mobile reactions (13.6s)
+  ✓  348 [firefox] › e2e/live-marking.spec.ts:188:1 › Live classroom: teacher transfer, attendance and another teacher sees the saved mark (7.4s)
+  ✓  349 [firefox] › e2e/live-marking.spec.ts:250:1 › Live Zoom: two levels share one session without changing enrollment (4.6s)
+  ✓  350 [firefox] › e2e/news-notifications.spec.ts:60:1 › Phase 8: Admin edits a scheduled local post without losing its draft (1.9s)
+  ✓  351 [firefox] › e2e/news-notifications.spec.ts:118:1 › Phase 8: Admin corrects a published local post without moving its time (1.4s)
+  ✓  352 [firefox] › e2e/news-notifications.spec.ts:177:1 › Phase 8: Family changes real notification preferences without individual review push (1.1s)
+  ✓  353 [firefox] › e2e/news-notifications.spec.ts:221:1 › Phase 8: Admin explicitly sends one lesson digest and Family sees it (1.3s)
+  ✓  354 [firefox] › e2e/news-notifications.spec.ts:279:1 › Phase 8: Student reads cached news, dismisses a banner and acknowledges the event (6.0s)
+  ✓  355 [firefox] › e2e/news-notifications.spec.ts:434:1 › Phase 8: Family sees the shared post, banner and its own news event (2.4s)
+  -  356 [firefox] › e2e/offline-current-lessons.spec.ts:11:3 › Student downloads current levels on Now and opens them after a cold offline start (network)
+  ✓  357 [firefox] › e2e/offline-current-lessons.spec.ts:11:3 › Student downloads current levels on Now and opens them after a cold offline start (api) (2.8s)
+  ✓  358 [firefox] › e2e/oral-admission.spec.ts:14:1 › Phase 7: Student joins an oral window and Teacher records the legacy result (3.0s)
+  ✓  359 [firefox] › e2e/oral-windows-weekly.spec.ts:4:1 › Weekly oral draft: choose days, persist, save, clone and edit (1.4s)
+  ✓  360 [firefox] › e2e/organizer-layout.spec.ts:5:1 › Organizer entry points have responsive layouts (1.9s)
+  ✓  361 [firefox] › e2e/organizer-questions.spec.ts:7:3 › Organizers: student asks privately and administrator replies (4.1s)
+  ✓  362 [firefox] › e2e/organizer-questions.spec.ts:7:3 › Organizers: family asks privately and administrator replies (4.9s)
+  ✓  363 [firefox] › e2e/organizer-questions.spec.ts:123:1 › Organizers: teacher cannot see queue or photos (1.2s)
+  ✓  364 [firefox] › e2e/problem-release.spec.ts:5:1 › teacher releases fifteen tasks progressively to Student and Family (4.3s)
+  ✓  365 [firefox] › e2e/review-queue.spec.ts:5:1 › Review queue: filters, summary, colleague lease and return navigation (3.5s)
+  ✓  366 [firefox] › e2e/review-workspace.spec.ts:16:1 › Sheet review: independent cards, foreign verdict conflict and explicit resend (5.1s)
+  ✓  367 [firefox] › e2e/review-workspace.spec.ts:203:1 › Written precedence: Student and Family follow review, reload and reconnect (3.7s)
+  ✓  368 [firefox] › e2e/review-workspace.spec.ts:318:3 › Series feed › clone, complete, compare, correct and move whole entries (3.0s)
+  ✓  369 [firefox] › e2e/review-workspace.spec.ts:391:1 › Phase 6: Staff review restores its draft and completes one leased case (10.8s)
+  ✓  370 [firefox] › e2e/rich-file-attachments.spec.ts:44:1 › news attachment survives publication and caption editing for Student and Family (2.5s)
+  ✓  371 [firefox] › e2e/rich-file-attachments.spec.ts:102:1 › broadcast banner attachment is published to Student and Family (2.4s)
+  ✓  372 [firefox] › e2e/rich-file-attachments.spec.ts:136:1 › both lesson blocks retain file links through draft and publication (3.1s)
+  ✓  373 [firefox] › e2e/runtime-isolation.spec.ts:266:3 › student: exact health and runtime contracts cross the one-origin gateway (97ms)
+  ✓  374 [firefox] › e2e/runtime-isolation.spec.ts:322:3 › student: history fallback cannot swallow API, WS or missing assets (664ms)
+  ✓  375 [firefox] › e2e/runtime-isolation.spec.ts:266:3 › family: exact health and runtime contracts cross the one-origin gateway (139ms)
+  ✓  376 [firefox] › e2e/runtime-isolation.spec.ts:322:3 › family: history fallback cannot swallow API, WS or missing assets (122ms)
+  ✓  377 [firefox] › e2e/runtime-isolation.spec.ts:266:3 › staff: exact health and runtime contracts cross the one-origin gateway (121ms)
+  ✓  378 [firefox] › e2e/runtime-isolation.spec.ts:322:3 › staff: history fallback cannot swallow API, WS or missing assets (121ms)
+  ✓  379 [firefox] › e2e/runtime-isolation.spec.ts:354:1 › the gateway exposes no MSW artifact (121ms)
+  ✓  380 [firefox] › e2e/runtime-isolation.spec.ts:364:1 › browser HTTP and WebSocket traffic cannot leave the E2E loopback origin (317ms)
+  ✓  381 [firefox] › e2e/runtime-isolation.spec.ts:413:3 › student: manifest and every icon have exact install boundaries (141ms)
+  ✓  382 [firefox] › e2e/runtime-isolation.spec.ts:413:3 › family: manifest and every icon have exact install boundaries (143ms)
+  ✓  383 [firefox] › e2e/runtime-isolation.spec.ts:439:1 › student and family service workers install, activate and control only their scopes (1.9s)
+  ✓  384 [firefox] › e2e/runtime-isolation.spec.ts:503:1 › student and family workers own disjoint scopes and Cache Storage (1.8s)
+  ✓  385 [firefox] › e2e/runtime-isolation.spec.ts:576:3 › student: a byte-different built worker reaches prompt and controls the page (button) (2.7s)
+  ✓  386 [firefox] › e2e/runtime-isolation.spec.ts:576:3 › student: a byte-different built worker reaches prompt and controls the page (another tab) (2.8s)
+  ✓  387 [firefox] › e2e/runtime-isolation.spec.ts:576:3 › family: a byte-different built worker reaches prompt and controls the page (button) (2.2s)
+  ✓  388 [firefox] › e2e/runtime-isolation.spec.ts:576:3 › family: a byte-different built worker reaches prompt and controls the page (another tab) (2.7s)
+  ✓  389 [firefox] › e2e/runtime-isolation.spec.ts:780:3 › student: product realtime reconnects with cursor and refetches HTTP authority (1.5s)
+  ✓  390 [firefox] › e2e/runtime-isolation.spec.ts:836:3 › student: WebSocket first connect, heartbeat and reconnect require refetch (631ms)
+  ✓  391 [firefox] › e2e/runtime-isolation.spec.ts:780:3 › family: product realtime reconnects with cursor and refetches HTTP authority (1.8s)
+  ✓  392 [firefox] › e2e/runtime-isolation.spec.ts:836:3 › family: WebSocket first connect, heartbeat and reconnect require refetch (565ms)
+  ✓  393 [firefox] › e2e/runtime-isolation.spec.ts:780:3 › staff: product realtime reconnects with cursor and refetches HTTP authority (1.6s)
+  ✓  394 [firefox] › e2e/runtime-isolation.spec.ts:836:3 › staff: WebSocket first connect, heartbeat and reconnect require refetch (1.1s)
+  ✓  395 [firefox] › e2e/runtime-isolation.spec.ts:906:1 › student: current-session revoke closes product realtime and returns to login (1.7s)
+  ✓  396 [firefox] › e2e/runtime-isolation.spec.ts:945:1 › localStorage theme state stays audience-scoped on the shared origin (1.4s)
+  ✓  397 [firefox] › e2e/runtime-isolation.spec.ts:1034:1 › runtime-created IndexedDB names encode audience and instance (1.6s)
+  ✓  398 [firefox] › e2e/shells.spec.ts:8:1 › public root shows Student and Family entry points only (192ms)
+  ✓  399 [firefox] › e2e/shells.spec.ts:46:3 › student: shell, base path and history fallback (807ms)
+  ✓  400 [firefox] › e2e/shells.spec.ts:46:3 › family: shell, base path and history fallback (715ms)
+  ✓  401 [firefox] › e2e/shells.spec.ts:46:3 › staff: shell, base path and history fallback (707ms)
+  ✓  402 [firefox] › e2e/shells.spec.ts:57:1 › theme choice survives navigation within its application (960ms)
+  ✓  403 [firefox] › e2e/smooth-redeploy.spec.ts:13:1 › cold start explains our server failure and recovers without blaming the internet (3.4s)
+  ✓  404 [firefox] › e2e/smooth-redeploy.spec.ts:47:1 › Family keeps connecting after a minute instead of turning waiting into an error (1.0m)
+  ✓  405 [firefox] › e2e/smooth-redeploy.spec.ts:65:1 › a twenty-second deployment preserves an open form and saves exactly once (25.4s)
+  ✓  406 [firefox] › e2e/smooth-redeploy.spec.ts:100:1 › a teacher mark survives a lost response with the same operation key (4.5s)
+  ✓  407 [firefox] › e2e/smooth-redeploy.spec.ts:132:1 › a written answer keeps its photograph and resumes the existing outbox operation (5.0s)
+  ✓  408 [firefox] › e2e/student-results.spec.ts:9:1 › Student archive: fuzzy search, multiple levels, complete history, URL and responsive layout (2.8s)
+  ✓  409 [firefox] › e2e/student-results.spec.ts:122:1 › Old review: Teacher and Admin read full mixed dialogue and correct original evidence (2.7s)
+  ✓  410 [firefox] › e2e/student-results.spec.ts:210:1 › Student archive refuses teacher access (774ms)
+  ✓  411 [firefox] › e2e/support-dialogue.spec.ts:19:1 › Phase 6: private Student and Staff dialogue survives reload and syncs live (3.3s)
+  ✓  412 [firefox] › e2e/support-dialogue.spec.ts:123:1 › new replies jump into an older worksheet and read state converges across devices (13.1s)
+  ✓  413 [firefox] › e2e/task-interaction-polish.spec.ts:8:1 › task references, worksheet return, narrow composer and delayed sending (5.3s)
+  ✓  414 [firefox] › e2e/teacher-work.spec.ts:7:1 › Admin accounting tabs, calculation, export and protected teacher view (3.5s)
+  ✓  415 [firefox] › e2e/teacher-work.spec.ts:63:1 › Teacher cannot read work accounting (591ms)
+  ✓  416 [firefox] › e2e/teacher-work.spec.ts:71:1 › Admin confirms school work and a written override survives recalculation (2.5s)
+  ✓  417 [firefox] › e2e/test-submission.spec.ts:247:1 › Phase 4: a test answer survives reload and an offline POST is delivered exactly once (4.8s)
+  ✓  418 [firefox] › e2e/test-submission.spec.ts:337:1 › Phase 4: an admin repairs a published checker and rechecks an immutable pending answer (4.3s)
+  ✓  419 [firefox] › e2e/test-submission.spec.ts:406:1 › Phase 5: a written draft with a photo survives reload and resumes exactly once (6.0s)
+  ✓  420 [firefox] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (ru) (6.2s)
+  ✓  421 [firefox] › e2e/whiteboard-export.spec.ts:7:3 › downloads complete PNG archive from published worksheet (en) (4.0s)
+  ✓  422 [firefox] › e2e/worksheet-preview.spec.ts:5:1 › staff preview uses the student conditions and material presentation without recording views (2.1s)
+  ✓  423 [firefox] › e2e/worksheet-print.spec.ts:5:1 › worksheets print only mounted conditions and expanded learning materials (2.9s)
+
+
+  1) [chromium] › e2e/problem-release.spec.ts:5:1 › teacher releases fifteen tasks progressively to Student and Family
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('heading', { name: /^Задача / })
+    Expected: 15
+    Received: 5
+    Timeout:  30000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 30000ms
+      - waiting for getByRole('heading', { name: /^Задача / })
+        64 × locator resolved to 5 elements
+           - unexpected value "5"
+
+
+       99 |   // a visibilitychange; deliver that device event after proving visibility.
+      100 |   await student.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+    > 101 |   await expect(studentTasks).toHaveCount(15, { timeout: 30_000 })
+          |                              ^
+      102 |   await family.bringToFront()
+      103 |   await expect.poll(() => family.evaluate(() => document.visibilityState)).toBe('visible')
+      104 |   await family.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+        at /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/e2e/problem-release.spec.ts:101:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/problem-release-teacher-re-b83ba-ively-to-Student-and-Family-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/problem-release-teacher-re-b83ba-ively-to-Student-and-Family-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/problem-release-teacher-re-b83ba-ively-to-Student-and-Family-chromium/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/problem-release-teacher-re-b83ba-ively-to-Student-and-Family-chromium/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/problem-release-teacher-re-b83ba-ively-to-Student-and-Family-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/problem-release-teacher-re-b83ba-ively-to-Student-and-Family-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [webkit] › e2e/course-attendance.spec.ts:7:1 › course setting hides attendance and rooms, then restores the stored preference
+
+    Error: page.goto: Frame load interrupted
+    Call log:
+      - navigating to "http://127.0.0.1:5380/student/profile/notifications", waiting until "load"
+
+
+      82 |             .hasInPersonCourses,
+      83 |         ).toBe(false)
+    > 84 |         await visitor.goto(`/${audience}/profile/notifications`)
+         |                       ^
+      85 |         await expect(visitor.getByText('Очное занятие', { exact: true })).toHaveCount(0)
+      86 |       } finally {
+      87 |         await context.close()
+        at /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/e2e/course-attendance.spec.ts:84:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/course-attendance-course-s-8e1ea-tores-the-stored-preference-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/course-attendance-course-s-8e1ea-tores-the-stored-preference-webkit/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/course-attendance-course-s-8e1ea-tores-the-stored-preference-webkit/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/course-attendance-course-s-8e1ea-tores-the-stored-preference-webkit/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/course-attendance-course-s-8e1ea-tores-the-stored-preference-webkit/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [webkit] › e2e/rich-file-attachments.spec.ts:102:1 › broadcast banner attachment is published to Student and Family
+
+    Test timeout of 90000ms exceeded.
+
+    Error: page.goto: Test timeout of 90000ms exceeded.
+    Call log:
+      - navigating to "http://127.0.0.1:5380/staff/broadcasts", waiting until "domcontentloaded"
+
+
+       at auth-personas.ts:91
+
+      89 | ): Promise<void> {
+      90 |   const expectedDestination = new URL(intendedRoute, 'http://127.0.0.1:5380')
+    > 91 |   await page.goto(intendedRoute, { waitUntil: 'domcontentloaded' })
+         |              ^
+      92 |   await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
+      93 |   await submitLoginForm(page, persona)
+      94 |
+        at loginThroughUi (/Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/e2e/auth-personas.ts:91:14)
+        at /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/e2e/rich-file-attachments.spec.ts:107:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/rich-file-attachments-broa-ea550-ished-to-Student-and-Family-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/rich-file-attachments-broa-ea550-ished-to-Student-and-Family-webkit/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/rich-file-attachments-broa-ea550-ished-to-Student-and-Family-webkit/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/rich-file-attachments-broa-ea550-ished-to-Student-and-Family-webkit/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [webkit] › e2e/support-dialogue.spec.ts:123:1 › new replies jump into an older worksheet and read state converges across devices
+
+    Error: page.goto: Navigation to "http://127.0.0.1:5380/student/tasks?course=math-5-7&group=%D0%BD&question=sup-4" is interrupted by another navigation to "http://127.0.0.1:5380/student/profile"
+    Call log:
+      - navigating to "http://127.0.0.1:5380/student/tasks?course=math-5-7&group=%D0%BD&question=sup-4", waiting until "domcontentloaded"
+
+
+      226 |     await page.waitForLoadState('domcontentloaded')
+      227 |     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    > 228 |     await page.goto(answerUrl, { waitUntil: 'domcontentloaded' })
+          |                ^
+      229 |     const englishQuestion = page
+      230 |       .getByRole('region', { name: 'Problem discussion', exact: true })
+      231 |       .filter({ hasText: text })
+        at /Users/sergeyshashkov/.codex/worktrees/2f86ad9d-21cc-4bcd-95be-cd2e802d9cb8/vmsh_tasks_bot/vmshpwa/e2e/support-dialogue.spec.ts:228:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/support-dialogue-new-repli-9957a-te-converges-across-devices-webkit/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/support-dialogue-new-repli-9957a-te-converges-across-devices-webkit/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/support-dialogue-new-repli-9957a-te-converges-across-devices-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/support-dialogue-new-repli-9957a-te-converges-across-devices-webkit/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/support-dialogue-new-repli-9957a-te-converges-across-devices-webkit/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/support-dialogue-new-repli-9957a-te-converges-across-devices-webkit/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    [chromium] › e2e/problem-release.spec.ts:5:1 › teacher releases fifteen tasks progressively to Student and Family
+    [webkit] › e2e/course-attendance.spec.ts:7:1 › course setting hides attendance and rooms, then restores the stored preference
+    [webkit] › e2e/rich-file-attachments.spec.ts:102:1 › broadcast banner attachment is published to Student and Family
+    [webkit] › e2e/support-dialogue.spec.ts:123:1 › new replies jump into an older worksheet and read state converges across devices
+  20 skipped
+  399 passed (21.2m)

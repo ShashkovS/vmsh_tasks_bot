@@ -1,0 +1,52 @@
+{
+  "source_digest": "716bd1facd9719d2de5cfbd57c9082cbc8920c9a189af67cca22a57cfb673cd6",
+  "format": "Initial format gate: 13 unchanged files failed; touched PageLayout now formatted, remaining files left intact",
+  "steps": [
+    {
+      "name": "types",
+      "exit_code": 0,
+      "seconds": 15.63
+    },
+    {
+      "name": "lint-js",
+      "exit_code": 0,
+      "seconds": 44.29
+    },
+    {
+      "name": "lint-css",
+      "exit_code": 0,
+      "seconds": 1.08
+    },
+    {
+      "name": "i18n-frontend",
+      "exit_code": 0,
+      "seconds": 2.09
+    },
+    {
+      "name": "i18n-backend",
+      "exit_code": 0,
+      "seconds": 0.56
+    },
+    {
+      "name": "python",
+      "exit_code": 1,
+      "seconds": 73.0
+    },
+    {
+      "name": "frontend",
+      "exit_code": 0,
+      "seconds": 80.29
+    },
+    {
+      "name": "storybook",
+      "exit_code": 0,
+      "seconds": 86.17
+    },
+    {
+      "name": "e2e",
+      "exit_code": 0,
+      "seconds": 43.58
+    }
+  ],
+  "source_unchanged": true
+}

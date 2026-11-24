@@ -1,0 +1,18 @@
+[Unit]
+Description=Independent encrypted S3 backup
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /web/vmsh_tasks_bot/s3-backup/tools/backup.py
+UMask=0077
+Environment=XDG_CACHE_HOME=/var/lib/vmsh-s3-backup/cache
+Environment=GOMAXPROCS=2
+Nice=10
+MemoryMax=512M
+TimeoutStartSec=50min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/vmsh-s3-backup

@@ -1,0 +1,186 @@
+{
+  "profile": "fast",
+  "modes": ["review", "oral", "live-marking"],
+  "started_at": "2026-11-17T09:34:22.294896+00:00",
+  "steps": [
+    {
+      "name": "python-dependencies",
+      "command": ["uv", "sync", "--frozen", "--check"],
+      "seconds": 0.113,
+      "exit_code": 0
+    },
+    {
+      "name": "format",
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        "apps/staff/src/live-marking-page.tsx",
+        "apps/staff/src/review-contribution-events.ts",
+        "apps/staff/src/review-contribution.stories.tsx",
+        "apps/staff/src/review-contribution.test.tsx",
+        "apps/staff/src/review-contribution.tsx",
+        "apps/staff/src/review-history-page.tsx",
+        "apps/staff/src/review-queue-page.tsx",
+        "apps/staff/src/review-sheet-page.tsx",
+        "apps/staff/src/review-workspace-page.tsx",
+        "apps/staff/src/staff-oral-results-page.tsx",
+        "dev/design-system/05-pages-and-flows.md",
+        "dev/design-system/STATUS.md",
+        "dev/development-plan/10-phase-6-review-and-feedback.md",
+        "dev/development-plan/STATUS.md",
+        "docs/review-contribution.md",
+        "e2e/live-marking.spec.ts",
+        "e2e/review-workspace.spec.ts",
+        "packages/app-shell/src/index.ts",
+        "packages/app-shell/src/review-contribution.test.ts",
+        "packages/app-shell/src/review-contribution.ts",
+        "packages/contracts/fixtures/review/contribution.v1.json",
+        "packages/contracts/src/index.ts",
+        "packages/contracts/src/review-contribution.test.ts",
+        "packages/contracts/src/review-contribution.ts"
+      ],
+      "seconds": 3.587,
+      "exit_code": 0
+    },
+    {
+      "name": "types",
+      "command": ["pnpm", "typecheck"],
+      "seconds": 21.442,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-js",
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        "apps/staff/src/live-marking-page.tsx",
+        "apps/staff/src/review-contribution-events.ts",
+        "apps/staff/src/review-contribution.stories.tsx",
+        "apps/staff/src/review-contribution.test.tsx",
+        "apps/staff/src/review-contribution.tsx",
+        "apps/staff/src/review-history-page.tsx",
+        "apps/staff/src/review-queue-page.tsx",
+        "apps/staff/src/review-sheet-page.tsx",
+        "apps/staff/src/review-workspace-page.tsx",
+        "apps/staff/src/staff-oral-results-page.tsx",
+        "e2e/live-marking.spec.ts",
+        "e2e/review-workspace.spec.ts",
+        "packages/app-shell/src/index.ts",
+        "packages/app-shell/src/review-contribution.test.ts",
+        "packages/app-shell/src/review-contribution.ts",
+        "packages/contracts/src/index.ts",
+        "packages/contracts/src/review-contribution.test.ts",
+        "packages/contracts/src/review-contribution.ts",
+        "--max-warnings=0"
+      ],
+      "seconds": 18.026,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-css",
+      "command": ["pnpm", "lint:css"],
+      "seconds": 3.321,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-frontend",
+      "command": ["pnpm", "i18n:check"],
+      "seconds": 4.328,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-backend",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.backend_i18n",
+        "check"
+      ],
+      "seconds": 1.018,
+      "exit_code": 0
+    },
+    {
+      "name": "python",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "pwa_tests/domain/test_review_contribution.py",
+        "pwa_tests/integration/test_review_contribution_http.py"
+      ],
+      "seconds": 24.796,
+      "exit_code": 0
+    },
+    {
+      "name": "frontend",
+      "command": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit*",
+        "apps/staff/src/review-contribution.test.tsx",
+        "packages/contracts/src/review-contribution.test.ts",
+        "packages/app-shell/src/review-contribution.test.ts"
+      ],
+      "seconds": 7.641,
+      "exit_code": 0
+    },
+    {
+      "name": "storybook",
+      "command": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "vitest.storybook.config.ts",
+        "apps/staff/src/review-contribution.stories.tsx"
+      ],
+      "seconds": 10.798,
+      "exit_code": 0
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.e2e_runner",
+        "--browser",
+        "chromium",
+        "--report",
+        "/Users/sergeyshashkov/.codex/worktrees/940f/vmsh_tasks_bot/.runtime/vmshpwa/checks/contribution-scoped/e2e.json",
+        "--mode",
+        "review",
+        "--mode",
+        "oral",
+        "--mode",
+        "live-marking"
+      ],
+      "seconds": 122.999,
+      "exit_code": 0
+    }
+  ],
+  "exit_code": 0,
+  "revision": "26d2a71691df07796027cadadbaf5feed8ab2ec4",
+  "source_digest": "245700ae3461b09cfc2484d69ebebbe43e776e08f7a48043dd15fa4059fb6509",
+  "source_changed": false,
+  "seconds": 220.785,
+  "validation_scope": "Final changed-code tests after broad validation: 1157 frontend and 392 Storybook tests passed, remaining new scenarios rechecked; full Python has two unrelated baseline failures after fixture setup.",
+  "format_scope": "Changed files only; full format failed on 12 unchanged baseline files. See ../20261117T085209.425019Z/format.log."
+}

@@ -1,0 +1,16 @@
+{
+  "fixtureVersion": 1,
+  "response": {
+    "schemaVersion": 1,
+    "problemId": "problem-fixture-choice",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-condition",
+      "configVersion": 4
+    },
+    "answerType": 98,
+    "validationPattern": null,
+    "validationError": "Выберите, какой вариант подходит",
+    "options": ["Чётное", "Нечётное", "Не определяется"],
+    "requestId": "request-fixture-input"
+  }
+}

@@ -1,0 +1,113 @@
+/* Page-local density; docs/lesson-statistics.md. */
+.staff-statistics :is(th, td) {
+  height: auto;
+  padding: 4px 8px;
+  line-height: 20px;
+}
+
+.staff-statistics .lesson-statistics-table td:nth-child(n + 3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.staff-statistics .lesson-statistics-table td:nth-child(2) {
+  white-space: normal;
+}
+
+.statistics-select {
+  min-height: 36px;
+  padding: 4px 8px;
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.statistics-matrix-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.statistics-matrix,
+.statistics-summary {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.statistics-matrix :is(th, td),
+.statistics-summary :is(th, td) {
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.statistics-matrix th,
+.statistics-summary th {
+  background: var(--surface);
+}
+
+.statistics-matrix thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.statistics-matrix tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 150px;
+  max-width: 210px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.statistics-matrix thead tr > :first-child {
+  z-index: 3;
+}
+
+.statistics-matrix td small {
+  margin-left: 3px;
+  font-size: 11px;
+  line-height: 12px;
+}
+
+.statistics-source-bot {
+  color: color-mix(in oklab, var(--chart-1) 70%, var(--foreground));
+}
+
+.statistics-source-written {
+  color: color-mix(in oklab, var(--chart-2) 70%, var(--foreground));
+}
+
+.statistics-source-zoom {
+  color: color-mix(in oklab, var(--chart-3) 70%, var(--foreground));
+}
+
+.statistics-source-school {
+  color: color-mix(in oklab, var(--chart-4) 70%, var(--foreground));
+}
+
+@media (width >= 1100px) {
+  .statistics-matrix thead th {
+    top: 56px;
+  }
+
+  .statistics-matrix-scroll {
+    overflow: clip;
+  }
+
+  .statistics-matrix {
+    table-layout: fixed;
+  }
+
+  .statistics-matrix tr > :first-child {
+    width: 180px;
+  }
+
+  .staff-statistics .statistics-matrix :is(th, td) {
+    padding: 4px 2px;
+  }
+}

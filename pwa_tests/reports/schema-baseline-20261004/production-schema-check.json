@@ -1,0 +1,16 @@
+{
+  "read_only": true,
+  "selected_product_rows": false,
+  "vmsh": {
+    "head": "0110.pwa_written_result_precedence",
+    "previous_head_hash_matches": true,
+    "product_objects": 510,
+    "ddl_sha256": "7addfa22b6733d53fdfcdc0e9706b70ed81370b5a345506201c4025e5299d53a"
+  },
+  "tlf": {
+    "head": "0110.pwa_written_result_precedence",
+    "previous_head_hash_matches": true,
+    "product_objects": 510,
+    "ddl_sha256": "7addfa22b6733d53fdfcdc0e9706b70ed81370b5a345506201c4025e5299d53a"
+  }
+}

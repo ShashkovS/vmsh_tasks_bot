@@ -1,0 +1,21 @@
+{
+  "installedAt": "2026-10-11T13:16:36.018802+00:00",
+  "packages": [
+    "cm-super 0.3.4-17build1",
+    "cm-super-minimal 0.3.4-17build1",
+    "pfb2t1c2pfb 0.3-11build2"
+  ],
+  "reason": "Scalable T2A Cyrillic glyphs; bitmap images rejected by existing SVG sanitizer",
+  "discoverableToolchain": "/web/vmsh_tasks_bot/toolchains/cm-super",
+  "links": {
+    "type1": "/usr/share/texmf/fonts/type1/public/cm-super",
+    "maps": "/usr/share/texmf/fonts/map/dvips/cm-super",
+    "encodings": "/usr/share/texmf/fonts/enc/dvips/cm-super",
+    "map-config": "/usr/share/texmf/web2c/updmap.cfg",
+    "generated-maps": "/var/lib/texmf/fonts/map",
+    "documentation": "/usr/share/doc/cm-super",
+    "pfb2t1c": "/usr/bin/pfb2t1c",
+    "t1c2pfb": "/usr/bin/t1c2pfb"
+  },
+  "servicesRestarted": false
+}

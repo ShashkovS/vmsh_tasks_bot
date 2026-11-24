@@ -1,5 +1,7 @@
 # VMSh Tasks Bot
 
+[Администрирование занятий через MCP](vmshpwa/docs/admin-mcp/README.md)
+
 VMSh Tasks Bot is an asynchronous Telegram assistant used by the Moscow math circle to manage problem assignments, collect solutions, and broadcast live game updates. The project combines an [aiogram 3](https://docs.aiogram.dev/) bot, aiohttp web applications, a SQLite database, and Google Sheets synchronization routines so tutors can administer tasks from a single workflow.
 
 ## Overview
@@ -27,6 +29,12 @@ A deeper breakdown of components, data flow, and external dependencies is availa
 2. Place the Google service account JSON obtained from Google Cloud under `creds_test/vmsh_bot_sheets_creds_test.json` (or the production path) so that `helpers.config` can read it on startup.
 3. The configuration loader automatically runs yoyo migrations and resolves the SQLite path before returning a `Config` dataclass instance to the rest of the codebase.
 4. The only environment flag is `PROD`. Set `PROD=true` to switch into production mode, otherwise omit it (or set any other value) to load the development credentials.
+
+An empty `telegram_bot_token` disables the legacy Telegram bot even when `apps`
+includes `tg_bot`: neither polling nor webhooks start. The other configured web
+applications remain enabled. Independently, an empty `google_sheets_key` disables
+all Google Sheets import commands and removes the Google service-account
+credentials requirement at startup. See [optional legacy integrations](docs/optional-telegram-bot.md).
 
 ## Installation
 ```bash

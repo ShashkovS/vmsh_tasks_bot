@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "browser": "Chromium",
+  "checks": [
+    {
+      "site": "tlf",
+      "origin": "https://prep.leaders.tech",
+      "locale": "ru",
+      "passwordLabel": "Пароль",
+      "noTelegramOrTokenCopy": true,
+      "status": "PASS"
+    },
+    {
+      "site": "tlf",
+      "origin": "https://prep.leaders.tech",
+      "locale": "en",
+      "passwordLabel": "Password",
+      "noTelegramOrTokenCopy": true,
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": 1,
+  "httpStatus": 403,
+  "response": {
+    "error": {
+      "code": "forbidden",
+      "message": "У вас нет доступа к этому разделу",
+      "requestId": "fixture-error-forbidden-v1"
+    }
+  }
+}

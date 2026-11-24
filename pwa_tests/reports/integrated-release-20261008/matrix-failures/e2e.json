@@ -1,0 +1,35 @@
+{
+  "modes": [
+    "all"
+  ],
+  "browser": "all",
+  "seconds": 1302.588,
+  "exit_code": 1,
+  "phases": [
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "seconds": 13.034,
+      "cache_hit": false,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "e2e/(?!figure-layout|statistics-recalculation|statistics-reports).*\\.spec\\.ts",
+        "--grep-invert",
+        "@visual",
+        "--retries",
+        "0"
+      ],
+      "seconds": 1288.443,
+      "cache_hit": false,
+      "exit_code": 1
+    }
+  ]
+}

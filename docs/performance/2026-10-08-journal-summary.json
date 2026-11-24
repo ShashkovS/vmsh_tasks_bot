@@ -1,0 +1,929 @@
+{
+  "scope": "Available journal samples only; original logs stay outside Git.",
+  "tlf": {
+    "journal_records": 116,
+    "units": {
+      "vmshpwa.service": 115,
+      "vmshzoom.service": 1
+    },
+    "first_utc": "2026-10-07T03:59:05.428547+00:00",
+    "last_utc": "2026-10-08T06:57:19.281700+00:00",
+    "slow_requests": [
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 2098.12,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 0.03
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 0.07
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.15
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 1.2
+          },
+          "auth": {
+            "count": 1,
+            "ms": 2.2
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 5.27
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 1689.84
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 289.22
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 1988.13
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 90.8
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.07
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 2.43
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 2.72
+          }
+        },
+        "time_utc": "2026-10-07T08:12:47.390448+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 339.85,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 15.38
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 15.42
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 0.81
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 0.41
+          },
+          "auth": {
+            "count": 1,
+            "ms": 4.06
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 1.04
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 161.07
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 62.99
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 226.59
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 88.9
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.08
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 1.43
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 2.53
+          }
+        },
+        "time_utc": "2026-10-07T11:36:34.548913+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 314.56,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 0.01
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 0.05
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 2.56
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 1.02
+          },
+          "auth": {
+            "count": 1,
+            "ms": 1.36
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 1.27
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 156.95
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 49.33
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 207.4
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 93.76
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.04
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 1.16
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 4.71
+          }
+        },
+        "time_utc": "2026-10-07T11:37:02.542717+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 309.41,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 0.01
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 0.04
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 0.71
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 0.61
+          },
+          "auth": {
+            "count": 1,
+            "ms": 1.04
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 1.07
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 174.69
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 58.92
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 234.94
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 65.62
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.33
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 1.98
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 1.87
+          }
+        },
+        "time_utc": "2026-10-07T15:30:33.366649+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 1088.09,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 0.02
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 0.07
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.08
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 0.93
+          },
+          "auth": {
+            "count": 1,
+            "ms": 1.91
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 3.41
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 711.17
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 206.15
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 920.63
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 155.35
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.05
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 1.14
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 1.61
+          }
+        },
+        "time_utc": "2026-10-07T15:45:54.636175+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 608.4,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 25.8
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 25.85
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 0.99
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 0.77
+          },
+          "auth": {
+            "count": 1,
+            "ms": 6.77
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 2.03
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 318.18
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 89.4
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 410.0
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 161.86
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.04
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 1.15
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 2.6
+          }
+        },
+        "time_utc": "2026-10-07T15:52:03.709876+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 911.86,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 37.04
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 37.09
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 0.8
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 0.68
+          },
+          "auth": {
+            "count": 1,
+            "ms": 12.02
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 2.36
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 478.44
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 206.24
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 687.53
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 172.09
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.01
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.06
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 3.69
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 4.59
+          }
+        },
+        "time_utc": "2026-10-07T16:47:56.610452+00:00"
+      },
+      {
+        "route": "/student/api/v1/thread-entries/{entry_public_id}/attachments",
+        "method": "POST",
+        "status": 201,
+        "total_ms": 1384.92,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 4.92
+          },
+          "db.admission_queue": {
+            "count": 6,
+            "ms": 5.01
+          },
+          "db.thread_queue": {
+            "count": 6,
+            "ms": 1.78
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 1.32
+          },
+          "auth": {
+            "count": 1,
+            "ms": 3.46
+          },
+          "upload.read": {
+            "count": 1,
+            "ms": 3.37
+          },
+          "image.normalize": {
+            "count": 1,
+            "ms": 1005.29
+          },
+          "image.webp": {
+            "count": 1,
+            "ms": 266.42
+          },
+          "image.convert": {
+            "count": 1,
+            "ms": 1278.06
+          },
+          "storage.put": {
+            "count": 1,
+            "ms": 84.65
+          },
+          "db.admission_queue.write": {
+            "count": 1,
+            "ms": 0.03
+          },
+          "db.write_lock": {
+            "count": 1,
+            "ms": 0.07
+          },
+          "db.write": {
+            "count": 1,
+            "ms": 2.14
+          },
+          "db.commit": {
+            "count": 1,
+            "ms": 2.88
+          }
+        },
+        "time_utc": "2026-10-08T06:57:19.281700+00:00"
+      }
+    ],
+    "connection_reset_exceptions": 3
+  },
+  "vmsh_pwa": {
+    "journal_records": 100,
+    "first_timestamp": "Oct 08 07:04:39",
+    "last_timestamp": "Oct 08 07:09:35",
+    "outside_main_window": true,
+    "operation_count": 86,
+    "operations_by_callback_event": {
+      "PwaContentRepository.activate_next_due_publication.<locals>.write / admitted": 31,
+      "deliver_web_push_once.<locals>.<lambda> / released": 41,
+      "activate_due_oral_window_notifications.<locals>.<lambda> / released": 1,
+      "PwaContentRepository.activate_next_due_publication.<locals>.write / released": 4,
+      "PwaContentRepository.list_student_problems.<locals>.read / released": 1,
+      "PwaContentRepository.get_published_content.<locals>.read / admitted": 4,
+      "PwaContentRepository.get_group_lesson_scope.<locals>.read / admitted": 1,
+      "PwaContentRepository.get_student_home_snapshot.<locals>.read / admitted": 1,
+      "PwaContentRepository.list_student_problems.<locals>.read / admitted": 1,
+      "LessonBlockService.activate_due_blocks.<locals>.activate / released": 1
+    },
+    "operation_duration_ms_min": 202.6,
+    "operation_duration_ms_max": 332.6,
+    "slow_requests": [
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 338.61,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 90.75
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 90.79
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 2.1
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 242.78
+          },
+          "auth": {
+            "count": 1,
+            "ms": 9.31
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 345.23,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 337.95
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 338.0
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.31
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 3.16
+          },
+          "auth": {
+            "count": 1,
+            "ms": 9.26
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 321.5,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 315.14
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 315.19
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.53
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 1.97
+          },
+          "auth": {
+            "count": 1,
+            "ms": 8.98
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 326.4,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 317.44
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 317.47
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 2.36
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 2.82
+          },
+          "auth": {
+            "count": 1,
+            "ms": 9.55
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 245.99,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 180.13
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 180.18
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.18
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 60.11
+          },
+          "auth": {
+            "count": 1,
+            "ms": 32.52
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 252.58,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 243.25
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 243.28
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.3
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 4.55
+          },
+          "auth": {
+            "count": 1,
+            "ms": 32.61
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 203.16,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 161.91
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 161.95
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 0.96
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 37.82
+          },
+          "auth": {
+            "count": 1,
+            "ms": 17.31
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 260.42,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 77.11
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 77.14
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.29
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 176.79
+          },
+          "auth": {
+            "count": 1,
+            "ms": 8.08
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/home",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 258.91,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 4,
+            "ms": 254.8
+          },
+          "db.admission_queue": {
+            "count": 4,
+            "ms": 254.82
+          },
+          "db.thread_queue": {
+            "count": 4,
+            "ms": 0.55
+          },
+          "db.read": {
+            "count": 4,
+            "ms": 1.37
+          },
+          "auth": {
+            "count": 1,
+            "ms": 10.98
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/group-lessons/{group_lesson_id}/content/{kind}",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 270.91,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 263.86
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 263.89
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.6
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 2.94
+          },
+          "auth": {
+            "count": 1,
+            "ms": 8.39
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 303.52,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 262.53
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 262.57
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 2.81
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 34.15
+          },
+          "auth": {
+            "count": 1,
+            "ms": 8.14
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 338.26,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 300.34
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 300.37
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 1.6
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 33.06
+          },
+          "auth": {
+            "count": 1,
+            "ms": 10.41
+          }
+        }
+      },
+      {
+        "route": "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems",
+        "method": "GET",
+        "status": 200,
+        "total_ms": 377.57,
+        "stages": {
+          "db.admission_queue.read": {
+            "count": 5,
+            "ms": 336.79
+          },
+          "db.admission_queue": {
+            "count": 5,
+            "ms": 336.82
+          },
+          "db.thread_queue": {
+            "count": 5,
+            "ms": 2.6
+          },
+          "db.read": {
+            "count": 5,
+            "ms": 35.87
+          },
+          "auth": {
+            "count": 1,
+            "ms": 10.51
+          }
+        }
+      }
+    ]
+  },
+  "vmsh_telegram": {
+    "journal_records": 100,
+    "first_timestamp": "Oct 04 11:57:03",
+    "last_timestamp": "Oct 08 06:56:19",
+    "error_lines": 0,
+    "warning_lines": 49
+  }
+}

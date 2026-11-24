@@ -1,0 +1,84 @@
+{
+  "checkedAt": "2026-10-18T17:55:04.868Z",
+  "client": "Connected MCP tools in Codex",
+  "productionSuggestionsSubmitted": 0,
+  "teacherVerdictsChanged": 0,
+  "sides": {
+    "vmsh": {
+      "courses": ["ВМШ 2026-2027"],
+      "readToolsChecked": 14,
+      "toolsExposed": 15,
+      "pendingPagination": "passed",
+      "bulkStatusModes": ["pending", "reviewed", "all"],
+      "bulkPagination": "passed",
+      "reviewComments": "passed",
+      "dialogue": "passed",
+      "context": "passed",
+      "previousLessons": {
+        "requested": 5,
+        "returned": 5
+      },
+      "reviewImage": {
+        "ok": true,
+        "images": [
+          {
+            "mime": "image/webp",
+            "encodedBytes": 61004
+          }
+        ]
+      },
+      "lessonMaterialImage": {
+        "ok": true,
+        "images": [
+          {
+            "mime": "image/png",
+            "encodedBytes": 19980
+          }
+        ]
+      }
+    },
+    "tlf": {
+      "courses": ["TLF Math Club", "TLF Physics Club"],
+      "readToolsChecked": 14,
+      "toolsExposed": 15,
+      "pendingPagination": "passed",
+      "bulkStatusModes": ["pending", "reviewed", "all"],
+      "bulkPagination": "passed",
+      "reviewComments": "passed",
+      "dialogue": "passed",
+      "context": "passed",
+      "previousLessons": {
+        "requested": 5,
+        "returned": 3
+      },
+      "reviewImage": {
+        "ok": true,
+        "images": [
+          {
+            "mime": "image/png",
+            "encodedBytes": 6224
+          }
+        ]
+      },
+      "lessonMaterialImage": {
+        "ok": true,
+        "images": [
+          {
+            "mime": "image/png",
+            "encodedBytes": 6224
+          }
+        ]
+      }
+    }
+  },
+  "tlfSvgFix": {
+    "cause": "ImageMagick SVG/MSVG coder missing from base Ubuntu package",
+    "package": "libmagickcore-7.q16-10-extra",
+    "version": "8:7.1.2.18+dfsg1-1",
+    "upgrades": 0,
+    "serviceRestarts": 0,
+    "syntheticPreview": "passed",
+    "connectedMcpImagesAfterFix": "passed"
+  },
+  "mcpCallsReadOnly": true
+}

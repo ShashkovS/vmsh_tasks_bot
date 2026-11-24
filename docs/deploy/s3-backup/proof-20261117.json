@@ -1,0 +1,16 @@
+{
+  "verified_at": "2026-11-17T12:58:43.446135+00:00",
+  "source_objects": 3512,
+  "source_bytes": 379428260,
+  "allocated_bytes": 778723328,
+  "budget_bytes": 10000000000,
+  "changed_candidates": 0,
+  "incremental_transferred_bytes": 0,
+  "incremental_seconds": 10.3,
+  "full_download_check": "passed",
+  "restore_sha256": "64f482ea9a62721253a678dae4deab39dd34a62bf91e8691a2b38005781af72d",
+  "timer": "enabled-active",
+  "local_budget_tests": 5,
+  "retained_redundant_rehearsal_versions": true,
+  "installed_tool_sha256": "147bf93aa8d9663c506d470c2b853f8184ece9b4492c8e7347f8be2a99780da5"
+}

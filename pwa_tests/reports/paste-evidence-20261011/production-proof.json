@@ -1,0 +1,157 @@
+{
+  "branch": "vmshpwa",
+  "release_source": "bef85d3c8d5ea6f75cd2cbf071e9ec641e0dca51",
+  "feature_commit": "d3e9085ade9e8fea140c7fafd548f673e3e1b9b3",
+  "sheet_integration_fix": "155e5a2d",
+  "recorded_at_utc": "2026-10-11T20:42:16.526200+00:00",
+  "servers": [
+    {
+      "checked_at_utc": "2026-10-11T20:40:33.219983+00:00",
+      "origin": "https://vmsh.shashkovs.ru",
+      "static_release": "bef85d3c8d5e-20261011203834",
+      "html_sha256_matched": 4,
+      "staff_assets_sha256_matched": 116,
+      "production_provenance": {
+        "landing": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "bef85d3c8d5e-20261011203834",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "landing"
+        },
+        "student": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "bef85d3c8d5e-20261011203834",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "student"
+        },
+        "family": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "bef85d3c8d5e-20261011203834",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "family"
+        },
+        "staff": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "bef85d3c8d5e-20261011203834",
+          "publicMediaOrigin": "https://vmshstor.shashkovs.ru",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "staff"
+        }
+      },
+      "public_sourcemaps": false,
+      "maintenance": false,
+      "source": "bef85d3c8d5ea6f75cd2cbf071e9ec641e0dca51",
+      "schema_head": "0119.text_origin",
+      "http_smoke_checks": 25,
+      "http_smoke": "pass",
+      "services": "active",
+      "sqlite_backup": {
+        "before_push_integrity_check": "ok",
+        "deployer_before_after_quick_check": "ok",
+        "private_before_push_record": "db/paste-evidence-release-20261011/before-push.sqlite3",
+        "after_deploy": "backups/vmsh-after-deploy-20261011204004.sqlite3"
+      }
+    },
+    {
+      "checked_at_utc": "2026-10-11T20:39:55.885488+00:00",
+      "origin": "https://prep.leaders.tech",
+      "static_release": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+      "html_sha256_matched": 4,
+      "staff_assets_sha256_matched": 116,
+      "production_provenance": {
+        "landing": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "landing"
+        },
+        "student": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "student"
+        },
+        "family": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "family"
+        },
+        "staff": {
+          "schemaVersion": 1,
+          "profile": "production",
+          "releaseId": "tlfprep-20261011-paste-evidence-bef85d3c8d5e",
+          "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+          "sentryConfigured": true,
+          "sentryOrigin": "https://glitch.leaders.tech",
+          "msw": false,
+          "prototype": false,
+          "application": "staff"
+        }
+      },
+      "public_sourcemaps": false,
+      "maintenance": false,
+      "source": "bef85d3c8d5ea6f75cd2cbf071e9ec641e0dca51",
+      "schema_head": "0119.text_origin",
+      "http_smoke_checks": 25,
+      "http_smoke": "pass",
+      "services": "active",
+      "migration_rehearsal": {
+        "up_down_up": "pass",
+        "existing_tables_preserved": 168,
+        "existing_rows_preserved": 37052,
+        "integrity": "ok"
+      },
+      "live_stopped_writer_comparison": {
+        "existing_tables_preserved": 168,
+        "existing_rows_preserved": 37052,
+        "nullable_origin_column": "pass",
+        "integrity": "ok"
+      },
+      "canonical_settings_and_nats": "preserved; assertions passed in guarded deploy",
+      "backups": {
+        "before": "20261011T203851.995711Z",
+        "after": "20261011T203924.408826Z",
+        "integrity": "ok",
+        "zoom_receipts_before_after": 2714
+      },
+      "private_release_record": "deploy/releases/tlfprep-20261011-paste-evidence-bef85d3c8d5e/"
+    }
+  ],
+  "authenticated_production_browser_acceptance": false,
+  "reference_corpora_copied": false
+}

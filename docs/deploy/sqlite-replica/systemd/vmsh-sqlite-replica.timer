@@ -1,0 +1,7 @@
+[Unit]
+Description=Replicate production SQLite every ten minutes
+[Timer]
+OnCalendar=*-*-* *:00/10:00 UTC
+Persistent=true
+[Install]
+WantedBy=timers.target

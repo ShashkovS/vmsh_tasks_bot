@@ -1,0 +1,46 @@
+{
+  "recorded_at": "2026-10-08T16:05:28.193762+00:00",
+  "status": "deployed and verified",
+  "deployment_revision": "d4bf4a30ce9ddee3723fd13ed22eec95f9670ef0",
+  "owner_decision": "owner-release-decision.json",
+  "release_gate_green": false,
+  "remaining_browser_validation": [
+    "figure-layout",
+    "runtime-isolation full final phase",
+    "statistics",
+    "visual",
+    "complete i18n WebKit/Firefox replay"
+  ],
+  "direct_s3_enabled_by_release": false,
+  "productions": {
+    "vmsh": {
+      "source_revision": "d4bf4a30ce9ddee3723fd13ed22eec95f9670ef0",
+      "frontend_release": "d4bf4a30ce9d-20261008155618",
+      "schema_current": true,
+      "migration_head": "0116.notification_push_candidate_index",
+      "maintenance_cleared": true,
+      "services_active": true,
+      "public_http_checks": 25,
+      "proof": "production-vmsh.json"
+    },
+    "tlf": {
+      "source_revision": "d4bf4a30ce9ddee3723fd13ed22eec95f9670ef0",
+      "frontend_release": "tlfprep-20261008-integrated-d4bf4a30ce9d-r2",
+      "schema_current": true,
+      "migration_head": "0116.notification_push_candidate_index",
+      "maintenance_cleared": true,
+      "services_active": true,
+      "public_http_checks": 25,
+      "proof": "production-tlf.json"
+    }
+  },
+  "tlf_first_attempt": {
+    "result": "failed before maintenance/cutover",
+    "reason": "root-owned JSON receipt unreadable to service account",
+    "corrected_script_sha256": "88b32a51724e51af3ed4c29300d85148a3fcb2baec8c7f1c93d2e3ef94410085",
+    "successful_retry": "r2"
+  },
+  "public_proof": "public-release.json",
+  "media_domain_proof": "vmsh-media-domain.json",
+  "performance_speedup_measured": false
+}

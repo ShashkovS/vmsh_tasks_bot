@@ -32,8 +32,10 @@ flowchart TD
 app = web.Application()
 app.on_startup.append(on_startup)
 for module in apps.all_apps:
-    module.configue(app)
+    module.configure(app)
 ```
+
+`configue` remains a temporary compatibility alias in the adapters for older external launchers.
 
 The `apps/__init__.py` loader imports each sub-application on demand by inspecting `config.apps`. The default sample configuration enables the Telegram bot, the game dashboard, the results dashboard, and the Zoom webhook listener. Removing an entry from the comma-separated list disables its routes without changing code.
 

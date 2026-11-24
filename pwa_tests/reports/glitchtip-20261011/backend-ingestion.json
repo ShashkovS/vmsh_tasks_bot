@@ -1,0 +1,18 @@
+[
+  {
+    "organization": "vmsh",
+    "project": 2,
+    "event_id": "e8f120ecb6d444c3a8455c3d6ca4951b",
+    "release": "99552697e6d4-20261011094249",
+    "sdk": "sentry.python",
+    "include_local_variables": true
+  },
+  {
+    "organization": "tlf",
+    "project": 4,
+    "event_id": "d532c213654c45bca7faf6a6e119d77c",
+    "release": "tlfprep-20261011-glitchtip-99552697e6d4-093337",
+    "sdk": "sentry.python",
+    "include_local_variables": true
+  }
+]

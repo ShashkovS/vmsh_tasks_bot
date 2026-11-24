@@ -1,0 +1,17 @@
+...........                                                              [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327
+  /Users/sergeyshashkov/repos/vmsh_tasks_bot/.venv/lib/python3.14/site-packages/mathsolvers/sympy_stuff/utils.py:327: SymPyDeprecationWarning:
+
+  gcd is deprecated in Rational, use nsimplify instead
+
+  See https://docs.sympy.org/latest/explanation/active-deprecations.html#deprecated-rational-gcd
+  for details.
+
+  This has been deprecated since SymPy version 1.11. It
+  will be removed in a future version of SymPy.
+
+    dummy_two = sympy.core.Rational(2, 1, 1)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+11 passed, 1 warning in 22.53s

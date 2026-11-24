@@ -1,0 +1,142 @@
+{
+  "profile": "fast",
+  "modes": ["figure-layout", "review"],
+  "previous_attempt": ".runtime/vmshpwa/checks/20261004T045050.912942Z",
+  "steps": [
+    {
+      "name": "python-dependencies",
+      "command": ["uv", "sync", "--frozen", "--check"],
+      "seconds": 0.057,
+      "exit_code": 0
+    },
+    {
+      "name": "format",
+      "command": ["pnpm", "format:check"],
+      "seconds": 6.475,
+      "exit_code": 0
+    },
+    {
+      "name": "types",
+      "command": ["pnpm", "typecheck"],
+      "seconds": 8.592,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-js",
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        ".",
+        "--max-warnings=0",
+        "--cache",
+        "--cache-strategy",
+        "content",
+        "--cache-location",
+        "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/vmshpwa/checks/lint/836bcde5ba0c41a83df8d9740ee5a2ca0c42f635b860ba792258db8fdde54236"
+      ],
+      "seconds": 1.652,
+      "exit_code": 0
+    },
+    {
+      "name": "lint-css",
+      "command": ["pnpm", "lint:css"],
+      "seconds": 1.052,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-frontend",
+      "command": ["pnpm", "i18n:check"],
+      "seconds": 1.887,
+      "exit_code": 0
+    },
+    {
+      "name": "i18n-backend",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.backend_i18n",
+        "check"
+      ],
+      "seconds": 0.431,
+      "exit_code": 0
+    },
+    {
+      "name": "frontend",
+      "command": ["pnpm", "test"],
+      "seconds": 46.925,
+      "exit_code": 0
+    },
+    {
+      "name": "storybook",
+      "command": ["pnpm", "storybook:test"],
+      "seconds": 58.718,
+      "exit_code": 0
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "python",
+        "-m",
+        "vmshpwa.scripts.e2e_runner",
+        "--browser",
+        "chromium",
+        "--report",
+        "/Users/sergeyshashkov/repos/vmsh_tasks_bot/.runtime/combined-optimization-figures-20261004/e2e.json",
+        "--mode",
+        "figure-layout",
+        "--mode",
+        "review"
+      ],
+      "seconds": 37.168,
+      "exit_code": 0
+    }
+  ],
+  "python": {
+    "full_attempt": {
+      "name": "python",
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-n4",
+        "--durations=20",
+        "tests",
+        "pwa_tests"
+      ],
+      "seconds": 40.419,
+      "exit_code": 1
+    },
+    "full_passed": 2782,
+    "full_skipped": 7,
+    "full_failed": 1,
+    "regression_file": "pwa_tests/integration/test_written_result_precedence.py",
+    "fix": "Freeze manual mark on Oct 3; subsequent written event is Oct 4. Assertions and production code unchanged.",
+    "regression_log": ".runtime/combined-optimization-figures-20261004/written-clock-regression.log",
+    "regression_passed": 140,
+    "regression_seconds": 4.66
+  },
+  "source_digest": "60cae6470b3c69189bb7aecb3c7c94b6823990d49080ea83d9a49021a1db18bf",
+  "exit_code": 0,
+  "source_changed": false,
+  "continuation_seconds": 143.324,
+  "total_automated_seconds": 209.928,
+  "counts": {
+    "python_final_unique_passed": 2783,
+    "python_skipped": 7,
+    "frontend_passed": 1028,
+    "storybook_passed": 355,
+    "chromium_e2e_passed": 7
+  }
+}
