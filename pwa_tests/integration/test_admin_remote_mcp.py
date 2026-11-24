@@ -1,9 +1,10 @@
 """A real MCP client authenticates with a Staff grant. See docs/admin-mcp/oauth.md."""
 
+import asyncio
 import json
 import subprocess
 from contextlib import asynccontextmanager
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import httpx2
 import pytest
@@ -39,9 +40,8 @@ def render_bundle(tmp_path_factory):
     return destination / "render.cjs"
 
 
-async def issue(f):
-    verifier = "a" * 45
-    query = {
+def consent_query(verifier):
+    return {
         "client_id": oauth.client(),
         "redirect_uri": oauth.callback(),
         "resource": fixtures.ORIGIN + oauth.PATH,
@@ -51,6 +51,25 @@ async def issue(f):
         "code_challenge_method": "S256",
         "code_challenge": oauth.challenge(verifier),
     }
+
+
+async def test_browser_consent(review_http):
+    f = review_http
+    name, value = next(iter(fixtures._cookie(f, "admin").items()))
+    url = fixtures.ORIGIN + oauth.ISSUER_PATH + "/authorize?" + urlencode(consent_query("a" * 45))
+    process = await asyncio.create_subprocess_exec(
+        "node", "vmshpwa/scripts/test-admin-consent.mjs", stdin=asyncio.subprocess.PIPE
+    )
+    await process.communicate(json.dumps({
+        "url": url, "backend": str(f.client.make_url("/")).rstrip("/"),
+        "cookie": {"name": name, "value": value}, "callback": oauth.callback(),
+    }).encode())
+    assert process.returncode == 0
+
+
+async def issue(f):
+    verifier = "a" * 45
+    query = consent_query(verifier)
     response = await f.client.post(
         oauth.ISSUER_PATH + "/authorize",
         params=query,

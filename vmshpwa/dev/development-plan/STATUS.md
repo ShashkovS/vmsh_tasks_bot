@@ -4744,3 +4744,7 @@ Types/lint/i18n/build, 1152 frontend, 386 Storybook, 5 Chromium review E2E PASS;
 Релиз `354c93d9` выложен на TLF Prep и ВМШ FirstVDS. На каждом сервере проверены
 оба типа реальным SymPy-воркером, отрицательный вердикт и пояснение на RU/EN.
 После перезапуска публичные Student API обоих сайтов ответили `ok: true`.
+
+- 2026-11-24 · Admin MCP OAuth. Fixed the wire CSP that blocked consent form submissions,
+  localized the page using the active Staff brand and device language, and covered both
+  consent decisions through a Chromium navigation to the registered callback.

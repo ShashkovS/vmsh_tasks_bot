@@ -10,6 +10,7 @@ from pathlib import Path
 
 from aiohttp import WSCloseCode, WSMsgType, web
 
+from apps.pwa_api.oauth_consent import CONSENT_CSP, CONSENT_DOCUMENT
 from apps.pwa_api.image_upload_routes import routes as image_upload_routes, cleanup_lifecycle as image_upload_cleanup_lifecycle
 
 from apps.pwa_api.auth_routes import auth_routes
@@ -302,6 +303,8 @@ def _apply_pwa_response_headers(response: web.StreamResponse, request_id: str) -
         response.headers[name] = value
     for name, value in PWA_SECURITY_HEADERS.items():
         response.headers[name] = value
+    if isinstance(response, web.Response) and response.get(CONSENT_DOCUMENT):
+        response.headers["Content-Security-Policy"] = CONSENT_CSP
 
 
 async def on_pwa_response_prepare(

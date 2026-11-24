@@ -20,3 +20,7 @@
 в ChatGPT. Тогда discovery объявляет client_secret_post. Файлы загружаются по HTTPS
 с поддоменов oaiusercontent.com. Дополнительные проверенные имена файловых хостов
 можно перечислить через запятую в `VMSH_ADMIN_MCP_FILE_HOSTS`.
+
+После входа Staff показывает название портала, аккаунт и запрашиваемые права на языке кабинета.
+Обе кнопки возвращают пользователя в ChatGPT. При отказе клиент получает `access_denied`.
+[Страница согласия](../../../apps/pwa_api/oauth_consent.py) · [Проверка в Chromium](../../scripts/test-admin-consent.mjs).

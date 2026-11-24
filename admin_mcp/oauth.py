@@ -3,7 +3,6 @@
 import base64
 import hashlib
 import hmac
-import html
 import os
 import re
 import secrets
@@ -13,6 +12,7 @@ from urllib.parse import parse_qsl, urlencode
 from aiohttp import web
 from multidict import MultiDict
 
+from apps.pwa_api.oauth_consent import consent_page, return_page
 from apps.pwa_api.ai_review_routes import factory
 from apps.pwa_api.middleware import (
     auth_service,
@@ -176,22 +176,8 @@ async def authorize(request):
     if not principal.has_capability(Capability.CONTENT_MANAGE):
         raise web.HTTPForbidden()
     if request.method == "GET":
-        return web.Response(
-            text=(
-                '<!doctype html><meta charset="utf-8"><title>Подключение ChatGPT</title>'
-                "<h1>Администрирование занятий через ChatGPT</h1><p>"
-                + html.escape(
-                    session.current.display_name or principal.account_public_id
-                )
-                + ": разрешить ChatGPT читать ответы учеников и управлять доступными вам занятиями?</p>"
-                '<form method="post"><button name="decision" value="allow">Разрешить</button> '
-                '<button name="decision" value="deny">Отказать</button></form>'
-            ),
-            content_type="text/html",
-            headers={
-                **PRIVACY,
-                "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
-            },
+        return await consent_page(
+            request, session.current.display_name or principal.account_public_id
         )
     reply = {"iss": origin + ISSUER_PATH}
     if "state" in q:
@@ -222,7 +208,10 @@ async def authorize(request):
         reply["code"] = code
     else:
         reply["error"] = "access_denied"
-    raise web.HTTPFound(callback() + "?" + urlencode(reply), headers=PRIVACY)
+    destination = callback() + "?" + urlencode(reply)
+    if "text/html" in request.headers.get("Accept", ""):
+        return await return_page(request, destination)
+    raise web.HTTPFound(destination, headers=PRIVACY)
 
 
 @routes.post(ISSUER_PATH + "/token")
