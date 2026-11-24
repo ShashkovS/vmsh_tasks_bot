@@ -81,7 +81,10 @@ async def _uploaded_file(request: web.Request) -> tuple[bytes, str]:
 
 
 async def _upload(request: web.Request) -> web.Response:
-    data, filename = await _uploaded_file(request)
+    return await persist_uploaded_file(request, *await _uploaded_file(request))
+
+
+async def persist_uploaded_file(request, data, filename):
     storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
     if storage is None:
         raise PwaApiError(

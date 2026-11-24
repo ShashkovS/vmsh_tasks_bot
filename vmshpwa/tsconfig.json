@@ -12,6 +12,8 @@
   },
   "include": [
     "*.config.ts",
+    "admin-render/*.ts",
+    "admin-render/*.tsx",
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx",
     "dev/**/*.ts",

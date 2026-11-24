@@ -962,6 +962,10 @@ msgstr "The import receipt is corrupted"
 msgid "Ключ запроса уже использован для другого курса"
 msgstr "The request key has already been used for another course"
 
+#: apps/pwa_api/admin_course_routes.py
+msgid "Ключ использован для другого занятия"
+msgstr "This idempotency key was used for another lesson"
+
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Команда \\tikz не содержит braced-тело."
 msgstr "Command \\tikz has no braced body."
@@ -2175,6 +2179,10 @@ msgstr "Check the source solution version"
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте ключ отправки"
 msgstr "Check the submission key"
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте ключ повтора"
+msgstr "Check the idempotency key"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте комментарий"

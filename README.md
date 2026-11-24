@@ -1,5 +1,7 @@
 # VMSh Tasks Bot
 
+[Администрирование занятий через MCP](vmshpwa/docs/admin-mcp/README.md)
+
 VMSh Tasks Bot is an asynchronous Telegram assistant used by the Moscow math circle to manage problem assignments, collect solutions, and broadcast live game updates. The project combines an [aiogram 3](https://docs.aiogram.dev/) bot, aiohttp web applications, a SQLite database, and Google Sheets synchronization routines so tutors can administer tasks from a single workflow.
 
 ## Overview

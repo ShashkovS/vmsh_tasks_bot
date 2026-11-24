@@ -550,7 +550,21 @@ async def create_group_lesson(request: web.Request) -> web.Response:
 
     now = _now()
 
+    request_key = request.headers.get("Idempotency-Key")
+    if request_key is not None and not re.fullmatch(r"[a-zA-Z0-9._-]{1,128}", request_key):
+        raise PwaApiError(status=422, code="invalid_idempotency_key", message="Проверьте ключ повтора")
+    canonical_payload = json.dumps(payload, sort_keys=True)
+
     def write(connection):
+        if request_key:
+            receipt = connection.execute(
+                "SELECT * FROM staff_lesson_creation_receipts WHERE account=? AND request_key=?",
+                (actor_account_id, request_key),
+            ).fetchone()
+            if receipt:
+                if receipt["payload"] != canonical_payload:
+                    raise PwaApiError(status=409, code="idempotency_conflict", message="Ключ использован для другого занятия")
+                return receipt["request_id"], receipt["group_lesson"], receipt["course_lesson"]
         owner = find_course_group(
             connection,
             course_public_id=course_public_id,
@@ -610,7 +624,11 @@ async def create_group_lesson(request: web.Request) -> web.Response:
             ),
             occurred_at=now,
         )
-        return "created", group_lesson_public_id, resolved_course_lesson_public_id
+        if request_key:
+            connection.execute("INSERT INTO staff_lesson_creation_receipts VALUES(?,?,?,?,?,?)",
+                               (actor_account_id, request_key, canonical_payload, group_lesson_public_id,
+                                resolved_course_lesson_public_id, request["request_id"]))
+        return request["request_id"], group_lesson_public_id, resolved_course_lesson_public_id
 
     try:
         course_lesson_id = await _factory(request).run_write_async(write)
@@ -626,7 +644,7 @@ async def create_group_lesson(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=404, code="group_not_found", message="Курс или группа не найдены"
         )
-    _, group_lesson_public_id, course_lesson_public_id = course_lesson_id
+    creation_request_id, group_lesson_public_id, course_lesson_public_id = course_lesson_id
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -644,7 +662,7 @@ async def create_group_lesson(request: web.Request) -> web.Response:
                 "hintScheduledAt": _utc(hint_at),
                 "solutionScheduledAt": _utc(solution_at),
             },
-            "requestId": request["request_id"],
+            "requestId": creation_request_id,
         },
         status=201,
         headers={"Cache-Control": "no-store"},

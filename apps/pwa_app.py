@@ -1646,14 +1646,40 @@ async def activate_due_lesson_blocks(
     activated = await LessonBlockService(database.factory).activate_due_blocks(batch_size)
     for item in activated:
         scope = await app[PWA_CONTENT_REPOSITORY].get_group_lesson_scope(
-            item.block.group_lesson_id
+            f"gl-{item.block.group_lesson_id}"
         )
         await publish_lesson_block_invalidation(
             app,
             group_lesson_public_id=scope.group_lesson_public_id,
             reason="lesson-block-schedule-activated",
         )
-    return len(activated)
+    from admin_mcp.schedule import activate
+
+    now = datetime.now(UTC).isoformat()
+    has_due_hides = await database.factory.run_read_async(
+        lambda connection: connection.execute(
+            "SELECT 1 FROM lesson_hide_events WHERE state='scheduled' AND due<=? LIMIT 1",
+            (now,),
+        ).fetchone()
+    )
+    if not has_due_hides:
+        return len(activated)
+    due = await database.factory.run_write_async(
+        lambda connection: activate(connection, now, batch_size)
+    )
+    for lesson_id, target in due:
+        scope = await app[PWA_CONTENT_REPOSITORY].get_group_lesson_scope(lesson_id)
+        if target in {"before", "after"}:
+            await publish_lesson_block_invalidation(
+                app,
+                group_lesson_public_id=scope.group_lesson_public_id,
+                reason="lesson-block-scheduled-hide",
+            )
+        else:
+            await app[PWA_CONTENT_INVALIDATOR](
+                scope, ContentKind(target), "content-scheduled-hide"
+            )
+    return len(activated) + len(due)
 
 
 async def invalidate_due_local_news(
@@ -2148,6 +2174,15 @@ def configure(
         app.add_routes(legacy_print_routes)
         app.add_routes(ai_review_routes)
         app.add_routes(ai_review_mcp_routes)
+        from admin_mcp.exports import routes as admin_export_routes
+        from admin_mcp.oauth import routes as admin_oauth_routes
+        from admin_mcp.server import routes as admin_mcp_routes
+
+        from admin_mcp.jobs import lifecycle as admin_jobs_lifecycle
+        app.cleanup_ctx.append(admin_jobs_lifecycle)
+        app.add_routes(admin_export_routes)
+        app.add_routes(admin_oauth_routes)
+        app.add_routes(admin_mcp_routes)
         app.add_routes(classroom_delivery_routes)
         app.add_routes(notification_routes)
         app.add_routes(oral_window_routes)

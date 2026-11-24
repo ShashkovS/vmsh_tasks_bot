@@ -1,5 +1,9 @@
 # Design-system status
 
+## 2026-11-24 — Экспорт занятия для MCP
+
+HTML-экспорт использует SemanticMathDocument, LessonRichDocumentView и KaTeX MathML. Проверены формулы и фильтрация подпунктов, блоки с PDF и видео. [Сценарий и реализация](../../docs/admin-mcp/materials.md).
+
 ## 2026-11-09 — Совместимость оформления импортируемых рисунков
 
 Backend converter поддерживает `pdfrender` без общего запрета `pdf`/`file`/`sys`

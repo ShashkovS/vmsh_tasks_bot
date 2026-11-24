@@ -340,10 +340,14 @@ pwa-i18n-check:
 	cd $(PWA_DIR) && CI=true pnpm i18n:check
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.backend_i18n check
 
-pwa-build:
+.PHONY: pwa-admin-render
+pwa-admin-render:
+	cd $(PWA_DIR) && node node_modules/vite/bin/vite.js build --config admin-render/vite.config.ts
+
+pwa-build: pwa-admin-render
 	cd $(PWA_DIR) && CI=true pnpm build
 
-pwa-production-build:
+pwa-production-build: pwa-admin-render
 	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
 	@test -n "$(VITE_PUBLIC_MEDIA_ORIGIN)" || (echo "Set VITE_PUBLIC_MEDIA_ORIGIN"; exit 2)
 	@test -n "$(VITE_SENTRY_DSN)" || (echo "Set VITE_SENTRY_DSN"; exit 2)

@@ -416,6 +416,26 @@ class PwaAuthService:
             )
             return None
 
+    async def delegated_staff_session(self, grant) -> AuthenticatedSession | None:
+        """Resolve the original Staff session, including normal browser token rotations."""
+        versions = await self.repository.get_session_authority_versions(
+            audience=AuthAudience.STAFF,
+            account_public_id=grant["account"],
+            session_public_id=grant["session"],
+        )
+        if versions is None or versions[0] != grant["credential_version"]:
+            return None
+        current = await self.repository.get_current_session(
+            audience=AuthAudience.STAFF,
+            account_public_id=grant["account"],
+            session_public_id=grant["session"],
+            credential_version=grant["credential_version"],
+            session_version=versions[1],
+        )
+        if current is None:
+            return None
+        return await self._build_authenticated_session(current)
+
     async def is_websocket_session_active(
         self,
         *,
