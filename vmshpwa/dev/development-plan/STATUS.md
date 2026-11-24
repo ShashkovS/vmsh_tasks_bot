@@ -4774,3 +4774,10 @@ Types/lint/i18n/build, 1152 frontend, 386 Storybook, 5 Chromium review E2E PASS;
   consent decisions through a Chromium navigation to the registered callback.
 - Admin MCP connection setup on both portals now uses OAuth public-client registration.
   Staff → MCP access provides the portal URL and setup steps in English and Russian.
+
+2026-11-19. На TLF Prep установлен mathsolvers 0.20.22 из коммита
+`b23419aba598654190cff41faa51afd85e2a14fc`, закреплённого в серверном
+[uv.lock](../../../uv.lock). Проверка через [символический чекер](../../../helpers/checkers.py)
+приняла обе формы nCr в режиме эквивалентности, отклонила ответ 41 и сохранила
+строгую проверку формы. После перезапуска Student API вернул `ok: true`.
+Предыдущий lock сохранён в `deploy/releases/mathsolvers-b23419a/uv.lock.previous`.
