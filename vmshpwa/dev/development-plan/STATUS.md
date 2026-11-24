@@ -4,6 +4,8 @@
 
 В общую ветку перенесены [обработка неполных metadata](../../docs/metadata-generation.md), [восстановление кэша рисунков](../../docs/offline-current-lessons.md), [поддержка FirstS3](../../docs/object-storage.md) и [конвертация HEIC](../../../docs/deploy/vmsh/image-stack/README.md). Эксплуатационные инструкции описывают [отложенные проверки](../../../docs/deploy/deferred-reviews.md), [архивы](../../../docs/deploy/cross-backup/README.md) и [реплику SQLite](../../../docs/deploy/sqlite-replica/README.md).
 
+Проверка слияния: прошли 189 профильных тестов pytest и 12 тестов Vitest. Общий `make pwa-check-fast` остановился на Prettier в 12 файлах с замечаниями в исходной ветке.
+
 ## 2026-11-24 — Администрирование через MCP
 
 [Административный MCP](../../docs/admin-mcp/README.md) проверен на изолированном портале.
@@ -46,6 +48,7 @@ Staff. Ученический health, Staff и MCP преподавательс�
 исходного листка 11н.7 в один абзац с курсивом. После плавной перезагрузки
 воркеров оба публичных Student API вернули `ok: true`.
 Для обновления опубликованного условия потребуется повторная публикация листка.
+
 ## 2026-11-17 — Выпуск личного вклада и накопленной пачки: production PASS
 
 Владелец разрешил rollout на `vmshfirstvds` и всей накопленной пачки на
