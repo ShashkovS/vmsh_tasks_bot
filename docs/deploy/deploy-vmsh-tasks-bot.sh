@@ -150,10 +150,11 @@ check_public_media_csp() {
 
 make_db_backup() {
   local label=$1
-  local destination="/web/vmsh_tasks_bot/backups/vmsh-${label}-$(date -u +%Y%m%d%H%M%S).sqlite3"
-  sqlite3 "$DB_PATH" ".backup '${destination}'"
-  sqlite3 "$destination" 'PRAGMA quick_check;' | grep -Fxq ok
-  echo "SQLite backup ready: ${destination}"
+  local destination="/web/vmsh_tasks_bot/backups/vmsh-${label}-$(date -u +%Y%m%d%H%M%S).sqlite3.7z"
+  # cross-backup/README.md: retain compressed, restore-verified safety copies.
+  /usr/bin/python3 /usr/local/lib/vmsh-cross-backup/legacy-backup.py \
+    --database "$DB_PATH" --output "$destination"
+  echo "Compressed SQLite backup ready: ${destination}"
 }
 
 CURRENT_STEP="loading Node toolchain"

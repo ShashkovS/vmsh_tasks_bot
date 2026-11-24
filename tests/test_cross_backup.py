@@ -303,3 +303,23 @@ def test_sdk_exclusion_keeps_real_configuration(fixture_config, tmp_path):
     backup.restore(fixture_config, archive, target, Path(fixture_config['password_file']))
     with tarfile.open(target / 'payload.tar') as tar:
         assert not any('swift-fixture' in member.name for member in tar)
+
+
+def test_recovery_working_exclusions_keep_before_apply_and_evidence(fixture_config, tmp_path):
+    recovery = tmp_path / 'host/recovery/images-20261105'
+    recovery.mkdir(parents=True)
+    names = ('initial.sqlite3', 'fresh-rehearsal.sqlite3', 'before-apply.sqlite3', 'receipt.json')
+    for name in names:
+        (recovery / name).write_text('retained recovery evidence')
+    fixture_config['exclude_config_patterns'] = [
+        str(recovery / name).lstrip('/') for name in names[:2]
+    ]
+    archive = backup.capture(fixture_config)
+    target = tmp_path / 'restored-recovery'
+    backup.restore(fixture_config, archive, target, Path(fixture_config['password_file']))
+    with tarfile.open(target / 'payload.tar') as tar:
+        members = set(tar.getnames())
+    for name in names[:2]:
+        assert 'host/' + str(recovery / name).lstrip('/') not in members
+    for name in names[2:]:
+        assert 'host/' + str(recovery / name).lstrip('/') in members

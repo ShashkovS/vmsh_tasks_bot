@@ -857,7 +857,6 @@ class ContentAssetConverter:
         with tempfile.TemporaryDirectory(dir=self.temp_root) as temporary:
             directory = Path(temporary)
             input_path = directory / "input.bin"
-            normalized_path = directory / "normalized.png"
             webp_path = directory / "output.webp"
             input_path.write_bytes(payload)
             environment = _safe_environment(directory)
@@ -874,48 +873,27 @@ class ContentAssetConverter:
                     "-limit",
                     "disk",
                     "1GiB",
-                    str(input_path),
+                    f"{input_path}[0]",
                     "-auto-orient",
                     "-strip",
                     "-resize",
                     f"{_OUTPUT_MAX_SIDE}x{_OUTPUT_MAX_SIDE}>",
-                    str(normalized_path),
-                ),
-                cwd=directory,
-                environment=environment,
-            )
-            _assert_command_succeeded(
-                capability="image-normalization",
-                return_code=normalize_result.return_code,
-                output_path=normalized_path,
-                maximum_bytes=64 * 1024 * 1024,
-                server_diagnostics=_raster_command_diagnostics(
-                    normalize_result, workdir=directory, executable=self.tools.magick,
-                ),
-            )
-            webp_result = await self._run(
-                capability="raster-to-webp",
-                executable=self.tools.cwebp,
-                args=(
-                    "-quiet",
-                    "-q",
+                    "-quality",
                     "82",
-                    "-metadata",
-                    "none",
-                    str(normalized_path),
-                    "-o",
                     str(webp_path),
                 ),
                 cwd=directory,
                 environment=environment,
             )
+            # One ImageMagick call decodes HEIC and encodes WebP; no PNG spool.
+            # docs/deploy/vmsh/image-stack/README.md documents the pinned codecs.
             webp = _assert_command_succeeded(
-                capability="raster-to-webp",
-                return_code=webp_result.return_code,
+                capability="image-normalization",
+                return_code=normalize_result.return_code,
                 output_path=webp_path,
                 maximum_bytes=_MAX_WEBP_BYTES,
                 server_diagnostics=_raster_command_diagnostics(
-                    webp_result, workdir=directory, executable=self.tools.cwebp,
+                    normalize_result, workdir=directory, executable=self.tools.magick,
                 ),
             )
         width, height = _webp_dimensions(webp)
@@ -973,7 +951,7 @@ class ConfiguredContentAssetConverter:
                 pdflatex="",
                 pdf2svg="",
                 magick=_configured_tool(self._config, "magick_path"),
-                cwebp=_configured_tool(self._config, "cwebp_path"),
+                cwebp="",
             )
         )
         return await converter.raster_to_webp(payload)

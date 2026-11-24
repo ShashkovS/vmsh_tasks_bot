@@ -22,6 +22,7 @@ from helpers.pwa.i18n import N_, translate
 from models.pwa.content import ANSWER_TYPE_VALUES
 from models.pwa.metadata_generation import DEFAULT_METADATA_MODEL
 from vmsh_openrouter_tools_fixed_v2.vmsh_openrouter_contract import (
+    ModelOutputError,
     generate_lesson_json,
     infer_lesson_identity,
 )
@@ -30,7 +31,8 @@ from vmsh_openrouter_tools_fixed_v2.vmsh_openrouter_contract import (
 DEFAULT_MODEL = DEFAULT_METADATA_MODEL
 MAX_LATEX_CHARS = 500_000
 GENERATION_REASONING_EFFORT = "medium"
-GENERATION_MAX_OUTPUT_TOKENS = 12_000
+# docs/metadata-generation.md: budget covers reasoning and the complete JSON.
+GENERATION_MAX_OUTPUT_TOKENS = 32_000
 # This bounds the entire OpenRouter generation + verification contract, rather
 # than an individual upstream attempt.  The proxy and Gunicorn boundaries keep
 # an additional minute of headroom so Staff receives this structured failure.
@@ -75,13 +77,28 @@ def _is_usable_api_key(value: str) -> bool:
 
 
 def _upstream_generation_error(error: Exception) -> MetadataGenerationError:
-    """Map transport failures to a safe Staff-facing explanation.
+    """Map upstream/response failures to a safe Staff-facing explanation.
 
     The original exception remains chained and is logged with its full
     traceback by the HTTP route.  Do not expose an arbitrary provider body:
     it can include operational details that belong only in the server log.
     """
 
+    if isinstance(error, ModelOutputError):
+        return MetadataGenerationError(
+            str(error),
+            public_message=(
+                N_(
+                    "Модель не завершила ответ в пределах лимита генерации. "
+                    "Повторите генерацию."
+                )
+                if error.truncated
+                else N_(
+                    "Модель вернула некорректные metadata. Повторите генерацию; "
+                    "технические детали записаны в журнал сервера."
+                )
+            ),
+        )
     status_code = getattr(error, "status_code", None)
     if status_code in {401, 403}:
         return MetadataGenerationError(

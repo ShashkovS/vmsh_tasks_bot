@@ -410,6 +410,70 @@ test('browser HTTP and WebSocket traffic cannot leave the E2E loopback origin', 
 })
 
 for (const audience of pwaAudiences) {
+  // offline-current-lessons.md: a recovered file must replace a cached error.
+  // All HTTP bytes come from the real seeded backend; only Cache Storage is seeded.
+  test(`${audience}: recent images recover from a cached error without clearing offline data`, async ({
+    page,
+    request,
+  }, testInfo) => {
+    const assetPath = `/pwa-content-assets/ma-32101?media-cache-recovery=${audience}-${testInfo.project.name}`
+    const expected = await request.get(assetPath)
+    expect(expected.status()).toBe(200)
+    const expectedImage = await expected.text()
+    const cacheName = `vmsh-179-${audience}-recent-media-v1`
+    const preservedCache = `vmsh-${audience}-offline-assets-e2e-preserve`
+    await page.goto('/__e2e__/health')
+    test.skip(!(await supportsServiceWorkers(page)), 'This browser build has no Service Worker API')
+    await page.evaluate(
+      async ({ audience, assetPath, cacheName, preservedCache }) => {
+        const cache = await caches.open(cacheName)
+        await cache.put(
+          assetPath,
+          new Response('temporarily unavailable', {
+            headers: { 'content-type': 'image/svg+xml' },
+          }),
+        )
+        await (
+          await caches.open(preservedCache)
+        ).put('/preserved-offline-copy', new Response('keep'))
+        await navigator.serviceWorker.register(`/${audience}/sw.js`, { scope: `/${audience}/` })
+      },
+      { audience, assetPath, cacheName, preservedCache },
+    )
+    await waitForActiveWorker(page, audience)
+    await page.goto(`/${audience}/`)
+    await ensureControlled(page, audience)
+    const image = await page.evaluate(
+      (src) =>
+        new Promise<{ loaded: boolean; width: number }>((resolve) => {
+          const image = new Image()
+          image.onload = () => resolve({ loaded: true, width: image.naturalWidth })
+          image.onerror = () => resolve({ loaded: false, width: image.naturalWidth })
+          image.src = src
+          document.body.append(image)
+        }),
+      assetPath,
+    )
+    expect(image).toEqual({ loaded: true, width: 360 })
+    await expect
+      .poll(() =>
+        page.evaluate(
+          async ({ cacheName, assetPath }) =>
+            (await (await caches.open(cacheName)).match(assetPath))?.text(),
+          { cacheName, assetPath },
+        ),
+      )
+      .toBe(expectedImage)
+    expect(
+      await page.evaluate(
+        async (name) => (await (await caches.open(name)).match('/preserved-offline-copy'))?.text(),
+        preservedCache,
+      ),
+    ).toBe('keep')
+  })
+}
+
+for (const audience of pwaAudiences) {
   test(`${audience}: manifest and every icon have exact install boundaries`, async ({
     request,
   }) => {

@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-17",
+  "version": "3.54.1",
+  "archive_sha3_256": "555635de98534d87a67ee2e6e1b0d79f494b1b33b223477d3e7a8ea0c66e416f",
+  "first_complete": "2026-11-17T16:45:47Z",
+  "incremental_complete": "2026-11-17T16:47:15Z",
+  "main_bytes": 881430528,
+  "analytics_bytes": 176922624,
+  "full_integrity": {
+    "main": "ok",
+    "analytics": "ok"
+  },
+  "incremental_transfer_bytes": 651960,
+  "incremental_elapsed_seconds": 9.02,
+  "timer": "enabled-active",
+  "period_minutes": 10,
+  "ssh_arbitrary_command": "rejected",
+  "origin_unit_tests_passed": 8,
+  "production_service_status": "ready",
+  "daily_archive_timer": "enabled",
+  "source_hashes": {
+    "origin.py": "5b4cf481efa656a84944b1071f9b852545623d36f1adac708a8244ac5dfb4ccd",
+    "replicate.py": "126798d3ad71065b1123143cf640a1e3e930d6f23cc815740d979d2cb224258a",
+    "ssh.sh": "fd85611031a028ab9a7eeaf94e73b728e87f0e93da2276ca4b2f5bdd58dad5cf"
+  }
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif/RGB_10__128x128.heif",
+    "sha256": "7fbf1573c1e5c1693953b31bb287327c53eaefa74a6f1324e7391a08b3ed1e73",
+    "bytes": 11637,
+    "file": "RGB_10__128x128.heif"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif/RGB_12__128x128.heif",
+    "sha256": "92c048d4bead7eebd3e0da5cb13a2e286cccbde3acb23580ee9c5f6b4cfde812",
+    "bytes": 18468,
+    "file": "RGB_12__128x128.heif"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif/RGBA_12__128x128.heif",
+    "sha256": "7baf5a4e786fa381ac3e7675fd8245c886dadd4ef5c006bccfc6ac7f901a39f5",
+    "bytes": 22821,
+    "file": "RGBA_12__128x128.heif"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif/L_12__29x100.heif",
+    "sha256": "f3dee921639a77ea3bf0920a43e4abb6e052fee4e0f8ab45fa9b2bbf93a7a213",
+    "bytes": 1125,
+    "file": "L_12__29x100.heif"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif/zPug_3.heic",
+    "sha256": "daf1515c651e15968ad6ec142e443759156fee76c65715e4f5713cf1ad072774",
+    "bytes": 22074,
+    "file": "zPug_3.heic"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif_other/arrow.heic",
+    "sha256": "73f604d7353df4848505a1f45a5517f736857fe047372f95c2f3d671df92c22c",
+    "bytes": 792052,
+    "file": "arrow.heic"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif_other/spatial_photo.heic",
+    "sha256": "ef941d328072a2df034adb3c3b46f41117606bfc8fcc100dff975d31f55ec028",
+    "bytes": 1274535,
+    "file": "spatial_photo.heic"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/bigcat88/pillow_heif/master/tests/images/heif_special/xiaomi.heic",
+    "sha256": "cb5c7d9131931df4abd9bfe1c3de47617b68d1fae54a1c367fc5981ffea6aeed",
+    "bytes": 896013,
+    "file": "xiaomi.heic"
+  }
+]

@@ -375,7 +375,12 @@ class S3ObjectStorage:
             config=AioConfig(
                 signature_version="s3v4",
                 retries={"mode": "standard", "max_attempts": 3},
-                s3={"addressing_style": "virtual"},
+                # FirstS3 path-style avoids its bucket-host TLS failure in
+                # Chromium; vmshpwa/docs/object-storage.md, FirstVDS cutover.
+                s3={"addressing_style": (
+                    "path" if urlsplit(self.config.endpoint_url or "").hostname == "firsts3.ru"
+                    else "virtual"
+                )},
                 # Modern botocore otherwise adds optional flexible checksums
                 # that some S3-compatible providers reject. Required protocol
                 # checksums and SigV4 payload signing remain enabled.
@@ -495,12 +500,22 @@ class S3ObjectStorage:
         provider_failure: ObjectStorageOperationError | None = None
         try:
             async with self._client() as client:
-                return await client.generate_presigned_url(
+                signed_url = await client.generate_presigned_url(
                     "get_object",
                     Params={"Bucket": self.config.bucket_name, "Key": object_key},
                     ExpiresIn=expires_in,
                     HttpMethod="GET",
                 )
+                if (
+                    urlsplit(self.config.endpoint_url or "").hostname == "firsts3.ru"
+                    and self.config.public_base_url
+                ):
+                    # nginx restores Host: firsts3.ru, preserving the signed
+                    # bucket path/query; object-storage.md, FirstVDS cutover.
+                    public = urlsplit(self.config.public_base_url)
+                    signed = urlsplit(signed_url)
+                    return urlunsplit(("https", public.netloc, signed.path, signed.query, ""))
+                return signed_url
         except Exception as exc:
             provider_failure = _redacted_provider_error("sign-read", exc)
         if provider_failure is not None:
@@ -524,6 +539,7 @@ class S3ObjectStorage:
     def public_url(self, key: str) -> str:
         object_key = self._key(key)
         endpoint = urlsplit(self.config.endpoint_url or "")
+        encoded_key = quote(object_key, safe="/-._~")
         if self.config.public_base_url:
             base = urlsplit(self.config.public_base_url)
             netloc = base.netloc
@@ -537,13 +553,17 @@ class S3ObjectStorage:
             # The latter maps directly to our DNS-style bucket validation and
             # keeps the provider prefix outside the object key.
             netloc = f"{self.config.bucket_name}.{endpoint.netloc}"
+        elif endpoint.hostname == "firsts3.ru":
+            # Keep the bucket outside object_key, including runtime prefixes;
+            # public and signed requests use the same verified FirstS3 host.
+            return urlunsplit(("https", endpoint.netloc,
+                f"/{self.config.bucket_name}/{encoded_key}", "", ""))
         else:
             # A generic S3 endpoint does not define its public virtual-host or
             # CDN shape. Guessing can leak a full key to an unrelated host.
             raise StorageConfigurationError(
                 "Public GET for this S3 endpoint requires explicit s3_public_base_url"
             )
-        encoded_key = quote(object_key, safe="/-._~")
         return urlunsplit(("https", netloc, f"/{encoded_key}", "", ""))
 
 

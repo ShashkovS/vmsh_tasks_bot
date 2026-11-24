@@ -1,5 +1,20 @@
 # TLF Prep Clubs deployment
 
+## Safety-backup compression — 2026-11-05
+
+The [backup helper](backup.py) now retains `backups/<UTC timestamp>/backup.7z`
+plus `report.json`, rather than raw SQLite files. Archive members remain
+`main.sqlite3`, `analytics.sqlite3` and `report.json`. LZMA2 `mx=5`, two threads;
+the helper extracts each candidate and verifies SHA-256 and SQLite integrity
+before publishing it. Existing JSON output and Zoom receipt count are preserved.
+Old backup directories remain unchanged. Daily encrypted cross-backups already
+compress before transfer; see [compression policy](../cross-backup/README.md).
+
+For restoration, first extract into an empty private directory using
+`7z x -o/secure/restore /path/to/backup.7z`, then follow the stopped-writer
+SQLite restoration procedure below. VMSH deployment archives use the same
+helper with `--database PATH --output NEW.sqlite3.7z` and contain `main.sqlite3`.
+
 ## Backup update — 2026-10-10
 
 Encrypted daily main/analytics + host configuration/secrets archives are installed
@@ -162,7 +177,7 @@ All paths below are relative to `/web/vmsh_tasks_bot`. Use SSH alias
 | `deploy/bin/`                                         | [build](build_source.sh), [renderer](render_server.py), [initializer](initialize.py), [backup](backup.py), [live probe](live_probe.py), [S3 probe](s3_probe.py) |
 | `deploy/reports/`                                     | Build, migration, converters, nginx/systemd, HTTP/S3, live and restart proofs, no credentials                                                                   |
 | `deploy/systemd/`, `deploy/config/`                   | Convenience pointers to installed runtime files                                                                                                                 |
-| `backups/<UTC timestamp>/`                            | Main/analytics snapshots and integrity report                                                                                                                   |
+| `backups/<UTC timestamp>/`                            | Verified compressed main/analytics snapshots (`backup.7z`) and integrity report                                                                                  |
 | `toolchains/`                                         | Pinned Python/Node/pnpm/uv                                                                                                                                      |
 | `tls/`, `monitoring/`                                 | Root-only pointers to certs, config, monitoring source/Grafana credentials                                                                                      |
 

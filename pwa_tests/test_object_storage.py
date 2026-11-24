@@ -640,6 +640,61 @@ def test_unknown_s3_provider_public_url_requires_explicit_origin():
         storage.public_url("probe.txt")
 
 
+@pytest.mark.asyncio
+async def test_firsts3_public_and_signed_urls_share_path_style_without_io():
+    from urllib.parse import parse_qs, urlsplit
+
+    config = StorageConfig.s3(
+        endpoint_url="https://firsts3.ru", bucket_name="vmsh-test-bucket",
+        region="default", access_key="synthetic-access", secret_key="synthetic-secret",
+        prefix="integration/unit-test", secret_source="test",
+    )
+    storage = S3ObjectStorage(config)
+    key = "folder/рисунок 1.svg"
+    public = urlsplit(storage.public_url(key))
+    signed = urlsplit(await storage.signed_read_url(key, expires_in=600))
+    assert public.hostname == signed.hostname == "firsts3.ru"
+    assert public.path == signed.path == (
+        "/vmsh-test-bucket/integration/unit-test/folder/"
+        "%D1%80%D0%B8%D1%81%D1%83%D0%BD%D0%BE%D0%BA%201.svg"
+    )
+    assert parse_qs(signed.query)["X-Amz-Expires"] == ["600"]
+    assert not public.query
+
+
+@pytest.mark.asyncio
+async def test_firsts3_writes_keep_original_object_key_and_cdn_override():
+    config = StorageConfig.s3(
+        endpoint_url="https://firsts3.ru", bucket_name="vmsh-test-bucket",
+        region="default", access_key="synthetic-access", secret_key="synthetic-secret",
+        prefix="media", secret_source="test", public_base_url="https://media.example.test",
+    )
+    session = FakeSession()
+    storage = S3ObjectStorage(config, session=session)
+    await storage.put("figure.svg", b"svg", "image/svg+xml")
+    assert await storage.get("figure.svg") == b"svg"
+    assert session.client_kwargs[0]["config"].s3["addressing_style"] == "path"
+    assert storage.public_url("figure.svg") == "https://media.example.test/media/figure.svg"
+
+    signed = await S3ObjectStorage(config).signed_read_url("figure.svg", expires_in=600)
+    from urllib.parse import parse_qs, urlsplit
+    parsed = urlsplit(signed)
+    assert parsed.hostname == "media.example.test"
+    assert parsed.path == "/vmsh-test-bucket/media/figure.svg"
+    assert parse_qs(parsed.query)["X-Amz-SignedHeaders"] == ["host"]
+    assert len(parse_qs(parsed.query)["X-Amz-Signature"][0]) == 64
+
+
+def test_firsts3_lookalike_host_is_not_assumed_to_be_a_known_provider():
+    config = StorageConfig.s3(
+        endpoint_url="https://firsts3.ru.example.test", bucket_name="vmsh-test-bucket",
+        region="default", access_key="synthetic-access", secret_key="synthetic-secret",
+        prefix="", secret_source="test",
+    )
+    with pytest.raises(StorageConfigurationError, match="s3_public_base_url"):
+        S3ObjectStorage(config, session=FakeSession()).public_url("figure.svg")
+
+
 def test_beget_public_url_uses_documented_virtual_host_without_override():
     config = StorageConfig.s3(
         endpoint_url="https://s3.ru1.storage.beget.cloud",

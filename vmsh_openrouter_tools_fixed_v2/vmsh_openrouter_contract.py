@@ -1837,6 +1837,14 @@ def apply_fact_review(
 # ---------------------------------------------------------------------------
 
 
+class ModelOutputError(ValueError):
+    """Received output is unusable; see vmshpwa/docs/metadata-generation.md."""
+
+    def __init__(self, message: str, *, truncated: bool = False):
+        super().__init__(message)
+        self.truncated = truncated
+
+
 def _jsonable(value: Any) -> Any:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
@@ -2040,14 +2048,28 @@ async def _openrouter_chat(
             async with asyncio.timeout(timeout_seconds):
                 response = await client.chat.send_async(**request_kwargs)
 
+    response_dump = _jsonable(response)
+    choices = response_dump.get("choices", []) if isinstance(response_dump, dict) else []
+    finish_reason = choices[0].get("finish_reason") if choices else None
+    content = _message_content(response)
     if diagnostics is not None:
-        response_dump = _jsonable(response)
         diagnostics["response"] = {
             key: response_dump.get(key)
             for key in ("id", "model", "provider", "usage")
             if isinstance(response_dump, dict) and key in response_dump
         }
-    parsed_output = _extract_json_object(_message_content(response))
+        diagnostics["response"].update(
+            finish_reason=finish_reason, content_chars=len(content)
+        )
+    if finish_reason == "length":
+        # The provider's completion budget includes reasoning and visible JSON.
+        # Do not accept an apparently valid prefix of a truncated response.
+        raise ModelOutputError(
+            f"OpenRouter response reached max_completion_tokens={max_output_tokens} "
+            f"before completing output (finish_reason=length, content_chars={len(content)})",
+            truncated=True,
+        )
+    parsed_output = _extract_json_object(content)
     if diagnostics is not None:
         diagnostics["model_output"] = parsed_output
     return parsed_output
@@ -2218,6 +2240,7 @@ async def generate_lesson_json(
     last_errors: list[str] = []
     accepted: LessonMarkup | None = None
     accepted_warnings: list[str] = []
+    last_validation_error: Exception | None = None
     for attempt in range(1, max_attempts + 1):
         messages: list[dict[str, Any]] = [
             {
@@ -2256,6 +2279,7 @@ async def generate_lesson_json(
                 prompt_cache_ttl=prompt_cache_ttl,
                 diagnostics=attempt_diag,
             )
+            last_validation_error = None
             previous = raw
             markup = LessonMarkup.model_validate(raw)
             markup = canonicalize_with_source(markup, parsed, locale=locale)
@@ -2270,6 +2294,7 @@ async def generate_lesson_json(
                 break
             last_errors = errors
         except (ValidationError, ValueError) as exc:
+            last_validation_error = exc
             last_errors = [str(exc)]
             attempt_diag["validation_error"] = str(exc)
         except Exception as exc:
@@ -2277,7 +2302,11 @@ async def generate_lesson_json(
             raise
 
     if accepted is None:
-        raise ValueError("Model output failed validation after retries:\n- " + "\n- ".join(last_errors))
+        raise ModelOutputError(
+            "Model output failed validation after retries:\n- " + "\n- ".join(last_errors),
+            truncated=isinstance(last_validation_error, ModelOutputError)
+            and last_validation_error.truncated,
+        ) from last_validation_error
 
     if diagnostics is not None:
         diagnostics["accepted_generation"] = accepted.model_dump(mode="json")
@@ -2323,7 +2352,7 @@ async def generate_lesson_json(
                     else FACT_REVIEW_REMOTE_SCHEMA,
                     schema_name=FACT_REVIEW_SCHEMA_NAME,
                     reasoning_effort=reasoning_effort,
-                    max_output_tokens=min(max_output_tokens, 10000),
+                    max_output_tokens=min(max_output_tokens, 32000),
                     session_id="vmsh-lesson-fact-review-v1",
                     timeout_seconds=timeout_seconds,
                     prompt_cache=prompt_cache,

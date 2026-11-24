@@ -1,5 +1,9 @@
 # Статус плана разработки
 
+## 2026-11-24 — Интеграция эксплуатационных исправлений
+
+В общую ветку перенесены [обработка неполных metadata](../../docs/metadata-generation.md), [восстановление кэша рисунков](../../docs/offline-current-lessons.md), [поддержка FirstS3](../../docs/object-storage.md) и [конвертация HEIC](../../../docs/deploy/vmsh/image-stack/README.md). Эксплуатационные инструкции описывают [отложенные проверки](../../../docs/deploy/deferred-reviews.md), [архивы](../../../docs/deploy/cross-backup/README.md) и [реплику SQLite](../../../docs/deploy/sqlite-replica/README.md).
+
 ## 2026-11-24 — Администрирование через MCP
 
 [Административный MCP](../../docs/admin-mcp/README.md) проверен на изолированном портале.

@@ -173,6 +173,7 @@ def install(site: str, secret_file: Path | None) -> None:
     legacy = source.parent / 'tlf-app/backup.py'
     if legacy.exists():
         shutil.copyfile(legacy, TOOLS / 'legacy-backup.py')
+        (TOOLS / 'legacy-backup.py').chmod(0o755)
     else:
         legacy = TOOLS / 'legacy-backup.py'
     if site == 'prep':

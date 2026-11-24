@@ -230,20 +230,19 @@ async def test_raster_pipeline_discards_original_bounds_dimensions_and_strips_me
 ) -> None:
     tools_dir = tmp_path / "tools"
     tools_dir.mkdir()
-    args_record = tmp_path / "cwebp-args.txt"
+    args_record = tmp_path / "magick-args.txt"
+    webp_literal = repr(_vp8x(640, 480))
     magick = _executable(
         tools_dir,
         "magick",
-        """import pathlib, sys
-pathlib.Path(sys.argv[-1]).write_bytes(b'normalized-png')""",
+        f"""import pathlib, sys
+pathlib.Path({str(args_record)!r}).write_text('\\n'.join(sys.argv[1:]))
+pathlib.Path(sys.argv[-1]).write_bytes({webp_literal})""",
     )
-    webp_literal = repr(_vp8x(640, 480))
     cwebp = _executable(
         tools_dir,
         "cwebp",
-        f"""import pathlib, sys
-pathlib.Path({str(args_record)!r}).write_text('\\n'.join(sys.argv[1:]))
-pathlib.Path(sys.argv[sys.argv.index('-o') + 1]).write_bytes({webp_literal})""",
+        "raise AssertionError('Separate cwebp must not run')",
     )
     unused = _executable(tools_dir, "unused", "raise SystemExit(99)")
     converter = ContentAssetConverter(
@@ -264,33 +263,29 @@ pathlib.Path(sys.argv[sys.argv.index('-o') + 1]).write_bytes({webp_literal})""",
     assert (result.width, result.height) == (640, 480)
     assert original not in result.data
     arguments = args_record.read_text()
-    assert "-metadata\nnone" in arguments
-    assert "-q\n82" in arguments
+    assert "-strip" in arguments and "-auto-orient" in arguments
+    assert "-quality\n82" in arguments
+    assert "input.bin[0]" in arguments
+    assert "output.webp" in arguments and "normalized.png" not in arguments
 
 
 @pytest.mark.asyncio
-async def test_configured_raster_conversion_does_not_require_latex_tools(
+async def test_configured_raster_conversion_does_not_require_latex_or_cwebp(
     tmp_path: Path,
 ) -> None:
+    webp_literal = repr(_vp8x(640, 480))
     magick = _executable(
         tmp_path,
         "magick",
-        """import pathlib, sys
-pathlib.Path(sys.argv[-1]).write_bytes(b'normalized-png')""",
-    )
-    webp_literal = repr(_vp8x(640, 480))
-    cwebp = _executable(
-        tmp_path,
-        "cwebp",
         f"""import pathlib, sys
-pathlib.Path(sys.argv[sys.argv.index('-o') + 1]).write_bytes({webp_literal})""",
+pathlib.Path(sys.argv[-1]).write_bytes({webp_literal})""",
     )
     converter = ConfiguredContentAssetConverter(
         SimpleNamespace(
             pdflatex_path=None,
             pdf2svg_path=None,
             magick_path=str(magick),
-            cwebp_path=str(cwebp),
+            cwebp_path=None,
         )
     )
 
@@ -342,9 +337,8 @@ async def test_converter_failure_does_not_echo_stderr_or_server_path(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("stage", ["image-normalization", "raster-to-webp"])
 async def test_raster_failure_has_bounded_private_diagnostics_and_removes_input(
-    tmp_path: Path, stage: str,
+    tmp_path: Path,
 ) -> None:
     failing = _executable(
         tmp_path, "failing",
@@ -354,14 +348,10 @@ async def test_raster_failure_has_bounded_private_diagnostics_and_removes_input(
         "token=hidden-value https://example.test/?secret=hidden-value', file=sys.stderr)\n"
         "raise SystemExit(7)",
     )
-    normalize = _executable(
-        tmp_path, "normalize",
-        "import pathlib,sys\npathlib.Path(sys.argv[-1]).write_bytes(b'normalized')",
-    )
     work = tmp_path / "work"
     work.mkdir()
     converter = ContentAssetConverter(
-        ContentAssetTools("", "", str(failing if stage == "image-normalization" else normalize), str(failing)),
+        ContentAssetTools("", "", str(failing), ""),
         temp_root=work, timeout_seconds=5,
     )
     source = b"\x89PNG\r\n\x1a\nprivate-image-pixels"
@@ -371,7 +361,7 @@ async def test_raster_failure_has_bounded_private_diagnostics_and_removes_input(
 
     error = captured.value
     details = error.server_diagnostics
-    assert error.capability == stage
+    assert error.capability == "image-normalization"
     assert details["return_code"] == 7
     assert details["source_format"] == "png"
     assert details["source_bytes"] == len(source)

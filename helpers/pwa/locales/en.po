@@ -1090,6 +1090,14 @@ msgstr "The submitted work has changed"
 msgid "Метаданные задач редактируются для файла условий"
 msgstr "Edit problem metadata for the statement file"
 
+#: helpers/pwa/content/metadata_generation.py
+msgid "Модель вернула некорректные metadata. Повторите генерацию; технические детали записаны в журнал сервера."
+msgstr "The model returned invalid metadata. Generate again; technical details have been recorded in the server log."
+
+#: helpers/pwa/content/metadata_generation.py
+msgid "Модель не завершила ответ в пределах лимита генерации. Повторите генерацию."
+msgstr "The model did not finish its response within the generation limit. Generate again."
+
 #: helpers/pwa/push_delivery.py
 msgid "Можно подключиться к устной сдаче."
 msgstr "You can join the oral submission."

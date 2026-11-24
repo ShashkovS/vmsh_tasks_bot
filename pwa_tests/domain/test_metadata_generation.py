@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import replace
+import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -135,6 +137,75 @@ def test_metadata_generation_explains_openrouter_access_denial_safely():
     )
 
 
+@pytest.mark.parametrize("truncated", [False, True])
+def test_metadata_generation_distinguishes_bad_output_from_connection_failure(truncated):
+    error = _upstream_generation_error(
+        markup_contract.ModelOutputError("provider output diagnostic", truncated=truncated)
+    )
+    assert "OpenRouter" not in error.public_message
+    assert "provider output diagnostic" not in error.public_message
+    assert "лимита" in error.public_message if truncated else "некорректные" in error.public_message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "finish_reason,content",
+    [("length", '{"rows":[{"title":"unfinished'), ("length", '{"rows":[]}'),
+     ("stop", '{"rows":[]}')],
+)
+async def test_metadata_contract_checks_provider_finish_reason(monkeypatch, finish_reason, content):
+    response = {"id": "unit-response", "choices": [
+        {"finish_reason": finish_reason, "message": {"content": content}}
+    ]}
+
+    class Client:
+        def __init__(self, **kwargs):
+            self.chat = SimpleNamespace(send_async=self.send)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def send(self, **kwargs):
+            return response
+
+    monkeypatch.setitem(sys.modules, "openrouter", SimpleNamespace(OpenRouter=Client))
+    diagnostics = {}
+    call = markup_contract._openrouter_chat(
+        api_key="unit-key", proxy=None, model="provider/model", messages=[],
+        response_schema={"type": "object"}, schema_name="lesson", reasoning_effort="medium",
+        max_output_tokens=32000, session_id="unit-session", timeout_seconds=30,
+        prompt_cache=False, prompt_cache_ttl="1h", diagnostics=diagnostics,
+    )
+    if finish_reason == "length":
+        with pytest.raises(markup_contract.ModelOutputError, match="finish_reason=length") as failure:
+            await call
+        assert failure.value.truncated
+    else:
+        assert await call == {"rows": []}
+    assert diagnostics["response"]["finish_reason"] == finish_reason
+    assert diagnostics["response"]["content_chars"] == len(content)
+
+
+@pytest.mark.asyncio
+async def test_metadata_contract_preserves_truncation_after_bounded_retries(monkeypatch):
+    calls = []
+
+    async def truncated(**kwargs):
+        calls.append(kwargs)
+        raise markup_contract.ModelOutputError("completion budget exhausted", truncated=True)
+
+    monkeypatch.setattr(markup_contract, "_openrouter_chat", truncated)
+    with pytest.raises(markup_contract.ModelOutputError) as failure:
+        await markup_contract.generate_lesson_json(
+            r"\задача Найдите 7. \кзадача", 1, "н", api_key="unit-key", max_attempts=2,
+        )
+    assert failure.value.truncated
+    assert len(calls) == 2
+
+
 @pytest.mark.asyncio
 async def test_metadata_generation_rejects_the_checked_in_example_key():
     generator = OpenRouterMetadataGenerator(api_key="sk-or-v1-XXX_HERE")
@@ -213,6 +284,7 @@ async def test_metadata_generation_uses_an_async_client_for_configured_proxy(
     assert len(result.rows) == 1
     assert calls[0]["kwargs"]["proxy"] == "http://127.0.0.1:1080"
     assert calls[0]["kwargs"]["reasoning_effort"] == "medium"
+    assert calls[0]["kwargs"]["max_output_tokens"] == 32000
     assert calls[0]["kwargs"]["timeout_seconds"] == GENERATION_TIMEOUT_SECONDS
     assert calls[0]["kwargs"]["prompt_cache"] is True
     assert calls[0]["args"][1:3] == expected_identity

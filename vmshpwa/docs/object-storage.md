@@ -56,7 +56,25 @@ Production target — Hetzner S3-compatible Object Storage, а выделенн�
 bucket пока расположен в Beget. Адаптер знает ровно два документированных
 endpoint-шаблона: `<region>.your-objectstorage.com` и
 `s3.<region>.storage.beget.cloud`. Для них signing region выводится из hostname,
-а public URL строится в virtual-hosted форме. Для любого другого совместимого
+а public URL строится в virtual-hosted форме.
+
+С 17 ноября FirstS3 (`https://firsts3.ru`, явный region `default`) также является
+известным провайдером. [S3ObjectStorage](../../helpers/object_storage.py)
+использует path-style для SDK и подписей: `https://firsts3.ru/<bucket>/<key>`.
+Без override публичный URL имеет ту же форму. На production
+`s3_public_base_url` и `VITE_PUBLIC_MEDIA_ORIGIN` равны
+`https://vmsh.shashkovs.ru`: браузер получает публичные файлы через nginx
+`/<namespace>/<key>`, подписанные — через `/<bucket>/<key>?<signature>`.
+Nginx сохраняет подписанный URI/query и выставляет upstream Host `firsts3.ru`;
+подпись проверяет S3. Это сохраняет object keys и обходит проверенное зависание
+Chromium при прямых запросах к FirstS3. Публичные активные документы изолированы
+CSP sandbox; Cookie/Authorization не передаются в S3. Известные публичные пути
+кэширует [recent-media-policy.ts](../packages/offline/src/recent-media-policy.ts),
+приватные API-изображения исключены. Проверки подписей/ключей и HTTPS не
+ослаблены. Требование и результат:
+[тесты](../../pwa_tests/test_object_storage.py).
+
+Для любого другого совместимого
 провайдера/CDN `s3_public_base_url` обязателен: adapter fail-fast отказывается
 угадывать hostname. Полный object URL разрешён в media API там, где это
 продуктовый контракт, но provider exception заменяется redacted boundary error,

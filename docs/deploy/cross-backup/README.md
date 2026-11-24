@@ -8,6 +8,25 @@ Existing `/web/vmsh_tasks_bot/backups` archives are separate and are not pruned.
 Implementation: [backup.py](backup.py), [installer](install.py),
 [tests](../../../tests/test_cross_backup.py), [progress](STATUS.md).
 
+Owner-approved 2026-11-05: retain and transfer compressed backups. Daily cross
+archives already use LZMA2 `mx=5`; deployment safety backups now use the same
+compression through [the standalone helper](../tlf-app/backup.py), installed at
+`/usr/local/lib/vmsh-cross-backup/legacy-backup.py` (also at
+`/web/vmsh_tasks_bot/deploy/bin/backup.py` on prep). Each new safety archive is
+extracted and checked against the snapshot SHA-256 and SQLite `integrity_check`
+before atomic publication. These local safety archives retain the previous
+access controls; cross-host copies continue to use encrypted `.tar.7z` archives.
+Existing historical backups are preserved. Tests:
+[deployment archives](../../../tests/test_deployment_backup.py).
+
+## Additional live replicas
+
+Since 2026-11-17, FirstVDS main and analytics DBs also have a private running
+copy on vmsh/prep, refreshed every ten minutes with `sqlite3_rsync`. This does
+not replace or change the daily encrypted archives; replica data is excluded
+from their payload. See [replica operation and recovery](../sqlite-replica/README.md).
+S3 is independently [copied hourly](../s3-backup/README.md).
+
 ## Contents and recovery
 
 Every archive contains verified online snapshots of main and analytics SQLite,

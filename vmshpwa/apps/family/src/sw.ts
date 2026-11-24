@@ -6,7 +6,7 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { CacheFirst } from 'workbox-strategies'
+import { NetworkFirst } from 'workbox-strategies'
 
 import {
   immutableContentAssetNavigationPattern,
@@ -84,8 +84,10 @@ registerRoute(
       publicMediaOrigin,
     })
   },
-  new CacheFirst({
+  // docs/offline-current-lessons.md: recover opaque cached image errors online.
+  new NetworkFirst({
     cacheName: 'vmsh-179-family-recent-media-v1',
+    networkTimeoutSeconds: 3,
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }) as WorkboxPlugin,
       new ExpirationPlugin({

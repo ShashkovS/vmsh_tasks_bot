@@ -43,6 +43,25 @@ rules are unchanged. Browser/site-storage deletion still requires downloading ag
 
 ## UI and acceptance
 
+### Recovery from cached image errors — 2026-11-07
+
+Student and Family recent-media routes use Workbox `NetworkFirst` with a
+three-second cache fallback. Cross-origin `<img>` requests can produce opaque
+responses, whose HTTP error status is hidden. Retaining such a response with
+`CacheFirst` kept a missing-image placeholder even after the S3 file recovered;
+the failure and exact-entry eviction recovery were reproduced in isolated
+Firefox against the production worker. This establishes the mechanism, not the
+contents of an affected user's private cache. Workbox documents this limitation
+under [cross-origin considerations](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/#cross-origin-considerations).
+
+Both [Student](../apps/student/src/sw.ts) and [Family](../apps/family/src/sw.ts)
+reuse their existing recent-media cache names: a successful network response
+repairs the entry, and network failure still permits a cached image. Student's
+complete validated lesson bundle is checked first and keeps cache-first offline
+reading. No IndexedDB, answers, drafts, auth state or pinned lesson copies are
+cleared. Regression: `runtime-isolation.spec.ts`, “recent images recover from a
+cached error without clearing offline data”. Normal PWA update activation applies.
+
 Cross-origin public figure storage must allow browser GETs from the application
 origin. Offline preparation reads MIME and bytes before caching; an opaque
 response cannot satisfy those checks. The TLF configuration and browser-CORS

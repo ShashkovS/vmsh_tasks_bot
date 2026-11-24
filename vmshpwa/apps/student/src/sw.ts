@@ -6,7 +6,7 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { CacheFirst } from 'workbox-strategies'
+import { NetworkFirst } from 'workbox-strategies'
 
 import {
   immutableContentAssetNavigationPattern,
@@ -100,8 +100,11 @@ registerRoute(
     return recent ? recentMediaStrategy.handle({ request, event }) : fetch(request)
   },
 )
-const recentMediaStrategy = new CacheFirst({
+// docs/offline-current-lessons.md: opaque error responses must heal online.
+// The complete, verified lesson bundle above remains available cache-first.
+const recentMediaStrategy = new NetworkFirst({
   cacheName: 'vmsh-179-student-recent-media-v1',
+  networkTimeoutSeconds: 3,
   plugins: [
     new CacheableResponsePlugin({ statuses: [0, 200] }) as WorkboxPlugin,
     new ExpirationPlugin({

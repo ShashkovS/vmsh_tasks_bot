@@ -1,0 +1,8 @@
+[Unit]
+Description=Hourly independent S3 backup
+[Timer]
+OnCalendar=*-*-* *:20:00 UTC
+RandomizedDelaySec=2min
+Persistent=true
+[Install]
+WantedBy=timers.target

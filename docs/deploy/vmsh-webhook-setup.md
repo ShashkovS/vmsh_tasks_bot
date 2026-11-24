@@ -76,6 +76,11 @@ sudo install -o root -g root -m 0755 \
   docs/deploy/deploy-vmsh-tasks-bot.sh \
   /web/vmsh_tasks_bot/deploy/bin/deploy-vmsh-tasks-bot.sh
 
+# Compressed safety snapshots; cross-backup installation provides the tools directory.
+sudo install -o root -g root -m 0755 \
+  docs/deploy/tlf-app/backup.py \
+  /usr/local/lib/vmsh-cross-backup/legacy-backup.py
+
 sudo install -o root -g vmsh_webhook -m 0640 \
   docs/deploy/vmsh-webhook-config.yml \
   /web/vmsh_tasks_bot/deploy/config/webhook.yml

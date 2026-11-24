@@ -8,7 +8,8 @@
 `btitle/bvalerr/bwrong/bcongrat` переводит модель; математические ответы, варианты
 выбора и структурные идентификаторы сохраняются как данные исходной задачи.
 
-В «Курсы → Каталог → Настройки курса» поле «Модель OpenRouter для metadata»
+В Staff откройте «Курсы», нажмите «Настроить» на карточке нужного курса.
+В нижней части формы «Настройки курса» поле «Модель OpenRouter для metadata»
 принимает идентификатор вида `provider/model`, включая новые модели без изменения
 списка в коде. По умолчанию остаётся `openai/gpt-5.6-luna`. Значение применяется
 при следующей генерации, включая фактологическую проверку, без перезапуска.
@@ -26,6 +27,28 @@
 [адаптер](../../helpers/pwa/content/metadata_generation.py),
 [OpenRouter-контракт](../../vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py),
 [редактор курса](../apps/staff/src/course-catalog-editors.tsx).
+
+## Haiku: неполный JSON — 3 ноября 2026
+
+На `anthropic/claude-haiku-5.5` лимит 12 000 completion tokens обрывал ответ:
+живой replay получил `finish_reason=length`, 12 000 completion tokens, из них
+10 062 reasoning tokens, и незавершённый JSON длиной 4313 символов. Лимит
+completion включает рассуждение и видимый результат, а не только JSON
+([документация OpenRouter](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens)).
+
+`OpenRouterMetadataGenerator` теперь выделяет 32 000 tokens. Контракт также
+разрешает до 32 000 на отдельную фактологическую проверку вместо прежних 10 000.
+Уровень reasoning остаётся `medium`, общий deadline — 600 секунд, число попыток
+ограничено прежними значениями. Это потолок ответа, а не обязательный расход.
+
+В [OpenRouter-контракте](../../vmsh_openrouter_tools_fixed_v2/vmsh_openrouter_contract.py)
+`ModelOutputError` отличает полученный некорректный/обрезанный ответ от отсутствия
+соединения. `finish_reason=length` проверяется до JSON parsing, включая формально
+валидный JSON-префикс; признак сохраняется после повторных попыток. Диагностика
+включает finish reason и длину текста без логирования содержимого.
+[Адаптер](../../helpers/pwa/content/metadata_generation.py) возвращает отдельные
+RU/EN сообщения о лимите или некорректных metadata вместо сообщения о сети.
+Регрессии: [test_metadata_generation.py](../../pwa_tests/domain/test_metadata_generation.py).
 
 ## Проверка 1 октября 2026
 

@@ -23,6 +23,9 @@ def test_guard_rejects_a_correlated_full_scan_and_accepts_indexed_lookup(tmp_pat
             FROM parents
             WHERE EXISTS (
                 SELECT 1 FROM children WHERE children.parent_id = parents.id
+                -- Keep this unsafe fixture correlated on SQLite 3.53+, which
+                -- otherwise turns EXISTS into an indexed join automatically.
+                LIMIT 1 OFFSET 0
             );
             """
         )
