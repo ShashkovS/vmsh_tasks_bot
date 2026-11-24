@@ -68,3 +68,10 @@ Staff import preview. Номер и название задачи остаютс
 [`math-document.test.tsx`](../packages/content/src/math-document.test.tsx);
 Storybook-сценарий `EnglishWorksheetHeading` воспроизводит подпись
 `Problem 0m.1. «A big calculation?»`.
+
+В условии короткий подпункт занимает одну строку с номером. Если в единственном
+абзаце от 1 до 19 видимых символов, заголовок заменяется содержимым абзаца
+с исходным форматированием. Строчная формула с простыми индексами подходит,
+явные переносы, дроби и блочные элементы сохраняют полную форму.
+[Выбор формы](../packages/content/src/compact-subpart.ts) применяется
+в [общем рендерере листка](../packages/content/src/math-document.tsx).

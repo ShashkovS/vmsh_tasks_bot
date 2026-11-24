@@ -433,7 +433,12 @@
   font-weight: 650;
 }
 
-.vmsh-subpart-header > :not(.vmsh-subpart-label) {
+.vmsh-subpart-inline {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.vmsh-subpart-header > :not(.vmsh-subpart-label, .vmsh-subpart-inline) {
   margin-inline-start: auto;
 }
 

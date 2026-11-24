@@ -392,6 +392,21 @@ export const AnnouncementMobile: Story = {
 
 // docs/task-titles.md: names wrap on narrow worksheets and independent subparts.
 export const TaskTitles: Story = {
+  render: ({ document = semanticDocument }) => (
+    <div style={{ width: 'min(100%, 320px)' }}>
+      <SemanticMathDocument
+        document={document}
+        renderSubpartActions={(_, label) => (
+          <div className="vmsh-problem-actions-row">
+            <span>Не начата</span>
+            <button type="button" aria-label={`Открыть ${label}`}>
+              Открыть
+            </button>
+          </div>
+        )}
+      />
+    </div>
+  ),
   args: {
     document: {
       ...semanticDocument,
@@ -414,7 +429,12 @@ export const TaskTitles: Story = {
             blocks: [
               {
                 type: 'paragraph' as const,
-                children: [{ type: 'text' as const, value: 'Найдите сторону.' }],
+                children: [
+                  {
+                    type: 'text' as const,
+                    value: i === 0 ? 'Найдите сторону первого квадрата.' : '3;',
+                  },
+                ],
               },
             ],
           })),
@@ -429,7 +449,13 @@ export const TaskTitles: Story = {
       '2а) «Первый квадрат»',
     )
     await expect(canvas.getByText('«Первый квадрат»')).toBeVisible()
-    await expect(canvas.getByText('«Второй квадрат»')).toBeVisible()
+    await expect(canvasElement.querySelector('.vmsh-subpart-inline')).toHaveTextContent('2б) 3;')
+    await expect(canvas.queryByText('«Второй квадрат»')).toBeNull()
+    const button = canvas.getByRole('button', { name: 'Открыть б' })
+    const header = button.closest('.vmsh-subpart-header')!
+    await expect(within(header as HTMLElement).getByText('Не начата')).toBeVisible()
+    await expect(button).toBeVisible()
+    await expect(header.scrollWidth).toBeLessThanOrEqual(header.clientWidth + 1)
   },
 }
 

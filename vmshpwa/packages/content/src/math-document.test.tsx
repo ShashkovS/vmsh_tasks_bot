@@ -2,6 +2,8 @@ import { i18n } from '@lingui/core'
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { WebContentBlock, WebInlineNode } from '@vmsh/contracts'
+import { compactSubpart } from './compact-subpart'
 import webDocumentFixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { webContentContractFixtureSchema, webContentDocumentSchema } from '@vmsh/contracts'
 import { renderWithI18n as render } from '@vmsh/test-utils/i18n'
@@ -18,6 +20,88 @@ import {
 afterEach(() => cleanup())
 
 describe('browser math content renderer', () => {
+  it('keeps the introduction and long question, and moves the four cube counts into their headers', () => {
+    const base = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    const paragraph = (value: string): WebContentBlock => ({
+      type: 'paragraph',
+      children: [{ type: 'text', value }],
+    })
+    const parts = [
+      'Сколько всего получилось кубиков? Сколько получилось кубиков, у которых покрашенных граней ровно',
+      '3;',
+      '2;',
+      '1;',
+      '0?',
+    ]
+    const labels = ['а', 'б', 'в', 'г', 'д']
+    const blocks: WebContentBlock[] = [
+      paragraph('Деревянный кубик покрасили и распилили.'),
+      ...parts.map((value, index) => ({
+        type: 'subpart' as const,
+        label: labels[index]!,
+        title: 'Название ' + labels[index],
+        blocks: [paragraph(value)],
+      })),
+    ]
+    const document = {
+      ...base,
+      introduction: [],
+      problems: [{ ...base.problems[0]!, taskReference: '11н.5', blocks }],
+    }
+    const { container, rerender } = render(
+      <SemanticMathDocument
+        document={document}
+        renderSubpartActions={(_, label) => <button>{label}</button>}
+      />,
+    )
+    expect(screen.getByText('Деревянный кубик покрасили и распилили.')).not.toBeNull()
+    expect(screen.getByText('«Название а»')).not.toBeNull()
+    expect(screen.getByText(parts[0]!)).not.toBeNull()
+    const headers = container.querySelectorAll('.vmsh-subpart-header')
+    for (let i = 1; i < parts.length; i++) {
+      expect(headers[i]?.querySelector('.vmsh-subpart-inline')?.textContent).toBe(
+        '5' + labels[i] + ') ' + parts[i],
+      )
+      expect(headers[i]?.querySelector('button')?.textContent).toBe(labels[i])
+      expect(
+        container.querySelectorAll('.vmsh-subpart')[i]?.querySelector('.vmsh-subpart-content'),
+      ).toBeNull()
+    }
+    rerender(<SemanticMathDocument document={document} hideProblemHeadings />)
+    expect(screen.getByText('3;')).not.toBeNull()
+    expect(container.querySelector('.vmsh-subpart-header')).toBeNull()
+    rerender(<SemanticMathDocument document={{ ...document, materialKind: 'hint' }} />)
+    expect(screen.getByText('«Название б»')).not.toBeNull()
+    expect(screen.getByText('3;').closest('.vmsh-subpart-content')).not.toBeNull()
+  })
+
+  it('measures visible inline text and simple math, and excludes explicit breaks and complex math', () => {
+    const compact = (...children: WebInlineNode[]) =>
+      compactSubpart([{ type: 'paragraph', children }])
+    const text = (value: string): WebInlineNode => ({ type: 'text', value })
+    expect(compact(text('   '))).toBeNull()
+    expect(compact(text('я'.repeat(19)))).not.toBeNull()
+    expect(compact(text('я'.repeat(20)))).toBeNull()
+    expect(compact(text('раз\n два'), { type: 'emphasis', children: [text('!')] })).not.toBeNull()
+    expect(compact(text('раз'), text('\n'), text('два'))).toBeNull()
+    expect(compact(text('при '), { type: 'math', latex: 'x^2 = 4' })).not.toBeNull()
+    expect(compact(text('я'.repeat(17)), { type: 'math', latex: 'x+1' })).toBeNull()
+    for (const latex of [
+      String.raw`\frac{1}{2}`,
+      String.raw`\begin{matrix}1\\2\end{matrix}`,
+      String.raw`\unknownMacro`,
+    ]) {
+      expect(compact({ type: 'math', latex })).toBeNull()
+    }
+    expect(compactSubpart([{ type: 'formula', latex: 'x' }])).toBeNull()
+    expect(
+      compactSubpart([
+        { type: 'paragraph', children: [text('а')] },
+        { type: 'paragraph', children: [text('б')] },
+      ]),
+    ).toBeNull()
+  })
+
   it('renders a full problem reference and a short subpart reference', () => {
     const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
     render(
@@ -36,7 +120,12 @@ describe('browser math content renderer', () => {
                   label: 'а',
                   taskReference: '1н.11а',
                   title: 'Первый пункт',
-                  blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Условие' }] }],
+                  blocks: [
+                    {
+                      type: 'paragraph',
+                      children: [{ type: 'text', value: 'Подробное условие подпункта' }],
+                    },
+                  ],
                 },
               ],
             },
@@ -72,7 +161,12 @@ describe('browser math content renderer', () => {
                   type: 'subpart',
                   label: 'б)',
                   title: 'Запасной формат',
-                  blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Условие' }] }],
+                  blocks: [
+                    {
+                      type: 'paragraph',
+                      children: [{ type: 'text', value: 'Подробное условие подпункта' }],
+                    },
+                  ],
                 },
               ],
             },
@@ -143,7 +237,12 @@ describe('browser math content renderer', () => {
               type: 'subpart',
               label: 'а',
               title: 'Два квадрата',
-              blocks: [{ type: 'paragraph', children: [{ type: 'text', value: 'Первый пункт' }] }],
+              blocks: [
+                {
+                  type: 'paragraph',
+                  children: [{ type: 'text', value: 'Подробное условие первого пункта' }],
+                },
+              ],
             },
           ],
           problems: [],
@@ -207,7 +306,10 @@ describe('browser math content renderer', () => {
                   type: 'subpart',
                   label: 'а',
                   blocks: [
-                    { type: 'paragraph', children: [{ type: 'text', value: 'Первый пункт' }] },
+                    {
+                      type: 'paragraph',
+                      children: [{ type: 'text', value: 'Подробное условие первого пункта' }],
+                    },
                   ],
                 },
               ],

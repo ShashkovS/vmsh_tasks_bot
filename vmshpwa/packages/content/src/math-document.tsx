@@ -20,6 +20,7 @@ import type {
 } from '@vmsh/contracts'
 import { cn } from '@vmsh/ui'
 
+import { compactSubpart } from './compact-subpart'
 import { FigureLoadingContext } from './figure-loading'
 import { MathExpression } from './katex-rendering'
 import { ZoomableAssetFigure } from './zoomable-asset-figure'
@@ -161,7 +162,7 @@ export type FigureToolsRenderer = (
 ) => ReactNode
 const FigureTools = createContext<FigureToolsRenderer | undefined>(undefined)
 
-const HideMaterialHeadings = createContext(false)
+const HeadingMode = createContext<'hidden' | 'condition' | 'material'>('material')
 
 function ContentBlocks({
   blocks,
@@ -172,7 +173,7 @@ function ContentBlocks({
   renderSubpartActions,
 }: ContentBlocksProps) {
   const { i18n } = useLingui()
-  const hideHeadings = useContext(HideMaterialHeadings)
+  const headingMode = useContext(HeadingMode)
   const renderFigureTools = useContext(FigureTools)
   return blocks.map((block, index) => {
     const key = `${path}-${index}`
@@ -295,31 +296,44 @@ function ContentBlocks({
           />
         )
       }
-      case 'subpart':
+      case 'subpart': {
+        const inline = headingMode === 'condition' ? compactSubpart(block.blocks) : null
         return (
           <div className="vmsh-subpart" key={key}>
-            {!hideHeadings ? (
+            {headingMode !== 'hidden' ? (
               <div className="vmsh-subpart-header">
-                <strong className="vmsh-subpart-label">
-                  {subpartReference(block, problem, i18n.locale)}
-                  {block.title ? <span> «{block.title}»</span> : null}
-                </strong>
+                {inline ? (
+                  <span className="vmsh-subpart-inline">
+                    <strong className="vmsh-subpart-label">
+                      {subpartReference(block, problem, i18n.locale)}
+                    </strong>{' '}
+                    <InlineNodes nodes={inline} path={key} />
+                  </span>
+                ) : (
+                  <strong className="vmsh-subpart-label">
+                    {subpartReference(block, problem, i18n.locale)}
+                    {block.title ? <span> «{block.title}»</span> : null}
+                  </strong>
+                )}
                 {problem ? renderSubpartActions?.(problem, block.label) : null}
               </div>
             ) : null}
-            <div className="vmsh-subpart-content">
-              <ContentBlocks
-                blocks={block.blocks}
-                path={`${key}-blocks`}
-                {...(problem === undefined ? {} : { problem })}
-                {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
-                {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
-                {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
-              />
-            </div>
+            {!inline && (
+              <div className="vmsh-subpart-content">
+                <ContentBlocks
+                  blocks={block.blocks}
+                  path={`${key}-blocks`}
+                  {...(problem === undefined ? {} : { problem })}
+                  {...(onFigureScaleCycle === undefined ? {} : { onFigureScaleCycle })}
+                  {...(renderAfterSubpart === undefined ? {} : { renderAfterSubpart })}
+                  {...(renderSubpartActions === undefined ? {} : { renderSubpartActions })}
+                />
+              </div>
+            )}
             {problem ? renderAfterSubpart?.(problem, block.label) : null}
           </div>
         )
+      }
       case 'callout':
         return (
           <aside className={`vmsh-callout vmsh-callout-${block.kind}`} key={key}>
@@ -372,7 +386,15 @@ export function SemanticMathDocument({
   return (
     <FigureTools.Provider value={renderFigureTools}>
       <FigureLoadingContext.Provider value={imageLoading}>
-        <HideMaterialHeadings.Provider value={hideProblemHeadings}>
+        <HeadingMode.Provider
+          value={
+            hideProblemHeadings
+              ? 'hidden'
+              : document.materialKind === 'condition'
+                ? 'condition'
+                : 'material'
+          }
+        >
           <MathDocument
             {...(className === undefined ? {} : { className })}
             {...(document.title === null || hideProblemHeadings ? {} : { title: document.title })}
@@ -424,7 +446,7 @@ export function SemanticMathDocument({
               )
             })}
           </MathDocument>
-        </HideMaterialHeadings.Provider>
+        </HeadingMode.Provider>
       </FigureLoadingContext.Provider>
     </FigureTools.Provider>
   )
