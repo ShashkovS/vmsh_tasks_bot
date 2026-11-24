@@ -1,5 +1,22 @@
 # Статус плана разработки
 
+## 2026-11-24 — Администрирование через MCP
+
+[Административный MCP](../../docs/admin-mcp/README.md) проверен на изолированном портале.
+82 интеграционных теста охватывают Staff OAuth и отзыв, каталог, два редактора,
+повторы, генерацию и возврат TSV, HTML с подсказками и решениями по ID подпункта,
+рисунки, блоки с PDF и YouTube, таймеры, ответы группы и перепроверку.
+Файловая доставка от ChatGPT в SDK-тестах заменена тестовыми байтами.
+27 тестов общих компонентов прошли. Общий PWA gate остановился на 12 прежних
+замечаниях форматирования. 24 ноября коммит `ba968e59` развёрнут на обоих рабочих порталах. На каждом
+проверены резервная копия, миграция 0125 на копии и рабочей базе, запуск рендера
+от пользователя службы, публичные discovery, challenge 401 и редирект OAuth на
+Staff. Ученический health, Staff и MCP преподавательской проверки доступны.
+Квитанции и исходное состояние хранятся в
+`/web/vmsh_tasks_bot/deploy/releases/admin-mcp-ba968e59` на каждом хосте.
+Публичные клиенты используют ID `vmsh-chatgpt-staff` и `prep-chatgpt-staff`
+соответственно. Открыта интерактивная приёмка файлов в ChatGPT.
+
 ## 2026-11-24 — Короткие подпункты
 
 В общем компоненте листка реализовано [компактное отображение условия](../../docs/task-titles.md) для примеров вида 11н.5б–д.
@@ -4751,3 +4768,9 @@ Types/lint/i18n/build, 1152 frontend, 386 Storybook, 5 Chromium review E2E PASS;
 Релиз `354c93d9` выложен на TLF Prep и ВМШ FirstVDS. На каждом сервере проверены
 оба типа реальным SymPy-воркером, отрицательный вердикт и пояснение на RU/EN.
 После перезапуска публичные Student API обоих сайтов ответили `ok: true`.
+
+- 2026-11-24 · Admin MCP OAuth. Fixed the wire CSP that blocked consent form submissions,
+  localized the page using the active Staff brand and device language, and covered both
+  consent decisions through a Chromium navigation to the registered callback.
+- Admin MCP connection setup on both portals now uses OAuth public-client registration.
+  Staff → MCP access provides the portal URL and setup steps in English and Russian.

@@ -1,0 +1,30 @@
+# Подключение портала
+
+**ВМШ.** В настройках приложений ChatGPT создайте подключение «ВМШ — Администрирование занятий».
+Адрес сервера — `https://vmsh.shashkovs.ru/staff/api/admin/v1/mcp`. Выберите OAuth, оставьте Client ID и Client Secret пустыми, войдите в Staff ВМШ и подтвердите делегирование. Проверьте поле portal в `get_my_access`.
+
+**Prep.** Создайте отдельное подключение «Prep — Администрирование занятий».
+Адрес — `https://prep.leaders.tech/staff/api/admin/v1/mcp`. Выберите OAuth, оставьте Client ID и Client Secret пустыми и войдите в Staff Prep. Проверьте, что portal равен `https://prep.leaders.tech`.
+
+Адрес и кнопку копирования можно найти в Staff → MCP-доступ на [Prep](https://prep.leaders.tech/staff/mcp-access) и [ВМШ](https://vmsh.shashkovs.ru/staff/mcp-access).
+ChatGPT получает идентификатор публичного клиента через объявленный `registration_endpoint`.
+Портал принимает регистрацию только с точным callback ChatGPT.
+
+Для ручной регистрации можно задать на каждом портале `VMSH_ADMIN_MCP_CLIENT_ID` и
+`VMSH_ADMIN_MCP_REDIRECT_URI` равным регистрации клиента и точному callback,
+показанному в ChatGPT. Для публичного клиента используется PKCE S256.
+Прокси должен передавать на aiohttp пути под `/staff/api/admin/v1/`, включая OAuth,
+и обе discovery-записи. Установите миграцию и выполните `make pwa-admin-render` на машине сборки.
+Доставьте файл vmshpwa/admin-render/dist/render.cjs рядом с backend. Для экспорта нужен Node.
+
+Отзыв через объявленный revocation_endpoint аннулирует пару токенов.
+[Маршруты и проверка делегирования](../../../admin_mcp/oauth.py) · [Тест SDK](../../../pwa_tests/integration/test_admin_remote_mcp.py).
+
+Для регистрации с секретом задайте `VMSH_ADMIN_MCP_CLIENT_SECRET` и укажите его
+в ChatGPT. Тогда discovery объявляет client_secret_post. Файлы загружаются по HTTPS
+с поддоменов oaiusercontent.com. Дополнительные проверенные имена файловых хостов
+можно перечислить через запятую в `VMSH_ADMIN_MCP_FILE_HOSTS`.
+
+После входа Staff показывает название портала, аккаунт и запрашиваемые права на языке кабинета.
+Обе кнопки возвращают пользователя в ChatGPT. При отказе клиент получает `access_denied`.
+[Страница согласия](../../../apps/pwa_api/oauth_consent.py) · [Проверка в Chromium](../../scripts/test-admin-consent.mjs).

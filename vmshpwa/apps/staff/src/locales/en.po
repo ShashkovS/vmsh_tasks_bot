@@ -698,6 +698,10 @@ msgstr "An administrator has not granted you access to a course with statistics 
 msgid "Администрирование"
 msgstr "Administration"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Администрирование занятий в ChatGPT"
+msgstr "Manage lessons in ChatGPT"
+
 #: apps/staff/src/test-attempt-recheck-page.tsx
 msgid "Администрирование тестовой задачи"
 msgstr "Test problem administration"
@@ -915,6 +919,10 @@ msgstr "On the feed"
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "В листке нет условий для экспорта"
 msgstr "The worksheet has no statements to export"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "В настройках ChatGPT откройте приложения и создайте новое подключение."
+msgstr "In ChatGPT settings, open Apps and create a new connection."
 
 #: apps/staff/src/review-history-page.tsx
 msgid "В начало списка"
@@ -1143,6 +1151,10 @@ msgstr "Teacher permissions are fixed by their role"
 msgid "Возможные синонимы · {0}"
 msgstr "Possible synonyms · {0}"
 
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Войдите в Staff, подтвердите доступ и попросите ChatGPT вызвать get_my_access."
+msgstr "Sign in to Staff, approve access, then ask ChatGPT to call get_my_access."
+
 #: apps/staff/src/login-page.tsx
 msgid "Войти"
 msgstr "Sign in"
@@ -1325,6 +1337,10 @@ msgstr "The pasted text is kept only in this browser until enrolment succeeds."
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "Вставленный текст сохраняется только в этом браузере до успешного создания аккаунтов."
 msgstr "The pasted text is kept only in this browser until the accounts are created successfully."
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Вставьте адрес этого портала и выберите OAuth. Оставьте Client ID и Client Secret пустыми."
+msgstr "Paste this portal’s URL and select OAuth. Leave Client ID and Client Secret blank."
 
 #: apps/staff/src/teacher-batch-panel.tsx
 msgid "Вставьте преподавателей из таблицы"
@@ -5887,6 +5903,10 @@ msgstr "check interrupted"
 #: apps/staff/src/review-sheet-page.tsx
 msgid "Проверка простынёй"
 msgstr "Review sheet"
+
+#: apps/staff/src/mcp-access-page.tsx
+msgid "Проверка работ через MCP"
+msgstr "Review submissions via MCP"
 
 #: apps/staff/src/pages.tsx
 #: apps/staff/src/review-workspace-page.tsx

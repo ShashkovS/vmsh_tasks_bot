@@ -11,6 +11,48 @@ import { useAiReviewRequest } from './ai-review-client'
 /** Personal token lifecycle; docs/ai-review-assistant.md, cookie-only API. */
 export function McpAccessPage() {
   const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'staff') return null
+  const adminUrl = `${window.location.origin}/staff/api/admin/v1/mcp`
+  return (
+    <PageLayout title={t`MCP-доступ`}>
+      <div className="max-w-2xl space-y-4">
+        {principal.capabilities.includes('content.manage') && (
+          <section className="space-y-3 rounded-lg border border-border p-4">
+            <h2 className="text-lg font-semibold">
+              <Trans>Администрирование занятий в ChatGPT</Trans>
+            </h2>
+            <ol className="list-decimal space-y-2 pl-5 text-small">
+              <li>
+                <Trans>
+                  В настройках ChatGPT откройте приложения и создайте новое подключение.
+                </Trans>
+              </li>
+              <li>
+                <Trans>
+                  Вставьте адрес этого портала и выберите OAuth. Оставьте Client ID и Client Secret
+                  пустыми.
+                </Trans>
+              </li>
+              <li>
+                <Trans>
+                  Войдите в Staff, подтвердите доступ и попросите ChatGPT вызвать get_my_access.
+                </Trans>
+              </li>
+            </ol>
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-subtle p-2">
+              <code className="min-w-0 flex-1 break-all text-small">{adminUrl}</code>
+              <CopyButton value={adminUrl} />
+            </div>
+          </section>
+        )}
+        {principal.capabilities.includes('review.write') && <ReviewAccess />}
+      </div>
+    </PageLayout>
+  )
+}
+
+function ReviewAccess() {
+  const principal = useAuthenticatedPrincipal()
   const request = useAiReviewRequest()
   const [name, setName] = useState('')
   const [secret, setSecret] = useState<string | null>(null)
@@ -46,111 +88,108 @@ export function McpAccessPage() {
   }
   const mcpUrl = `${window.location.origin}/staff/api/ai-review/v1/mcp`
   return (
-    <PageLayout title={t`MCP-доступ`}>
-      <div className="max-w-2xl space-y-4">
-        <p className="text-small">
-          <Trans>
-            Добавьте этот URL как HTTP MCP-сервер и укажите личный токен в заголовке Authorization:
-            Bearer. Клон репозитория и установка Python не нужны.
-          </Trans>
-        </p>
-        {/* F30 (dev/ui-audit-20261104/BACKLOG.md): values meant for another app get a copy button. */}
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle p-2">
-          <code className="min-w-0 flex-1 break-all text-small">{mcpUrl}</code>
-          <CopyButton value={mcpUrl} />
-        </div>
-        <p className="text-small">
-          <Trans>
-            Токен открывает учебные материалы ваших кружков и групп, включая неопубликованные
-            решения и изображения из диалогов. Через него можно загружать приватные предложения ИИ
-            для учителя.
-          </Trans>
-        </p>
-        <p className="text-small">
-          <Trans>
-            Срок действия — 90 дней. Сохраните секрет при создании: повторно он не показывается.
-          </Trans>
-        </p>
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (!busy && name.trim()) void mutate()
-          }}
-        >
-          <label htmlFor="mcp-connection-name" className="space-y-1 text-small">
-            <span className="block">
-              <Trans>Название подключения</Trans>
-            </span>
-            <Input
-              id="mcp-connection-name"
-              value={name}
-              maxLength={100}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <Button type="submit" disabled={busy || !name.trim()}>
-            <Trans>Создать токен</Trans>
-          </Button>
-        </form>
-        {secret && (
-          <section
-            className="space-y-2 rounded-lg border border-border p-3"
-            aria-label={t`Новый токен`}
-          >
-            <p className="text-small">
-              <Trans>Сохраните этот секрет в настройках MCP-клиента.</Trans>
-            </p>
-            <code className="block break-all select-all text-small">{secret}</code>
-            <CopyButton value={secret} />
-            <Button variant="outline" onClick={() => setSecret(null)}>
-              <Trans>Скрыть секрет</Trans>
-            </Button>
-          </section>
-        )}
-        {(error || query.isError) && (
-          <p role="alert">
-            <Trans>Не удалось обновить MCP-доступ.</Trans>{' '}
-            <Button variant="ghost" onClick={() => void query.refetch()}>
-              <Trans>Повторить</Trans>
-            </Button>
-          </p>
-        )}
-        {query.isPending && (
-          <p role="status">
-            <Trans>Загружаем подключения…</Trans>
-          </p>
-        )}
-        <ul className="space-y-3">
-          {query.data?.items.map((token) => (
-            <li
-              key={token.tokenId}
-              className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 ${token.revokedAt ? 'bg-surface-subtle opacity-70' : ''}`}
-            >
-              <div>
-                <p className="text-label">{token.name}</p>
-                <p className="text-caption text-muted-foreground">
-                  {token.revokedAt ? t`Отозван` : t`Действует до`}{' '}
-                  {!token.revokedAt &&
-                    dateTimeFormat(currentLocale(), { dateStyle: 'medium' }).format(
-                      new Date(token.expiresAt),
-                    )}
-                </p>
-              </div>
-              {!token.revokedAt && (
-                <Button
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void mutate(token.tokenId)}
-                >
-                  <Trans>Отозвать</Trans>
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
+    <>
+      <h2 className="text-lg font-semibold">
+        <Trans>Проверка работ через MCP</Trans>
+      </h2>
+      <p className="text-small">
+        <Trans>
+          Добавьте этот URL как HTTP MCP-сервер и укажите личный токен в заголовке Authorization:
+          Bearer. Клон репозитория и установка Python не нужны.
+        </Trans>
+      </p>
+      {/* F30 (dev/ui-audit-20261104/BACKLOG.md): values meant for another app get a copy button. */}
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-subtle p-2">
+        <code className="min-w-0 flex-1 break-all text-small">{mcpUrl}</code>
+        <CopyButton value={mcpUrl} />
       </div>
-    </PageLayout>
+      <p className="text-small">
+        <Trans>
+          Токен открывает учебные материалы ваших кружков и групп, включая неопубликованные решения
+          и изображения из диалогов. Через него можно загружать приватные предложения ИИ для
+          учителя.
+        </Trans>
+      </p>
+      <p className="text-small">
+        <Trans>
+          Срок действия — 90 дней. Сохраните секрет при создании: повторно он не показывается.
+        </Trans>
+      </p>
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (!busy && name.trim()) void mutate()
+        }}
+      >
+        <label htmlFor="mcp-connection-name" className="space-y-1 text-small">
+          <span className="block">
+            <Trans>Название подключения</Trans>
+          </span>
+          <Input
+            id="mcp-connection-name"
+            value={name}
+            maxLength={100}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <Button type="submit" disabled={busy || !name.trim()}>
+          <Trans>Создать токен</Trans>
+        </Button>
+      </form>
+      {secret && (
+        <section
+          className="space-y-2 rounded-lg border border-border p-3"
+          aria-label={t`Новый токен`}
+        >
+          <p className="text-small">
+            <Trans>Сохраните этот секрет в настройках MCP-клиента.</Trans>
+          </p>
+          <code className="block break-all select-all text-small">{secret}</code>
+          <CopyButton value={secret} />
+          <Button variant="outline" onClick={() => setSecret(null)}>
+            <Trans>Скрыть секрет</Trans>
+          </Button>
+        </section>
+      )}
+      {(error || query.isError) && (
+        <p role="alert">
+          <Trans>Не удалось обновить MCP-доступ.</Trans>{' '}
+          <Button variant="ghost" onClick={() => void query.refetch()}>
+            <Trans>Повторить</Trans>
+          </Button>
+        </p>
+      )}
+      {query.isPending && (
+        <p role="status">
+          <Trans>Загружаем подключения…</Trans>
+        </p>
+      )}
+      <ul className="space-y-3">
+        {query.data?.items.map((token) => (
+          <li
+            key={token.tokenId}
+            className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 ${token.revokedAt ? 'bg-surface-subtle opacity-70' : ''}`}
+          >
+            <div>
+              <p className="text-label">{token.name}</p>
+              <p className="text-caption text-muted-foreground">
+                {token.revokedAt ? t`Отозван` : t`Действует до`}{' '}
+                {!token.revokedAt &&
+                  dateTimeFormat(currentLocale(), { dateStyle: 'medium' }).format(
+                    new Date(token.expiresAt),
+                  )}
+              </p>
+            </div>
+            {!token.revokedAt && (
+              <Button variant="outline" disabled={busy} onClick={() => void mutate(token.tokenId)}>
+                <Trans>Отозвать</Trans>
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }
 

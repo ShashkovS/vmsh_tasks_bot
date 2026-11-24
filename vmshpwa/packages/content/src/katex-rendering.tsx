@@ -46,6 +46,21 @@ export function MathExpression({ latex, display = false, className }: MathExpres
     }
   }, [display, latex])
 
+  // The administrative export has no browser effects. Native MathML also travels with the HTML file.
+  if (typeof window === 'undefined') {
+    let math: string
+    try {
+      math = katex.renderToString(latex, {
+        ...katexRenderOptions,
+        displayMode: display,
+        output: 'mathml',
+      })
+    } catch {
+      return <code>{latex}</code>
+    }
+    return <span className={className} dangerouslySetInnerHTML={{ __html: math }} />
+  }
+
   return (
     <span
       className={[

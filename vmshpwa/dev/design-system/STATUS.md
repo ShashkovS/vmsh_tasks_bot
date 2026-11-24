@@ -19,6 +19,9 @@ types/lint/i18n/builds PASS. Все семь снимков просмотрен
 Production не менялся; визуальное принятие владельцем не записывается.
 [Правила и файлы](../../docs/review-contribution.md),
 [квитанции и снимки](../../../pwa_tests/reports/review-contribution-20261117/README.md).
+## 2026-11-24 — Экспорт занятия для MCP
+
+HTML-экспорт использует SemanticMathDocument, LessonRichDocumentView и KaTeX MathML. Проверены формулы и фильтрация подпунктов, блоки с PDF и видео. [Сценарий и реализация](../../docs/admin-mcp/materials.md).
 
 ## 2026-11-09 — Совместимость оформления импортируемых рисунков
 

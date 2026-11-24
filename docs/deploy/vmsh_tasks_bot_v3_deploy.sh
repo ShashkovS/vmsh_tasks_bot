@@ -1334,6 +1334,25 @@ server {
         proxy_pass http://vmshpwa_backend;
     }
 
+    # Export handles, OAuth state and codes are excluded from access logs.
+    location ^~ /staff/api/admin/v1/exports/ {
+        access_log off;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_pass http://vmshpwa_backend;
+    }
+    location ^~ /staff/api/admin/v1/oauth/ {
+        access_log off;
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_pass http://vmshpwa_backend;
+    }
+    location = /.well-known/oauth-protected-resource/staff/api/admin/v1/mcp {
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_pass http://vmshpwa_backend;
+    }
+    location = /.well-known/oauth-authorization-server/staff/api/admin/v1/oauth {
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_pass http://vmshpwa_backend;
+    }
     location ^~ /staff/api/ {
         client_max_body_size 64m;
 

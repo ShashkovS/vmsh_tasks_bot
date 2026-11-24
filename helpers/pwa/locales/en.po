@@ -181,6 +181,10 @@ msgstr "An administrator has access to every course"
 msgid "Администратор редактирует распределение. Сначала завершите этот план"
 msgstr "An administrator is editing the assignments. Complete that plan first"
 
+#: apps/pwa_api/oauth_consent.py
+msgid "Аккаунт Staff"
+msgstr "Staff account"
+
 #: apps/pwa_api/admin_account_routes.py
 msgid "Аккаунт не найден"
 msgstr "Account not found"
@@ -328,6 +332,10 @@ msgstr "Enter new sign-in credentials"
 #: apps/pwa_api/support_routes.py
 msgid "Введите текст вопроса"
 msgstr "Enter question text"
+
+#: apps/pwa_api/oauth_consent.py
+msgid "Вернуться в ChatGPT"
+msgstr "Return to ChatGPT"
 
 #: apps/pwa_api/submission_routes.py
 msgid "Версия формата ответа не поддерживается"
@@ -961,6 +969,10 @@ msgstr "The import receipt is corrupted"
 #: apps/pwa_api/statistics_recalculation_routes.py
 msgid "Ключ запроса уже использован для другого курса"
 msgstr "The request key has already been used for another course"
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Ключ использован для другого занятия"
+msgstr "This idempotency key was used for another lesson"
 
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Команда \\tikz не содержит braced-тело."
@@ -1753,6 +1765,10 @@ msgstr "The answer is too large"
 msgid "Ответ сохранён, но проверка временно недоступна."
 msgstr "The answer was saved, but review is temporarily unavailable."
 
+#: apps/pwa_api/oauth_consent.py
+msgid "Отказать"
+msgstr "Deny"
+
 #: apps/pwa_api/content_routes.py
 msgid "Откат возможен только на готовую revision"
 msgstr "You can revert only to a ready revision"
@@ -1874,6 +1890,10 @@ msgstr "The plan has already changed. Refresh the page."
 #: apps/pwa_api/content_routes.py
 msgid "Повторная обработка выявила ошибки. Исправьте исходный файл перед публикацией."
 msgstr "Reprocessing found errors. Fix the source file before publishing."
+
+#: apps/pwa_api/oauth_consent.py
+msgid "Подключить ChatGPT"
+msgstr "Connect ChatGPT"
 
 #: helpers/pwa/push_delivery.py
 msgid "Подсказки уже доступны в кабинете."
@@ -2176,6 +2196,10 @@ msgstr "Check the source solution version"
 #: apps/pwa_api/written_submission_routes.py
 msgid "Проверьте ключ отправки"
 msgstr "Check the submission key"
+
+#: apps/pwa_api/admin_course_routes.py
+msgid "Проверьте ключ повтора"
+msgstr "Check the idempotency key"
 
 #: apps/pwa_api/review_routes.py
 msgid "Проверьте комментарий"
@@ -2630,6 +2654,14 @@ msgstr "You can resize figures after successful compilation"
 #: helpers/pwa/content/diagnostic_i18n.py
 msgid "Разместите локальный \\tikzset непосредственно перед \\begin{tikzpicture} или внутри % addToTikz-блока."
 msgstr "Place the local \\tikzset directly before \\begin{tikzpicture} or inside an % addToTikz block."
+
+#: apps/pwa_api/oauth_consent.py
+msgid "Разрешить"
+msgstr "Allow"
+
+#: apps/pwa_api/oauth_consent.py
+msgid "Разрешить ChatGPT управлять доступными вам занятиями и читать ответы учеников?"
+msgstr "Allow ChatGPT to manage the lessons you have access to and read student responses?"
 
 #: apps/pwa_api/admin_schedule_routes.py
 msgid "Расписание временно недоступно"

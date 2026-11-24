@@ -76,19 +76,23 @@ async def remote_mcp(request):
     except ERRORS as error:
         raise translate(error) from error
 
+    return await serve_mcp(request, create_server(RequestClient(request, secret)), MCP_PATH, boundary)
+
+
+async def serve_mcp(request, server, path, boundary, *, max_request=MAX_REQUEST):
+    """Serve an already authorized request with the shared stateless SDK transport."""
     data = bytearray()
     async for chunk in request.content.iter_chunked(64 * 1024):
         data.extend(chunk)
-        if len(data) > MAX_REQUEST:
+        if len(data) > max_request:
             raise web.HTTPRequestEntityTooLarge(
-                max_size=MAX_REQUEST, actual_size=len(data)
+                max_size=max_request, actual_size=len(data)
             )
-    server = create_server(RequestClient(request, secret))
     server.streamable_http_app(
-        streamable_http_path=MCP_PATH,
+        streamable_http_path=path,
         stateless_http=True,
         json_response=True,
-        max_request_body_size=MAX_REQUEST,
+        max_request_body_size=max_request,
         transport_security=TransportSecuritySettings(
             allowed_hosts=[request.host], allowed_origins=[boundary.external_origin]
         ),
@@ -101,8 +105,8 @@ async def remote_mcp(request):
         "http_version": f"{request.version.major}.{request.version.minor}",
         "method": request.method,
         "scheme": request.scheme,
-        "path": MCP_PATH,
-        "raw_path": MCP_PATH.encode(),
+        "path": path,
+        "raw_path": path.encode(),
         "query_string": request.query_string.encode(),
         "root_path": "",
         "headers": list(request.raw_headers),

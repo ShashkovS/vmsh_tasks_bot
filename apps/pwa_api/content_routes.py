@@ -1733,7 +1733,11 @@ async def content_upload_targets(request: web.Request) -> web.Response:
 @content_routes.post("/staff/api/v1/content/uploads")
 @_translate_content_errors
 async def upload_content_source(request: web.Request) -> web.Response:
-    values = await _multipart_upload(request)
+    return await append_uploaded_source(request, await _multipart_upload(request))
+
+
+async def append_uploaded_source(request, values):
+    """Append a validated upload from Staff HTTP or the administrative MCP."""
     group_lesson_public_id = _decode_form_text(values, "groupLessonId")
     kind = _content_kind(_decode_form_text(values, "kind"))
     filename = _logical_source_name(_decode_form_text(values, "logicalFilename"))
@@ -1832,13 +1836,18 @@ async def resolve_content_revision_assets(request: web.Request) -> web.Response:
 @content_routes.post("/staff/api/v1/content/revisions/{revision_id}/assets")
 @_translate_content_errors
 async def upload_content_revision_asset(request: web.Request) -> web.Response:
+    return await attach_uploaded_asset(request)
+
+
+async def attach_uploaded_asset(request, values=None, source_filename=None):
     repository = _repository(request)
     context = await repository.get_revision_context(request.match_info["revision_id"])
     _principal, actor_user_id = _staff_actor(request, context.scope)
     expected_version = _revision_if_match_version(
         request, public_id=context.revision.public_id
     )
-    values, source_filename = await _multipart_asset_upload(request)
+    if values is None:
+        values, source_filename = await _multipart_asset_upload(request)
     logical_name = _logical_asset_name(_decode_form_text(values, "logicalName"))
     asset_kind = _decode_form_text(values, "kind")
     _result, references, _descriptors = await _inspect_revision_assets(
