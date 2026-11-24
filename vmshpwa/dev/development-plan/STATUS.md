@@ -4748,3 +4748,5 @@ Types/lint/i18n/build, 1152 frontend, 386 Storybook, 5 Chromium review E2E PASS;
 - 2026-11-24 · Admin MCP OAuth. Fixed the wire CSP that blocked consent form submissions,
   localized the page using the active Staff brand and device language, and covered both
   consent decisions through a Chromium navigation to the registered callback.
+- Admin MCP connection setup on both portals now uses OAuth public-client registration.
+  Staff → MCP access provides the portal URL and setup steps in English and Russian.

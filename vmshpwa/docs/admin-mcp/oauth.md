@@ -1,12 +1,16 @@
 # Подключение портала
 
 **ВМШ.** В настройках приложений ChatGPT создайте подключение «ВМШ — Администрирование занятий».
-Адрес сервера — `https://vmsh.shashkovs.ru/staff/api/admin/v1/mcp`. Выберите OAuth, используйте ID клиента ВМШ, войдите в Staff ВМШ и подтвердите делегирование. Проверьте поле portal в `get_my_access`.
+Адрес сервера — `https://vmsh.shashkovs.ru/staff/api/admin/v1/mcp`. Выберите OAuth, оставьте Client ID и Client Secret пустыми, войдите в Staff ВМШ и подтвердите делегирование. Проверьте поле portal в `get_my_access`.
 
 **Prep.** Создайте отдельное подключение «Prep — Администрирование занятий».
-Адрес — `https://prep.leaders.tech/staff/api/admin/v1/mcp`. Используйте ID клиента Prep и Staff-аккаунт Prep. Проверьте, что portal равен `https://prep.leaders.tech`.
+Адрес — `https://prep.leaders.tech/staff/api/admin/v1/mcp`. Выберите OAuth, оставьте Client ID и Client Secret пустыми и войдите в Staff Prep. Проверьте, что portal равен `https://prep.leaders.tech`.
 
-При установке задайте на каждом портале `VMSH_ADMIN_MCP_CLIENT_ID` и
+Адрес и кнопку копирования можно найти в Staff → MCP-доступ на [Prep](https://prep.leaders.tech/staff/mcp-access) и [ВМШ](https://vmsh.shashkovs.ru/staff/mcp-access).
+ChatGPT получает идентификатор публичного клиента через объявленный `registration_endpoint`.
+Портал принимает регистрацию только с точным callback ChatGPT.
+
+Для ручной регистрации можно задать на каждом портале `VMSH_ADMIN_MCP_CLIENT_ID` и
 `VMSH_ADMIN_MCP_REDIRECT_URI` равным регистрации клиента и точному callback,
 показанному в ChatGPT. Для публичного клиента используется PKCE S256.
 Прокси должен передавать на aiohttp пути под `/staff/api/admin/v1/`, включая OAuth,

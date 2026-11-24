@@ -313,10 +313,15 @@ function AuthenticatedStaffShell({ pathname }: { pathname: string }) {
   const [loggingOut, setLoggingOut] = useState(false)
   if (principal.audience !== 'staff') return null
   const localPathname = createRouterAuthReturnTo('staff', { pathname })
-  const permittedNavigation = navigation.filter(
+  const menu = navigation.map((item) =>
+    item.to === '/mcp-access' && principal.capabilities.includes('content.manage')
+      ? { ...item, capability: 'content.manage' as const }
+      : item,
+  )
+  const permittedNavigation = menu.filter(
     (item) => !item.capability || principal.capabilities.includes(item.capability),
   )
-  const requiredCapability = navigation.find(
+  const requiredCapability = menu.find(
     (item) =>
       item.capability && (localPathname === item.to || localPathname.startsWith(`${item.to}/`)),
   )?.capability

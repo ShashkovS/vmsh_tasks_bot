@@ -67,9 +67,10 @@ async def test_browser_consent(review_http):
     assert process.returncode == 0
 
 
-async def issue(f):
+async def issue(f, client_id=None):
     verifier = "a" * 45
     query = consent_query(verifier)
+    query["client_id"] = client_id or oauth.client()
     response = await f.client.post(
         oauth.ISSUER_PATH + "/authorize",
         params=query,
@@ -81,7 +82,7 @@ async def issue(f):
     assert response.status == 302, await response.text()
     code = parse_qs(urlsplit(response.headers["Location"]).query)["code"][0]
     data = {
-        "client_id": oauth.client(),
+        "client_id": query["client_id"],
         "resource": query["resource"],
         "redirect_uri": query["redirect_uri"],
         "grant_type": "authorization_code",
@@ -127,7 +128,19 @@ async def test_oauth_tools_and_revocation(review_http):
         headers=fixtures._headers(),
     )
     assert (await issuer.json())["code_challenge_methods_supported"] == ["S256"]
-    tokens = await issue(f)
+    registration = (await issuer.json())["registration_endpoint"]
+    endpoint = urlsplit(registration).path
+    response = await f.client.post(endpoint, headers=fixtures._headers(), json={
+        "redirect_uris": ["https://example.org/callback"],
+    })
+    assert response.status == 400
+    response = await f.client.post(endpoint, headers=fixtures._headers(), json={
+        "redirect_uris": [oauth.callback()], "token_endpoint_auth_method": "none",
+    })
+    assert response.status == 201
+    registered = await response.json()
+    assert registered["token_endpoint_auth_method"] == "none"
+    tokens = await issue(f, registered["client_id"])
     async with connect(f, tokens["access_token"]) as client:
         result = await client.call_tool("get_my_access", {})
         assert not result.is_error, result

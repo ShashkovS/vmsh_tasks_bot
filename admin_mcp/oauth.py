@@ -1,8 +1,9 @@
-"""Single pre-registered public PKCE client per portal. See docs/admin-mcp/oauth.md."""
+"""Portal-specific ChatGPT registration and PKCE consent. See docs/admin-mcp/oauth.md."""
 
 import base64
 import hashlib
 import hmac
+import json
 import os
 import re
 import secrets
@@ -117,12 +118,50 @@ async def resource_metadata(request):
     )
 
 
+@routes.post(ISSUER_PATH + "/register")
+async def register(request):
+    """RFC 7591: instances of the same public ChatGPT client share its registration."""
+    boundary(request)
+    if os.environ.get("VMSH_ADMIN_MCP_CLIENT_SECRET"):
+        raise web.HTTPNotFound()
+    if request.content_type != "application/json":
+        return bad("invalid_client_metadata")
+    # The application also accepts large lesson uploads. Bound this public route separately.
+    body = bytearray()
+    async for chunk in request.content.iter_chunked(4096):
+        body.extend(chunk)
+        if len(body) > 8192:
+            raise web.HTTPRequestEntityTooLarge(max_size=8192, actual_size=len(body))
+    try:
+        metadata = json.loads(body)
+    except (ValueError, RecursionError):
+        return bad("invalid_client_metadata")
+    if not isinstance(metadata, dict):
+        return bad("invalid_client_metadata")
+    if metadata.get("redirect_uris") != [callback()]:
+        return bad("invalid_redirect_uri")
+    if metadata.get("scope", SCOPE) != SCOPE:
+        return bad("invalid_client_metadata")
+    return web.json_response({
+        "client_id": client(),
+        "client_name": "ChatGPT",
+        "redirect_uris": [callback()],
+        "scope": SCOPE,
+        "response_types": ["code"],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "token_endpoint_auth_method": "none",
+    }, status=201, headers=PRIVACY)
+
+
 @routes.get("/.well-known/oauth-authorization-server" + ISSUER_PATH)
 async def authorization_metadata(request):
     issuer = boundary(request).external_origin + ISSUER_PATH
     return web.json_response(
         {
             "issuer": issuer,
+            **({} if os.environ.get("VMSH_ADMIN_MCP_CLIENT_SECRET") else {
+                "registration_endpoint": issuer + "/register"
+            }),
             "authorization_endpoint": issuer + "/authorize",
             "token_endpoint": issuer + "/token",
             "revocation_endpoint": issuer + "/revoke",
