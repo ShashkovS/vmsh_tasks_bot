@@ -136,6 +136,26 @@ msgstr "· messages: {0}"
 msgid "· Тест учителя"
 msgstr "· Teacher test"
 
+#. placeholder {0}: value.current
+#: apps/staff/src/review-contribution.tsx
+msgid "{0, plural, one {# день подряд} few {# дня подряд} many {# дней подряд} other {# дня подряд}}"
+msgstr "{0, plural, one {# consecutive day} other {# consecutive days}}"
+
+#. placeholder {0}: value.current
+#: apps/staff/src/review-contribution.tsx
+msgid "{0, plural, one {# неделя подряд} few {# недели подряд} many {# недель подряд} other {# недели подряд}}"
+msgstr "{0, plural, one {# consecutive week} other {# consecutive weeks}}"
+
+#. placeholder {0}: value.plus
+#: apps/staff/src/review-contribution.tsx
+msgid "{0, plural, one {# плюс} few {# плюса} many {# плюсов} other {# плюса}}"
+msgstr "{0, plural, one {# plus} other {# pluses}}"
+
+#. placeholder {0}: value.total
+#: apps/staff/src/review-contribution.tsx
+msgid "{0, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
+msgstr "{0, plural, one {# review} other {# reviews}}"
+
 #. placeholder {0}: messages.length
 #: apps/staff/src/review-workspace-page.tsx
 msgid "{0, plural, one {# сообщение} few {# сообщения} many {# сообщений} other {# сообщения}}"
@@ -348,6 +368,10 @@ msgstr "{0}{status}. Clicks: plus → minus → leave unchanged."
 msgid "{brandName} — учитель и администратор"
 msgstr "{brandName} — Staff"
 
+#: apps/staff/src/review-contribution.tsx
+msgid "{completed} из {target} проверок"
+msgstr "{completed} of {target} reviews"
+
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
 msgstr "{count, plural, one {# problem} other {# problems}}"
@@ -359,6 +383,10 @@ msgstr "{count, plural, one {# submission} other {# submissions}}"
 #: apps/staff/src/problem-synonym-page.tsx
 msgid "{count, plural, one {# проверка} few {# проверки} many {# проверок} other {# проверки}}"
 msgstr "{count, plural, one {# review} other {# reviews}}"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "{dayMark, plural, one {# день подряд с проверками} few {# дня подряд с проверками} many {# дней подряд с проверками} other {# дня подряд с проверками}}"
+msgstr "{dayMark, plural, one {# consecutive day with reviews} other {# consecutive days with reviews}}"
 
 #: apps/staff/src/review-history-page.tsx
 msgid "{error} Ваши изменения остаются в форме. "
@@ -373,6 +401,10 @@ msgstr "{error}. Try again."
 msgid "{hours} ч{0}"
 msgstr "{hours} h{0}"
 
+#: apps/staff/src/review-contribution.tsx
+msgid "{lifetimeText} проверок в PWA. Спасибо за помощь ученикам."
+msgstr "{lifetimeText} reviews in the PWA. Thank you for helping students."
+
 #: apps/staff/src/content-page.tsx
 msgid "{message} Код обращения: {requestId}."
 msgstr "{message} Request ID: {requestId}."
@@ -380,6 +412,14 @@ msgstr "{message} Request ID: {requestId}."
 #: apps/staff/src/review-queue-model.ts
 msgid "{minutes} мин"
 msgstr "{minutes} min"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "{nextMark, plural, one {Следующая отметка: # день} few {Следующая отметка: # дня} many {Следующая отметка: # дней} other {Следующая отметка: # дня}}"
+msgstr "{nextMark, plural, one {Next milestone: # day} other {Next milestone: # days}}"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "{nextMark, plural, one {Следующая отметка: # неделя} few {Следующая отметка: # недели} many {Следующая отметка: # недель} other {Следующая отметка: # недели}}"
+msgstr "{nextMark, plural, one {Next milestone: # week} other {Next milestone: # weeks}}"
 
 #. placeholder {0}: detail ? `: ${detail}` : '.'
 #: apps/staff/src/content-page.tsx
@@ -396,6 +436,14 @@ msgstr "{subject}: {0} is temporarily unavailable on the server. Try again later
 #: apps/staff/src/pages.tsx
 msgid "{submissionId} · Анна Белова · Начинающие"
 msgstr "{submissionId} · Анна Белова · Начинающие"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "{thresholdText} проверок за занятие"
+msgstr "{thresholdText} reviews for this lesson"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "{weekMark, plural, one {# неделя подряд с проверками} few {# недели подряд с проверками} many {# недель подряд с проверками} other {# недели подряд с проверками}}"
+msgstr "{weekMark, plural, one {# consecutive week with reviews} other {# consecutive weeks with reviews}}"
 
 #: apps/staff/src/staff-statistics-reports.tsx
 msgid "+ — зачёт, ½ — частичный зачёт, − — незачёт, … — ожидает проверки; пусто — нет отправок."
@@ -458,6 +506,10 @@ msgstr "February 1, 10:00 AM\\u20131:00 PM"
 #: apps/staff/src/account-provisioning-page.tsx
 msgid "1. Школьники"
 msgstr "1. Students"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "10 проверок за занятие. Спасибо за ваш вклад."
+msgstr "10 reviews for this lesson. Thank you for your contribution."
 
 #: apps/staff/src/pages.tsx
 msgid "12 задач распознано"
@@ -607,6 +659,7 @@ msgstr "Web sign-ins: {withoutAccount} without one, none ready for batch creatio
 msgid "XLSX-файл"
 msgstr "XLSX file"
 
+#: apps/staff/src/review-contribution.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
 msgid "Zoom"
 msgstr "Zoom"
@@ -907,6 +960,22 @@ msgstr "You have not been assigned any active courses or groups yet."
 #: apps/staff/src/content-page.tsx
 msgid "Вариант предпросмотра"
 msgstr "Preview variant"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Ваш вклад"
+msgstr "Your contribution"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Ваш вклад · Не удалось загрузить показатели"
+msgstr "Your contribution · Could not load the statistics"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Ваш вклад за занятие"
+msgstr "Your contribution to this lesson"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Ваш общий вклад"
+msgstr "Your overall contribution"
 
 #: apps/staff/src/whiteboard-export-generator.tsx
 msgid "Введение"
@@ -1357,6 +1426,14 @@ msgstr "Choose a problem for a review series or open an individual work item."
 msgid "Выберите занятие"
 msgstr "Choose a lesson"
 
+#: apps/staff/src/review-contribution.tsx
+msgid "Выберите курс"
+msgstr "Select a course"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Выберите курс для статистики занятия."
+msgstr "Select a course to see lesson statistics."
+
 #: apps/staff/src/staff-file-upload.tsx
 msgid "Выберите непустой документ или архив до 50 МиБ поддерживаемого формата."
 msgstr "Choose a non-empty document or archive in a supported format, up to 50 MiB."
@@ -1732,6 +1809,18 @@ msgstr "There are no published problems for this class"
 msgid "Для этой версии сначала нажмите «Повторно обработать исходник» над предпросмотром."
 msgstr "For this version, click “Reprocess source” above the preview first."
 
+#: apps/staff/src/review-contribution.tsx
+msgid "Дневной рекорд"
+msgstr "Personal daily streak record"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Дневной ритм"
+msgstr "Daily rhythm"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Дни и недели считаются по московскому времени. После перерыва личный рекорд сохраняется."
+msgstr "Days and weeks use Moscow time. Your personal record stays with you after a break."
+
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Дни очно и Zoom · занятия письменно · часы"
 msgstr "School and Zoom days · written lessons · hours"
@@ -1812,6 +1901,10 @@ msgstr "Share of problems solved"
 #: apps/staff/src/figure-layout-editor.tsx
 msgid "Дополнительные настройки"
 msgstr "Advanced settings"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Достигнутые отметки:"
+msgstr "Milestones reached:"
 
 #: apps/staff/src/staff-student-directory-page.tsx
 msgid "Доступ в кабинеты"
@@ -1902,6 +1995,14 @@ msgstr "Awaiting review:"
 #: apps/staff/src/staff-audit-page.tsx
 msgid "Журнал изменений"
 msgstr "Change log"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "За всё время в PWA"
+msgstr "All time in the PWA"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "За всё время:"
+msgstr "All time:"
 
 #: apps/staff/src/teacher-work-page.tsx
 msgid "За выбранные занятия работы нет"
@@ -2255,6 +2356,14 @@ msgstr "Class {0}"
 msgid "Занятие {0} · {1}"
 msgstr "Class {0} · {1}"
 
+#: apps/staff/src/review-contribution.tsx
+msgid "Занятие {lessonNumber}"
+msgstr "Lesson {lessonNumber}"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Занятие {lessonNumber} · {courseName}"
+msgstr "Lesson {lessonNumber} · {courseName}"
+
 #: apps/staff/src/pages.tsx
 msgid "занятие изменено отдельно"
 msgstr "class changed separately"
@@ -2270,6 +2379,10 @@ msgstr "Course class · {courseLessonId}"
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Занятие не создано"
 msgstr "Class not created"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Занятие статистики"
+msgstr "Statistics lesson"
 
 #: apps/staff/src/staff-lessons-page.tsx
 msgid "Занятий пока нет"
@@ -2901,6 +3014,10 @@ msgstr "A course combines groups for one subject and stores their shared statist
 msgid "курс с таким кодом не найден"
 msgstr "course with this code was not found"
 
+#: apps/staff/src/review-contribution.tsx
+msgid "Курс статистики"
+msgstr "Statistics course"
+
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Курсов пока нет"
 msgstr "No courses yet"
@@ -2915,6 +3032,10 @@ msgstr "Courses"
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Курсы и группы"
 msgstr "Courses and groups"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Личный рекорд:"
+msgstr "Personal record:"
 
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Лог неполный или неоднозначный. При наличии устных результатов весь день заменяется оценкой: не более 3.5 ч, максимум из интервала проверок + 0.3 ч и количества проверок / 14."
@@ -3027,6 +3148,14 @@ msgstr "Problem metadata"
 msgid "Метаданные уже изменились. Ваш локальный черновик сохранён; обновите и сверьте строки."
 msgstr "The metadata has changed. Your local draft is saved; refresh and compare the rows."
 
+#: apps/staff/src/review-contribution.tsx
+msgid "Минимум 3 проверки в день"
+msgstr "At least 3 reviews per day"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Минимум 3 проверки в неделю · с понедельника"
+msgstr "At least 3 reviews per week · starting Monday"
+
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Многочлен"
 msgstr "Polynomial"
@@ -3074,6 +3203,10 @@ msgstr "On narrow screens the figure fits the available width."
 #: apps/staff/src/classroom-layout-page.tsx
 msgid "На устройстве есть изменения от другой версии. Они сохранены; сравните схему перед подтверждением."
 msgstr "There are changes from another version on this device. They were saved; compare the layout before confirming."
+
+#: apps/staff/src/review-contribution.tsx
+msgid "На этой неделе:"
+msgstr "This week:"
 
 #: apps/staff/src/staff-course-catalog-page.tsx
 msgid "Набор вердиктов"
@@ -3516,6 +3649,10 @@ msgstr "Could not update MCP access."
 msgid "Не удалось обновить переписку. Набранный ответ не удалён."
 msgstr "Could not refresh the conversation. Your drafted reply was not deleted."
 
+#: apps/staff/src/review-contribution.tsx
+msgid "Не удалось обновить показатели"
+msgstr "Could not refresh the statistics"
+
 #: apps/staff/src/revision-assets-recovery.tsx
 msgid "Не удалось обработать ресурс. Повторите действие."
 msgstr "Could not process the asset. Try again."
@@ -3660,6 +3797,14 @@ msgstr "invalid number or name of columns"
 #: apps/staff/src/problem-metadata-columns.ts
 msgid "Неверный ответ"
 msgstr "Incorrect answer feedback"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Недельный рекорд"
+msgstr "Personal weekly streak record"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Недельный ритм"
+msgstr "Weekly rhythm"
 
 #: apps/staff/src/classroom-assignment-page.tsx
 #: apps/staff/src/classroom-catalog-page.tsx
@@ -4023,6 +4168,10 @@ msgstr "Refresh status"
 #: apps/staff/src/teacher-work-page.tsx
 msgid "Обновлено: {0}"
 msgstr "Updated: {0}"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Обновляем показатели…"
+msgstr "Refreshing statistics…"
 
 #: apps/staff/src/bulk-content-upload.tsx
 msgid "Обрабатываем набор…"
@@ -4614,6 +4763,7 @@ msgid "Очистить список"
 msgstr "Clear list"
 
 #: apps/staff/src/live-marking-page.tsx
+#: apps/staff/src/review-contribution.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
 #: apps/staff/src/staff-student-directory-page.tsx
 msgid "Очно"
@@ -4731,6 +4881,14 @@ msgstr "The password is not saved in the browser and is not shown again after se
 #: apps/staff/src/pages.tsx
 msgid "Парсер сначала делает dry-run и отдельно запрашивает недостающие assets."
 msgstr "The parser first performs a dry run and requests missing assets separately."
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Первая проверка в PWA. Спасибо за помощь ученикам."
+msgstr "Your first review in the PWA. Thank you for helping students."
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Первая проверка за занятие. Спасибо, что помогаете ребятам разобраться."
+msgstr "Your first review for this lesson. Thank you for helping students understand."
 
 #: apps/staff/src/student-results-page.tsx
 msgid "Первые 50 совпадений — уточните имя."
@@ -4869,6 +5027,7 @@ msgstr "Written"
 msgid "Письменная задача"
 msgstr "Written problem"
 
+#: apps/staff/src/review-contribution.tsx
 #: apps/staff/src/staff-statistics-reports.tsx
 msgid "Письменно"
 msgstr "Written"
@@ -4877,6 +5036,10 @@ msgstr "Written"
 #: apps/staff/src/review-queue-page.tsx
 msgid "Письменные задачи"
 msgstr "Written problems"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Письменные и устные проверки через PWA. Плюсы включают «+» и «+.»."
+msgstr "Written and oral reviews in the PWA. Pluses include “+” and “+.”."
 
 #: apps/staff/src/staff-statistics-reports.tsx
 msgid "Письменные плюсы"
@@ -4995,6 +5158,7 @@ msgstr "Centered after text"
 #: apps/staff/src/problem-import-page.tsx
 #: apps/staff/src/problem-review-workflow.tsx
 #: apps/staff/src/problem-synonym-page.tsx
+#: apps/staff/src/review-contribution.tsx
 #: apps/staff/src/review-conversation.tsx
 #: apps/staff/src/review-history-page.tsx
 #: apps/staff/src/review-queue-page.tsx
@@ -6453,6 +6617,10 @@ msgstr "Make {0} an administrator? They will have access to all data and setting
 #: apps/staff/src/staff-access-page.tsx
 msgid "Сделать администратором"
 msgstr "Make administrator"
+
+#: apps/staff/src/review-contribution.tsx
+msgid "Сегодня:"
+msgstr "Today:"
 
 #: apps/staff/src/pages.tsx
 msgid "Сезон 2025–2026"

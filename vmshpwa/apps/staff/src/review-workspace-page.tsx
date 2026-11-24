@@ -68,6 +68,7 @@ import {
 } from './review-draft'
 import { describeReviewError } from './review-errors'
 import { rememberCompletedReview } from './last-completed-review'
+import { ReviewContribution } from './review-contribution'
 import { AiReviewPanel } from './ai-review-panel'
 
 const verdictToWire = {
@@ -364,6 +365,12 @@ export function LoadedReviewWorkspace({
       width="wide"
     >
       <div className="space-y-3">
+        {!inactive && (
+          <ReviewContribution
+            course={first.courseId ?? undefined}
+            lesson={Number.parseInt(first.problemNumber, 10)}
+          />
+        )}
         {!storageAvailable ? (
           <Alert tone="danger" role="alert">
             <AlertContent>

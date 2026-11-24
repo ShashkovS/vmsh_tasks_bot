@@ -33,6 +33,7 @@ import {
 } from './review-queue-model'
 
 import { describeReviewError } from './review-errors'
+import { ReviewContribution } from './review-contribution'
 
 /** Staff queue: docs/serial-review.md; dev/design-system/05-pages-and-flows.md. */
 export function StaffReviewQueuePage() {
@@ -327,6 +328,9 @@ export function StaffReviewQueuePage() {
       title={t`Очередь проверки`}
       width="wide"
     >
+      <div className="mb-3">
+        <ReviewContribution course={search.queueCourse} />
+      </div>
       {content}
     </PageLayout>
   )

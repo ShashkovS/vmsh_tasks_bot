@@ -1,0 +1,12 @@
+{
+  "main": {
+    "integrity": "ok",
+    "bytes": 862990336,
+    "sha256": "46c4652b5502b0900281f8bad6c0264bc6e281a25c872a66ddd4da742ce9e26d"
+  },
+  "analytics": {
+    "integrity": "ok",
+    "bytes": 176132096,
+    "sha256": "979e8564c4618d56edb129a4e201ede8c212d960403021dd506940ca57ca6e70"
+  }
+}

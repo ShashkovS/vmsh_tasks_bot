@@ -52,6 +52,8 @@ import {
 } from './live-marking-state'
 import { LiveSchoolGrid, LiveZoomGrid, type MarkDisplay } from './live-marking-grid'
 import { LiveConditionDialog } from './live-marking-condition'
+import { ReviewContribution } from './review-contribution'
+import { notifyContributionSaved } from './review-contribution-events'
 
 // Page composition: live-marking.md and design-system/05-pages-and-flows.md.
 
@@ -309,6 +311,7 @@ export function LiveMarkingPage({
   })
   const received = useCallback(
     (receipt: LiveReceipt, command: LiveCommand) => {
+      if (command.kind === 'mark' && !receipt.replayed) notifyContributionSaved()
       const parsed = liveCellSchema.safeParse(receipt.state)
       if (parsed.success && (command.kind === 'mark' || command.kind === 'undo'))
         queryClient.setQueryData<LiveCells>(key('live-cells', command.context), (old) =>
@@ -886,6 +889,9 @@ export function LiveMarkingPage({
             compactStatus
           )}
         </span>
+      </div>
+      <div className="shrink-0 px-2 py-1">
+        <ReviewContribution course={course?.courseId} lesson={lesson?.number} />
       </div>
       <p className="border-b px-2 py-1 text-xs text-muted-foreground">
         <Trans>

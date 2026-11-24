@@ -25,6 +25,30 @@
 исходного листка 11н.7 в один абзац с курсивом. После плавной перезагрузки
 воркеров оба публичных Student API вернули `ok: true`.
 Для обновления опубликованного условия потребуется повторная публикация листка.
+## 2026-11-17 — Выпуск личного вклада и накопленной пачки: production PASS
+
+Владелец разрешил rollout на `vmshfirstvds` и всей накопленной пачки на
+`prep.leaders.tech`. Выпущен `0f7ef0f9`, static `review-contribution-20261117`:
+на каждом сайте 25 HTTP PASS, 4 HTML/121 Staff assets совпали, два PWA workers
+плавно заменены. Main/analytics backups до/после прошли integrity; schema,
+config, Zoom/Telegram/NATS сохранены. FirstVDS media/backend patches сохранены.
+Действующая browser-сессия подтвердила «Ваш вклад» и подробности.
+Осталось отдельное подтверждение владельца новых каталогов отчётов/fixture:
+approval review отклонила chown; runtime не затронут.
+[Production receipts и точный остаток](../../../pwa_tests/reports/review-contribution-20261117/rollout/README.md).
+
+## 2026-11-17 — Личный вклад проверяющего: реализован и проверен
+
+Компактный «Ваш вклад» подключён к письменной проверке/очереди/простыне/истории
+и очному/Zoom-приёму. PWA-only итоги, плюсы/всего, рубежи и два календарных
+ритма; отмены не вычитаются. Смена фильтров сохраняет раскрытие и фокус.
+8 server / 8 focused frontend / 7 focused Storybook и 15 Chromium E2E PASS,
+types/lint/i18n/builds PASS. Все семь снимков просмотрены. Полный gate
+ограничен 12 прежними format failures и двумя прежними Python failures;
+узкая простыня 320 px имеет прежнее переполнение 18 px, новый блок помещается.
+Production не менялся; визуальное принятие владельцем не записывается.
+[Правила и файлы](../../docs/review-contribution.md),
+[квитанции и снимки](../../../pwa_tests/reports/review-contribution-20261117/README.md).
 
 ## 2026-11-15 — Диагностика отказов фотографий: выпущено на обоих
 

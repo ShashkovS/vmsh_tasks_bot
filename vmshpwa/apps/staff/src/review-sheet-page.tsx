@@ -19,6 +19,7 @@ import {
 import { Button, Label } from '@vmsh/ui'
 import { describeReviewError } from './review-errors'
 import { ReviewSheetCard } from './review-sheet-card'
+import { ReviewContribution } from './review-contribution'
 
 /** docs/review-sheet.md; design-system/05-pages-and-flows.md § Written review. */
 export function StaffReviewSheetPage({
@@ -89,6 +90,7 @@ export function StaffReviewSheetPage({
       width="wide"
     >
       <div className="space-y-4">
+        <ReviewContribution groupLesson={lesson || undefined} />
         <p className="text-small text-muted-foreground">
           <Trans>
             Работы открываются без блокировки. Договоритесь с коллегами, какие работы вы проверяете.

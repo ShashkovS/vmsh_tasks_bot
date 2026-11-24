@@ -1,0 +1,15 @@
+{
+  "teachersChecked": 2,
+  "publishedLessonContexts": 11,
+  "measurements": [
+    {
+      "checks": 538,
+      "seconds": 0.01
+    },
+    {
+      "checks": 82,
+      "seconds": 0.003
+    }
+  ],
+  "readOnly": true
+}

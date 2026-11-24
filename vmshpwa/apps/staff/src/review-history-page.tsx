@@ -34,6 +34,7 @@ import { ReviewAttachmentImage } from './review-workspace-page'
 import { createEmptyReviewDraft, reviewDraftSchema } from './review-draft'
 import { describeReviewError } from './review-errors'
 import { rememberCompletedReview } from './last-completed-review'
+import { ReviewContribution } from './review-contribution'
 import { ReviewConversation } from './review-conversation'
 import type { HistorySearch } from './review-history-search'
 
@@ -110,6 +111,9 @@ export function StaffReviewHistoryPage({
       headerClassName="px-3 sm:px-0"
       title={translate`Завершённые проверки`}
     >
+      <div className="mb-3">
+        <ReviewContribution course={search.course} lesson={search.lesson} />
+      </div>
       {search.review ? (
         <CompletedReviewCard key={search.review} reviewId={search.review} onClose={close} />
       ) : (

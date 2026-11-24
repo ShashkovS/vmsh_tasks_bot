@@ -1,0 +1,45 @@
+{
+  "release": "review-contribution-20261117",
+  "target": "0f7ef0f9f529dc641bada70c70204b6a61b3a1f2",
+  "sourceBefore": "d2e5dddc2b0211aa86a9f93063317a10a1ab2a82",
+  "previous": "/web/vmsh_tasks_bot/vmshpwa/releases/ui-audit-20261104-7ee709141ded",
+  "schemaSha256": "1fee2065ca29e53489b2fe6b3ce9eb6d3418a4d219e2956d64cedfc87e6241bc",
+  "originalDirty": [],
+  "preservedUnits": {
+    "nats.service": 1093,
+    "vmshzoom.service": 2732506
+  },
+  "firstvdsMediaFiles": {},
+  "build": {
+    "profile": "production",
+    "releaseId": "review-contribution-20261117",
+    "publicMediaOrigin": "https://tlfprepimages.nbg1.your-objectstorage.com",
+    "sentryConfigured": true,
+    "sentryOrigin": "https://glitch.leaders.tech",
+    "msw": false,
+    "prototype": false
+  },
+  "status": "PASS",
+  "origin": "https://prep.leaders.tech",
+  "sourceAfter": "0f7ef0f9f529dc641bada70c70204b6a61b3a1f2",
+  "handover": {
+    "master": 2732555,
+    "workersBefore": [
+      4187715,
+      4187716
+    ],
+    "workersAfter": [
+      1302760,
+      1302761
+    ]
+  },
+  "htmlHashesMatched": 4,
+  "staffAssetHashesMatched": 121,
+  "httpChecksPassed": 25,
+  "contributionApiUnauthenticatedStatus": "401",
+  "schemaChanged": false,
+  "configurationPreserved": true,
+  "backupsBeforeVerified": true,
+  "staticAfter": "/web/vmsh_tasks_bot/vmshpwa/releases/review-contribution-20261117",
+  "backupsAfterVerified": true
+}

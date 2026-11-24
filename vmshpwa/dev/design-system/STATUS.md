@@ -1,5 +1,25 @@
 # Design-system status
 
+## 2026-11-17 — Личный вклад: выпущен на обоих сайтах
+
+`review-contribution-20261117` активен на FirstVDS и TLF. На каждом сайте
+25 HTTP checks PASS, опубликованные HTML/assets совпадают со сборкой.
+Действующая teacher browser-сессия подтвердила свёрнутый блок и подробности.
+[Production receipts](../../../pwa_tests/reports/review-contribution-20261117/rollout/README.md).
+
+## 2026-11-17 — Личный вклад проверяющего: реализован и проверен
+
+Компактный «Ваш вклад» подключён к письменной проверке/очереди/простыне/истории
+и очному/Zoom-приёму. PWA-only итоги, плюсы/всего, рубежи и два календарных
+ритма; отмены не вычитаются. Смена фильтров сохраняет раскрытие и фокус.
+8 server / 8 focused frontend / 7 focused Storybook и 15 Chromium E2E PASS,
+types/lint/i18n/builds PASS. Все семь снимков просмотрены. Полный gate
+ограничен 12 прежними format failures и двумя прежними Python failures;
+узкая простыня 320 px имеет прежнее переполнение 18 px, новый блок помещается.
+Production не менялся; визуальное принятие владельцем не записывается.
+[Правила и файлы](../../docs/review-contribution.md),
+[квитанции и снимки](../../../pwa_tests/reports/review-contribution-20261117/README.md).
+
 ## 2026-11-09 — Совместимость оформления импортируемых рисунков
 
 Backend converter поддерживает `pdfrender` без общего запрета `pdf`/`file`/`sys`
