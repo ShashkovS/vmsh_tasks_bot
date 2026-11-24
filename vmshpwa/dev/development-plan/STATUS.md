@@ -6,6 +6,8 @@
 
 Проверка слияния: прошли 189 профильных тестов pytest и 12 тестов Vitest. Общий `make pwa-check-fast` остановился на Prettier в 12 файлах с замечаниями в исходной ветке.
 
+24 ноября на FirstVDS (ВМШ) активирован `integrated-20f2bb09` из `origin/vmshpwa`. Перед переключением обе резервные копии SQLite прошли `integrity_check`; миграции 0124 и 0125 уже присутствовали. После замены PWA-воркеров проверены четыре публичные страницы и их JS/CSS, OAuth discovery, серверный рендерер и сравнение nCr в mathsolvers 0.20.22. Все 25 [публичных HTTP-проверок](../../scripts/production_http_smoke.py) прошли с FirstVDS и с внешней машины. Квитанция на FirstVDS — `/web/vmsh_tasks_bot/deploy/releases/integrated-20f2bb09/result.json`.
+
 ## 2026-11-24 — Администрирование через MCP
 
 [Административный MCP](../../docs/admin-mcp/README.md) проверен на изолированном портале.
